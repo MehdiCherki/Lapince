@@ -1,31 +1,55 @@
+import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
 import Footer from "../../components/Footer/footer";
 import { AnimatedOrbBackground } from "../../components/AnimatedOrbBackground/AnimatedOrbBackground";
 
+const features = [
+  {
+    title: "Tout ce qu'il vous faut. Rien de superflu.",
+    subtitle: "Notez vos dépenses et revenus à la volée",
+  },
+  {
+    title: "Aussi rapide que d'envoyer un message.",
+    subtitle: "Visualisez où va votre argent",
+  },
+  {
+    title: "Des alertes intelligentes sur vos budgets.",
+    subtitle: "Fixez des budgets par catégorie",
+  },
+  {
+    title: "Et tenez-les, on vous aide.",
+    subtitle: null,
+  },
+];
+
+const mainButtonStyle =
+  "w-fit px-12 py-3 bg-white text-[#002b49] rounded-full font-bold text-sm shadow-xl hover:scale-105 active:scale-95 transition-all shrink-0";
+
 export default function LandingPage() {
-  // Style du bouton blanc "S'inscrire"
-  const mainButtonStyle =
-    "w-fit px-12 py-3 bg-white text-[#002b49] rounded-full font-bold text-sm shadow-xl hover:scale-105 active:scale-95 transition-all shrink-0";
+  const { isAuthenticated } = useAuth();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (isAuthenticated) navigate("/accueil");
+  }, [isAuthenticated, navigate]);
 
   return (
     <main
-      className="fixed inset-0 w-full h-full overflow-hidden font-sans text-[#002b49]"
+      className="fixed inset-0 w-full h-full bg-[#b9c6d1] overflow-hidden font-sans text-[#002b49]"
       role="main"
       aria-label="Page d'accueil de La Pince"
     >
       <AnimatedOrbBackground />
-      {/* ------------------------------------------------------------ */}
-      {/* 1. BLOC DESKTOP (MD+)                                        */}
-      {/* ------------------------------------------------------------ */}
+
       <div className="hidden md:block">
-        {/* Arrière-plan Billets */}
         <img
           src="/WEBP/Desktop/Lapince-Hero-Background-Desktop.webp"
+          fetchpriority="high"
           className="absolute bottom-0 left-0 w-[60vw] opacity-50 object-contain origin-bottom-left z-0 pointer-events-none select-none"
           aria-hidden="true"
           alt=""
         />
-
-        {/* Illustration Femme - Ajustée à droite */}
         <div className="absolute bottom-0 right-40 z-30 pointer-events-none select-none h-[95vh]">
           <img
             src="/WEBP/Desktop/Lapince-Hero-Woman-Desktop.webp"
@@ -33,15 +57,11 @@ export default function LandingPage() {
             alt="Illustration La Pince"
           />
         </div>
-
-        {/* Logo Haut Gauche */}
         <img
           src="/WEBP/Desktop/Lapince-Logo-Desktop.webp"
-          className="absolute top-10 left-15 w-24 lg:w-60 z-50 transition-all"
+          className="absolute top-3 left-10 w-16 lg:w-24 z-50 transition-all"
           alt="Logo"
         />
-
-        {/* Bouton Connexion Haut Droite */}
         <div className="absolute top-6 right-6 z-50 pointer-events-auto">
           <a
             href="/login"
@@ -52,12 +72,10 @@ export default function LandingPage() {
         </div>
       </div>
 
-      {/* ------------------------------------------------------------ */}
-      {/* 2. BLOC MOBILE (< MD)                                       */}
-      {/* ------------------------------------------------------------ */}
       <div className="block md:hidden">
         <img
           src="/WEBP/Mobile/Lapince-Hero-Background-Mobile.webp"
+          fetchpriority="high"
           className="absolute bottom-0 right-30 w-screen opacity-40 z-0 pointer-events-none select-none"
           aria-hidden="true"
           alt=""
@@ -71,7 +89,7 @@ export default function LandingPage() {
         </div>
         <img
           src="/WEBP/Mobile/Lapince-Logo-Mobile.webp"
-          className="absolute top-6 left-6 w-28 z-50 pointer-events-auto"
+          className="absolute top-3 left-4 w-20 z-50"
           alt="Logo Round"
         />
         <div className="absolute top-6 right-6 z-50">
@@ -84,18 +102,12 @@ export default function LandingPage() {
         </div>
       </div>
 
-      {/* ------------------------------------------------------------ */}
-      {/* 3. ZONE DE CONTENU (L'essentiel)                             */}
-      {/* ------------------------------------------------------------ */}
-
-      {/* Overlay global */}
       <div
         className="absolute inset-0 bg-white/30 z-20 pointer-events-none"
         aria-hidden="true"
-      ></div>
+      />
 
       <div className="absolute inset-0 z-40 overflow-y-auto flex flex-col pt-20 pb-20 px-6 md:pl-14 lg:pl-16 scrollbar-hide">
-        {/* Titres */}
         <header className="max-w-[700px] mt-10 md:mt-56 shrink-0 text-center md:text-left md:pl-28">
           <h1 className="text-[30px] translate-y-30 md:translate-y-0 md:text-[50px] lg:text-[65px] font-medium leading-[0.9] tracking-tighter text-[#002b49]">
             Votre budget
@@ -103,13 +115,12 @@ export default function LandingPage() {
             sans prise de tête.
           </h1>
           <p className="text-[15px] translate-y-30 md:translate-y-0 md:text-[17px] lg:text-[21px] font-normal text-[#002b49] opacity-90 mt-6 max-w-[450px] leading-snug">
-            <span className="font-bold">La Pince,</span> l’app qui vous aide à garder
+            <span className="font-bold">La Pince,</span> l'app qui vous aide à garder
             <br />
             la main sur votre budget.
           </p>
         </header>
 
-        {/* Features + Bouton côte à côte (lg) */}
         <div className="hidden lg:flex flex-row items-center mt-2">
           <div className="w-[480px] shrink-0 pl-28 flex items-center">
             <a href="/register" className={mainButtonStyle}>
@@ -117,26 +128,20 @@ export default function LandingPage() {
             </a>
           </div>
           <section className="space-y-1 w-fit shrink-0 relative z-30">
-            {[
-              "<strong>Tout ce qu'il vous faut. Rien de superflu.</strong><br/><span style='display:block;text-align:center'>Notez vos dépenses et revenus à la volée</span>",
-              "<strong>Aussi rapide que d'envoyer un message.</strong><br/><span style='display:block;text-align:center'>Visualisez où va votre argent</span>",
-              "<strong>Des alertes intelligentes sur vos budgets.</strong><br/><span style='display:block;text-align:center'>Fixez des budgets par catégorie</span>",
-              "<strong>Et tenez-les, on vous aide.</strong>",
-            ].map((item, index) => (
+            {features.map((feature, index) => (
               <div
                 key={index}
-                className="px-8 py-2 rounded-full bg-white/30 backdrop-blur-sm border border-white/20 text-[#002b49] text-[13px] text-left shadow-sm"
+                className="px-8 py-2 rounded-full bg-white/30 backdrop-blur-sm border border-white/20 text-[#002b49] text-[13px] text-center shadow-sm"
               >
-                <p
-                  className="font-normal leading-tight"
-                  dangerouslySetInnerHTML={{ __html: item }}
-                />
+                <strong>{feature.title}</strong>
+                {feature.subtitle && (
+                  <span className="block">{feature.subtitle}</span>
+                )}
               </div>
             ))}
           </section>
         </div>
 
-        {/* Bouton d'action (mobile / md seulement) */}
         <div className="flex lg:hidden justify-center translate-y-30 md:translate-y-0 md:justify-start mt-10 md:mt-14 pb-16 shrink-0 relative z-30">
           <a href="/register" className={mainButtonStyle}>
             S'inscrire
@@ -144,9 +149,6 @@ export default function LandingPage() {
         </div>
       </div>
 
-      {/* ------------------------------------------------------------ */}
-      {/* 4. FOOTER                                                    */}
-      {/* ------------------------------------------------------------ */}
       <footer className="absolute bottom-0 left-0 w-full z-50">
         <Footer showIcons={false} />
       </footer>

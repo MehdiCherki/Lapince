@@ -10,6 +10,7 @@ import transactionRouter from "../routes/transaction.routes.js";
 import budgetRoutes from "../routes/budget.routes.js";
 import alertRoutes from "../routes/alert.routes.js";
 import statsRoutes from "../routes/stats.routes.js";
+import { errorMiddleware } from "../middlewares/error.middleware.js";
 
 // Créer une app Express
 const app = express();
@@ -42,9 +43,7 @@ app.use("/budgets", budgetRoutes);
 app.use("/alerts", alertRoutes);
 app.use("/stats", statsRoutes);
 
-app.get("/", (req, res) => {
-  res.json("Hello");
-});
+app.use(errorMiddleware);
 
 export default app;
 

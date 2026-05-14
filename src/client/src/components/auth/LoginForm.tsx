@@ -1,11 +1,12 @@
 import { useState, type FormEvent } from "react";
 import type { LoginCredentials } from "../../services/authApi";
+import type { ApiError } from "../../types/auth";
 import { Loader2, Eye, EyeOff } from "lucide-react";
 
 interface LoginFormProps {
-  onSubmit: (credentials: LoginCredentials) => void; // La fonction à appeler quand le formulaire est soumis, avec les données du formulaire
+  onSubmit: (credentials: LoginCredentials) => void;
   isLoading: boolean;
-  error: string | null;
+  error: ApiError | null;
 }
 
 export default function LoginForm({
@@ -32,7 +33,7 @@ export default function LoginForm({
       {/* Affichage de l'erreur globale renvoyée par le parent */}
       {error && (
         <p className="text-red-600 text-[11px] text-center font-bold italic bg-red-100/50 py-1 rounded-full">
-          {error}
+          {error.error}
         </p>
       )}
 

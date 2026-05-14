@@ -144,7 +144,7 @@ export default function RegisterForm({
               className="text-red-600 text-xs ml-4 mt-1"
               role="alert"
             >
-              {error.message}
+              {error.error}
             </p>
           )}
         </div>

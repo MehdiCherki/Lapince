@@ -23,7 +23,7 @@ export interface AuthUser {
 
 // C'est la forme de l'erreur que le serveur peut renvoyer en cas de problème, par exemple si l'email est déjà utilisé ou si le mot de passe est trop court.
 export interface ApiError {
-  message: string;
-  field?: string; // Permet de savoir quel champ est en erreur, par exemple "email" si l'email est déjà pris.
+  error: string;
+  field?: string;
 }
 
