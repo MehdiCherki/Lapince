@@ -24,7 +24,7 @@ services:
       context: ./src/api
       dockerfile: api.Dockerfile  # Dockerfile de dev : lance tsx --watch (hot reload)
     environment:
-      NODE_ENV: production           # production | development
+      NODE_ENV: ${NODE_ENV:-production}
       DATABASE_URL: ${DATABASE_URL}   # URL de connexion à Postgres
       PORT: ${API_PORT}               # Port interne sur lequel l'API écoute
       JWT_SECRET: ${JWT_SECRET}       # Clé secrète pour signer les tokens JWT
