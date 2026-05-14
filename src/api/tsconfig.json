@@ -6,6 +6,8 @@
     "rootDir": ".",
     "outDir": "./dist",
 
+    "typeRoots": ["./src/types", "./node_modules/@types"],
+
     // Environment Settings
     // See also https://aka.ms/tsconfig/module
     "module": "nodenext",
@@ -21,6 +23,7 @@
     "declaration": true,
     "declarationMap": true,
 
+    
     // Stricter Typechecking Options
     "noUncheckedIndexedAccess": true,
     "exactOptionalPropertyTypes": true,
@@ -37,14 +40,14 @@
 
     // Recommended Options
     "strict": true,
-    "jsx": "react-jsx",
     "verbatimModuleSyntax": true,
     "isolatedModules": true,
     "erasableSyntaxOnly": true, // Utiliser uniquement la syntaxe supportées par Node.js (pas d'enum, décorateurs...)
     "noUncheckedSideEffectImports": true,
     "moduleDetection": "force",
-    "skipLibCheck": true
+    "skipLibCheck": true,
   },
-  "typeRoots": ["./src/types", "./node_modules/@types"],
+  
+  
   "exclude": ["node_modules", "generated", "prisma", "prisma.config.ts"]
 }
