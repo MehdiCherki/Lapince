@@ -94,7 +94,7 @@ services:
       DATABASE_URL: ${DATABASE_URL}  # Connexion à la même base que l'API
     ports:
       - "5555:5555"  # Interface Prisma Studio accessible sur http://localhost:5555
-    command: sh -c "apt-get update -y && apt-get install -y openssl && npx --yes prisma studio --port 5555 --browser none"
+    command: sh -c "apt-get update -y && apt-get install -y openssl && npm --prefix /app/src/api install && npx --yes prisma studio --port 5555 --browser none"
     tty: true
     depends_on:
       db:
