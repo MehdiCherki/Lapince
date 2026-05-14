@@ -62,7 +62,7 @@ export default function DashboardPage() {
 
       <img
         src="/WEBP/Desktop/Lapince-Hero-Background-Desktop.webp"
-        fetchpriority="high"
+        fetchPriority="high"
         className="absolute bottom-0 left-0 w-[55vw] opacity-60 object-contain origin-bottom-left z-0 pointer-events-none select-none hidden md:block"
         aria-hidden="true"
         alt=""
@@ -77,7 +77,7 @@ export default function DashboardPage() {
 
       <img
         src="/WEBP/Mobile/Lapince-Hero-Background-Mobile.webp"
-        fetchpriority="high"
+        fetchPriority="high"
         className="absolute bottom-0 left-0 w-screen opacity-70 z-0 pointer-events-none block md:hidden"
         alt=""
       />

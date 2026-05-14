@@ -25,7 +25,7 @@ export default function ParametrePage() {
       <div className="hidden md:block">
         <img
           src="/WEBP/Desktop/Lapince-Hero-Background-Desktop.webp"
-          fetchpriority="high"
+          fetchPriority="high"
           className="absolute bottom-0 left-0 w-[55vw] opacity-60 z-0 pointer-events-none"
           alt=""
         />
@@ -46,7 +46,7 @@ export default function ParametrePage() {
       <div className="block md:hidden">
         <img
           src="/WEBP/Mobile/Lapince-Hero-Background-Mobile.webp"
-          fetchpriority="high"
+          fetchPriority="high"
           className="absolute bottom-0 left-0 w-screen opacity-70 z-0 pointer-events-none"
           alt=""
         />

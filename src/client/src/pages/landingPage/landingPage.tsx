@@ -45,7 +45,7 @@ export default function LandingPage() {
       <div className="hidden md:block">
         <img
           src="/WEBP/Desktop/Lapince-Hero-Background-Desktop.webp"
-          fetchpriority="high"
+          fetchPriority="high"
           className="absolute bottom-0 left-0 w-[60vw] opacity-50 object-contain origin-bottom-left z-0 pointer-events-none select-none"
           aria-hidden="true"
           alt=""
@@ -75,7 +75,7 @@ export default function LandingPage() {
       <div className="block md:hidden">
         <img
           src="/WEBP/Mobile/Lapince-Hero-Background-Mobile.webp"
-          fetchpriority="high"
+          fetchPriority="high"
           className="absolute bottom-0 right-30 w-screen opacity-40 z-0 pointer-events-none select-none"
           aria-hidden="true"
           alt=""

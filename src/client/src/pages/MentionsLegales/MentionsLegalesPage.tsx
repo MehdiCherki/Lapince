@@ -64,7 +64,7 @@ export default function MentionsLegalesPage() {
 
       <img
         src="/WEBP/Desktop/Lapince-Hero-Background-Desktop.webp"
-        fetchpriority="high"
+        fetchPriority="high"
         className="absolute bottom-0 left-0 w-[60vw] opacity-20 object-contain origin-bottom-left z-0 pointer-events-none select-none"
         aria-hidden="true"
         alt=""
