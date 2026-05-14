@@ -7,6 +7,7 @@
 // et plus facile à maintenir.
 
 import { prisma } from "../lib/prisma.js";
+import { NotFoundError } from "../lib/error.js";
 
 // -------------------------------------------------------------
 // 1. Récupérer tous les budgets d'un utilisateur
@@ -15,8 +16,8 @@ export const getAllBudgets = async (userId: number) => {
   return prisma.budget.findMany({
     where: { userId },
     include: {
-      category: true,       // Inclure la catégorie associée
-      transactions: true,   // Inclure les transactions liées
+      category: true, // Inclure la catégorie associée
+      transactions: true, // Inclure les transactions liées
     },
   });
 };
@@ -52,19 +53,19 @@ export const getBudgetById = async (id: number, userId: number) => {
 // 4. Mettre à jour un budget existant
 // -------------------------------------------------------------
 export const updateBudget = async (id: number, userId: number, data: any) => {
-  return prisma.budget.update({
-    where: { id },
-    data,
-  });
+  const budget = await prisma.budget.findFirst({ where: { id, userId } });
+  if (!budget) throw new NotFoundError("Budget introuvable");
+  return prisma.budget.update({ where: { id, userId }, data });
 };
 
 // -------------------------------------------------------------
 // 5. Supprimer un budget
 // -------------------------------------------------------------
+
 export const deleteBudget = async (id: number, userId: number) => {
-  return prisma.budget.delete({
-    where: { id },
-  });
+  const budget = await prisma.budget.findFirst({ where: { id, userId } });
+  if (!budget) throw new NotFoundError("Budget introuvable");
+  return prisma.budget.delete({ where: { id, userId } });
 };
 
 // -------------------------------------------------------------
@@ -102,7 +103,6 @@ export const deleteBudget = async (id: number, userId: number) => {
 // Ces données permettent d’afficher un suivi clair et visuel de l’état du budget,
 // par exemple sous forme de barre de progression ou de graphique.
 
-
 export const getBudgetStatus = async (budgetId: number, userId: number) => {
   // Récupérer le budget avec ses transactions
   const budget = await prisma.budget.findFirst({
@@ -118,7 +118,7 @@ export const getBudgetStatus = async (budgetId: number, userId: number) => {
   // Calcul du total dépensé
   const spent = budget.transactions.reduce(
     (sum: number, t: { amount: any }) => sum + Number(t.amount),
-    0
+    0,
   );
 
   // Montant restant

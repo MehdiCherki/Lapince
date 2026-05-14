@@ -8,6 +8,7 @@ import PrivateRoute from "../components/PrivateRoute";
 import PrivateLayout from "../components/Layout/PrivateLayout";
 import MentionsLegalesPage from "../pages/MentionsLegales/MentionsLegalesPage";
 import DashboardPage from "../pages/Dashboard/DashboardPage";
+import NotFoundPage from "../pages/NotFound/NotFoundPage";
 
 export const router = createBrowserRouter([
   // --- ROUTES PUBLIQUES ---
@@ -26,6 +27,11 @@ export const router = createBrowserRouter([
   {
     path: "/mentions-legales",
     element: <MentionsLegalesPage />,
+  },
+
+  {
+    path: "*",
+    element: <NotFoundPage />,
   },
 
   // --- ROUTES PRIVÉES ---
