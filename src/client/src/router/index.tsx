@@ -2,7 +2,7 @@ import { createBrowserRouter } from "react-router-dom";
 import RegisterPage from "../pages/auth/RegisterPage";
 import LoginPage from "../pages/auth/Login/loginPage";
 import LandingPage from "../pages/landingPage/landingPage";
-import TransactionPage from "../pages/Transaction/TransactionPage";
+import AccueilPage from "../pages/Accueil/AccueilPage";
 import ParametrePage from "../pages/Parametre/ParametrePage";
 import PrivateRoute from "../components/PrivateRoute";
 import PrivateLayout from "../components/Layout/PrivateLayout";
@@ -11,7 +11,6 @@ import DashboardPage from "../pages/Dashboard/DashboardPage";
 import NotFoundPage from "../pages/NotFound/NotFoundPage";
 
 export const router = createBrowserRouter([
-  // --- ROUTES PUBLIQUES ---
   {
     path: "/",
     element: <LandingPage />,
@@ -28,23 +27,19 @@ export const router = createBrowserRouter([
     path: "/mentions-legales",
     element: <MentionsLegalesPage />,
   },
-
   {
     path: "*",
     element: <NotFoundPage />,
   },
-
-  // --- ROUTES PRIVÉES ---
   {
-    element: <PrivateRoute />, // vérifie l'auth
+    element: <PrivateRoute />,
     children: [
       {
-        element: <PrivateLayout />, // ajoute le bouton logout sur toutes les pages enfants
+        element: <PrivateLayout />,
         children: [
           {
             path: "/accueil",
-            element: <TransactionPage />,
-            // C'est la page d'accueil après login.
+            element: <AccueilPage />,
           },
           {
             path: "/parametres",

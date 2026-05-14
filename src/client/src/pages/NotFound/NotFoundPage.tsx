@@ -6,7 +6,7 @@ export default function NotFoundPage() {
   const navigate = useNavigate();
 
   return (
-    <main className="fixed inset-0 w-full h-full overflow-hidden font-sans text-[#002b49]">
+    <main className="fixed inset-0 w-full h-full bg-[#b9c6d1] overflow-hidden font-sans text-[#002b49]">
       <AnimatedOrbBackground />
 
       <div className="relative z-30 flex flex-col items-center justify-center h-full gap-6 px-6 text-center">

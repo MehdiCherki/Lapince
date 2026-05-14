@@ -1,29 +1,15 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import CategorySelect from "./CategorySelect";
-import { fetchCategories } from "../../services/categoryApi.js";
-import type { Category } from "../../types/category.js";
+import { useCategories } from "../../hooks/useCategories";
 import { createBudget } from "../../services/budgetApi.js";
 
 export default function BudgetCard() {
-  const [categories, setCategories] = useState<Category[]>([]);
+  const categories = useCategories("EXPENSE");
   const [categorie, setCategorie] = useState("");
   const [montant, setMontant] = useState("");
   const [mois, setMois] = useState("");
-  const [_isLoading, setIsLoading] = useState(false);
   const [messageError, setError] = useState<string | null>(null);
   const [messageSuccess, setMessageSuccess] = useState<string | null>(null);
-
-  useEffect(() => {
-    async function loadCategories() {
-      try {
-        const data = await fetchCategories();
-        setCategories(data.filter((cat) => cat.type === "EXPENSE"));
-      } catch (error) {
-        console.error("Erreur lors du chargement des catégories:", error);
-      }
-    }
-    loadCategories();
-  }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -38,7 +24,6 @@ export default function BudgetCard() {
       return;
     }
 
-    setIsLoading(true);
     try {
       await createBudget({
         limit_amount: amount,
@@ -50,11 +35,8 @@ export default function BudgetCard() {
       setCategorie("");
       setMessageSuccess("✓ Budget ajouté !");
       setTimeout(() => setMessageSuccess(null), 3000);
-    } catch (err) {
+    } catch {
       setError("Impossible de créer le budget. Réessaie.");
-      console.error(err);
-    } finally {
-      setIsLoading(false);
     }
   }
 

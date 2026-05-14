@@ -39,7 +39,7 @@ export default function RegisterPage() {
 
   return (
     <main
-      className="fixed inset-0 w-full h-full overflow-hidden font-sans text-[#002b49]"
+      className="fixed inset-0 w-full h-full bg-[#b9c6d1] overflow-hidden font-sans text-[#002b49]"
       role="main"
     >
       <AnimatedOrbBackground />
@@ -49,6 +49,7 @@ export default function RegisterPage() {
       <div className="hidden md:block">
         <img
           src="/WEBP/Desktop/Lapince-Hero-Background-Desktop.webp"
+          fetchpriority="high"
           className="absolute bottom-0 left-0 w-[55vw] opacity-60 z-0 pointer-events-none select-none"
           alt=""
         />
@@ -61,7 +62,7 @@ export default function RegisterPage() {
         </div>
         <img
           src="/WEBP/Desktop/Lapince-Logo-Desktop.webp"
-          className="absolute top-10 left-15 w-24 lg:w-60 z-50 transition-all"
+          className="absolute top-3 left-10 w-16 lg:w-24 z-50 transition-all"
           alt="Logo"
         />
         <div className="absolute z-50 left-0 w-full md:pl-14 lg:pl-16 pointer-events-none pt-20">
@@ -86,6 +87,7 @@ export default function RegisterPage() {
       <div className="block md:hidden">
         <img
           src="/WEBP/Mobile/Lapince-Hero-Background-Mobile.webp"
+          fetchpriority="high"
           className="absolute bottom-0 left-0 w-full opacity-70 z-0 pointer-events-none select-none"
           alt=""
         />
@@ -96,7 +98,7 @@ export default function RegisterPage() {
         />
         <img
           src="/WEBP/Mobile/Lapince-Logo-Mobile.webp"
-          className="absolute top-6 left-6 w-28 z-50"
+          className="absolute top-3 left-4 w-20 z-50"
           alt="Logo Mobile"
         />
       </div>

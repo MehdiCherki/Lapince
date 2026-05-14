@@ -1,29 +1,16 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import CategorySelect from "./CategorySelect";
-import { fetchCategories } from "../../services/categoryApi.js";
-import type { Category } from "../../types/category.js";
+import { useCategories } from "../../hooks/useCategories";
 import { createTransaction } from "../../services/transactionApi.js";
 
 export default function RevenuCard({ onSuccess }: { onSuccess?: () => void }) {
-  const [categories, setCategories] = useState<Category[]>([]);
+  const categories = useCategories("INCOME");
   const [categorie, setCategorie] = useState("");
   const [transaction, setTransaction] = useState("");
   const [montant, setMontant] = useState("");
   const [date, setDate] = useState("");
   const [messageSuccess, setMessageSuccess] = useState<string | null>(null);
   const [messageError, setMessageError] = useState<string | null>(null);
-
-  useEffect(() => {
-    async function loadCategories() {
-      try {
-        const data = await fetchCategories();
-        setCategories(data.filter((cat) => cat.type === "INCOME"));
-      } catch (error) {
-        console.error("Erreur lors du chargement des catégories:", error);
-      }
-    }
-    loadCategories();
-  }, []);
 
   return (
     <div className="relative flex flex-col items-center">
@@ -64,12 +51,11 @@ export default function RevenuCard({ onSuccess }: { onSuccess?: () => void }) {
                   setDate("");
                   setCategorie("");
                   setMessageSuccess("✓ Revenu ajouté !");
-                  setTimeout(() => {
-                    setMessageSuccess(null);
-                    onSuccess?.();
-                  }, 3000);
-                } catch (error) {
-                  console.error("Erreur création revenu :", error);
+                  onSuccess?.();
+                  setTimeout(() => setMessageSuccess(null), 3000);
+                } catch {
+                  setMessageError("Erreur lors de l'ajout.");
+                  setTimeout(() => setMessageError(null), 3000);
                 }
               }}
               className="flex flex-col items-center gap-1.5 w-full px-5 md:px-10"

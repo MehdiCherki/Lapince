@@ -34,22 +34,22 @@ export default function Footer({
       src: "/WEBP/Icones/Lapince-landingpage-icon.webp",
     },
     {
-      id: "params",
-      label: "Paramètres",
-      href: "/parametres",
-      src: "/WEBP/Icones/Lapince-profil-icon.webp",
-    },
-    {
-      id: "dashboard",
-      label: "Dashboard",
-      href: "/dashboard",
-      src: "/WEBP/Icones/Lapince-dashboard-icon.webp",
-    },
-    {
       id: "transactions",
       label: "Accueil",
       href: "/accueil",
       src: "/WEBP/Icones/Lapince-home-icon.webp",
+    },
+    {
+      id: "dashboard",
+      label: "Tableau de bord",
+      href: "/dashboard",
+      src: "/WEBP/Icones/Lapince-dashboard-icon.webp",
+    },
+    {
+      id: "params",
+      label: "Paramètres",
+      href: "/parametres",
+      src: "/WEBP/Icones/Lapince-profil-icon.webp",
     },
   ];
 

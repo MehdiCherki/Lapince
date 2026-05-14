@@ -1,105 +1,83 @@
 import type { Request, Response } from "express";
 import argon2 from "argon2";
 import { prisma } from "../lib/prisma.js";
-import { updateUserSchema } from "../validators/user.validator.js"
+import { updateUserSchema } from "../validators/user.validator.js";
 
-//GET /users/me
-// Retourne le profil de l'utilisateur connecté (sans le mot de passe)
-export async function getMe(req: Request, res : Response) {
-    const id = req.user!.id;
+// GET /users/me
+export async function getMe(req: Request, res: Response) {
+  if (!req.user)
+    return res.status(401).json({ error: "Utilisateur non authentifié" });
 
-    const user = await prisma.user.findUnique({
-        where: { id },
-        select: { //On utilise select pour ne pas exposer le password
-            id:         true,
-            first_name: true,
-            last_name:  true,
-            email:      true,
-            photo:      true,
-            createdAt:  true,
-        },
+  const user = await prisma.user.findUnique({
+    where: { id: req.user.id },
+    select: {
+      id:         true,
+      first_name: true,
+      last_name:  true,
+      email:      true,
+      photo:      true,
+      createdAt:  true,
+    },
+  });
 
-    });
+  if (!user)
+    return res.status(404).json({ error: "Utilisateur introuvable" });
 
-    if (!user) {
-        res.status(404).json({ message: "Utilsateur introuvable" });
-        return;
-    }
-
-    res.status(200).json({ user })
+  return res.status(200).json({ user });
 }
 
 // PATCH /users/me
-// Met à Jour les informations du profil
 export async function updateMe(req: Request, res: Response) {
-    const id = req.user!.id;
+  if (!req.user)
+    return res.status(401).json({ error: "Utilisateur non authentifié" });
 
-    // Validation des données entrantes avec Zod (même pattern que auth.controller)
-    const result = updateUserSchema.safeParse(req.body) 
-    
-    if (!result.success) {
-    const firstIssue = result.error.issues[0]
-    res.status(400).json({
-        message: firstIssue?.message ?? "Données invalides",
-        field:   firstIssue?.path[0] as string |  undefined
-    });
+  const result = updateUserSchema.safeParse(req.body);
+  if (!result.success)
+    return res.status(400).json({ error: "Données invalides", details: result.error.issues });
 
-    return;
-    }
+  const { first_name, last_name, email, password, photo } = result.data;
 
-    const {first_name, last_name, email, password, photo } = result.data;
+  if (email) {
+    const existing = await prisma.user.findUnique({ where: { email } });
+    if (existing && existing.id !== req.user.id)
+      return res.status(409).json({ error: "Cet email est déjà utilisé", field: "email" });
+  }
 
-    //Si l'utilisateur veut change l'email, on verifie qu'il n'est déjà pris
+  const hashedPassword = password ? await argon2.hash(password) : undefined;
 
-    if(email) {
-        const existing = await prisma.user.findUnique({ where: { email } });
-        if (existing && existing.id !==id) {
-            res.status(409).json({ message: "Cet email est deja utilisé",  field: "email" });
-            return;
-        }
-    }
+  const user = await prisma.user.update({
+    where: { id: req.user.id },
+    data: {
+      ...(first_name && { first_name }),
+      ...(last_name  && { last_name }),
+      ...(email      && { email }),
+      ...(photo !== undefined && { photo }),
+      ...(hashedPassword && { password: hashedPassword }),
+    },
+    select: {
+      id:        true,
+      first_name: true,
+      last_name:  true,
+      email:      true,
+      photo:      true,
+      createdAt:  true,
+      updatedAt:  true,
+    },
+  });
 
-    // Si l'utilisateur veut changer de mot de passe, on le hache avant de le stocker
-    const hashedPassword = password ? await argon2.hash(password) : undefined;
-
-    const user = await prisma.user.update({
-        where: { id },
-        data: {
-            ...(first_name && { first_name }),
-            ...(last_name && { last_name }),
-            ...(email     && { email }),
-            ...(photo     !== undefined && { photo }),
-            ...(hashedPassword && { password: hashedPassword }),
-        },
-        select: {
-            id: true,
-            first_name: true,
-            last_name: true,
-            email: true,
-            photo: true,
-            createdAt: true,
-            updatedAt: true,
-        },
-    });
-
-    res.status(200).json({ message: "Profil mis à jour", user });
+  return res.status(200).json({ message: "Profil mis à jour", user });
 }
 
-
 // DELETE /users/me
-// Supprime le compte utilisateur
-
 export async function deleteMe(req: Request, res: Response) {
-    const id = req.user!.id;
+  if (!req.user)
+    return res.status(401).json({ error: "Utilisateur non authentifié" });
 
-    const existing = await prisma.user.findUnique({where: { id } });
-    if (!existing) {
-        res.status(404).json({ message : "Utilisateur introuvable"})
-        return;
-    }
+  const existing = await prisma.user.findUnique({ where: { id: req.user.id } });
+  if (!existing)
+    return res.status(404).json({ error: "Utilisateur introuvable" });
 
-    await prisma.user.delete({ where: { id } });
+  await prisma.user.delete({ where: { id: req.user.id } });
 
-    res.status(200).json({ message: "Compte supprimé avec succés" })
-
+  return res.status(200).json({ message: "Compte supprimé avec succès" });
 }

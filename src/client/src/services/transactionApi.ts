@@ -53,7 +53,6 @@ export async function createTransaction(
     );
   }
   const transaction = await response.json();
-  window.dispatchEvent(new CustomEvent("transaction:created"));
   return transaction;
 }
 
