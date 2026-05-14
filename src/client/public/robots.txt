@@ -1,0 +1,10 @@
+User-agent: *
+Disallow: /accueil
+Disallow: /dashboard
+Disallow: /parametres
+Disallow: /api/
+
+Allow: /
+Allow: /login
+Allow: /register
+Allow: /mentions-legales
