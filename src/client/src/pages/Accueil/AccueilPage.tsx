@@ -107,9 +107,39 @@ export default function AccueilPage() {
         aria-hidden="true"
       />
 
-      <div className="relative z-40 flex flex-col h-full overflow-y-auto scrollbar-hide pb-40 [mask-image:linear-gradient(to_bottom,transparent_0px,transparent_145px,black_162px)] [-webkit-mask-image:linear-gradient(to_bottom,transparent_0px,transparent_145px,black_162px)] md:[mask-image:none] md:[-webkit-mask-image:none]">
-        <header className="flex flex-col items-center pt-44 md:pt-10 pb-4 shrink-0">
-          <h1 className="text-[35px] md:text-[50px] lg:text-[60px] font-black uppercase leading-none tracking-tighter">
+      {/* Header fixe mobile — hors du masque, toujours visible */}
+      <div className="md:hidden absolute top-0 left-0 right-0 z-[45] flex flex-col items-center pt-28 pb-4 pointer-events-none">
+        <h1 className="text-[50px] font-black uppercase leading-none tracking-tighter">
+          Accueil
+        </h1>
+        <p className="text-base font-bold mt-1">Mon compte</p>
+        <p className="text-sm opacity-60 mt-0.5 capitalize">
+          {new Date().toLocaleDateString("fr-FR", {
+            month: "long",
+            year: "numeric",
+          })}
+        </p>
+        <p className="mt-4 leading-none">
+          <span className="text-xs font-bold uppercase tracking-widest opacity-60 align-bottom">
+            Solde *&nbsp;
+          </span>
+          <span className="text-4xl font-black tracking-tight">
+            {" "}
+            {overview
+              ? overview.balance.toLocaleString("fr-FR", {
+                  style: "currency",
+                  currency: "EUR",
+                })
+              : "…"}
+          </span>
+        </p>
+      </div>
+
+      <div
+        className="relative z-40 flex flex-col h-full overflow-y-auto scrollbar-hide pb-40 [mask-image:linear-gradient(to_bottom,transparent_0px,transparent_260px,black_300px)] [-webkit-mask-image:linear-gradient(to_bottom,transparent_0px,transparent_260px,black_300px)] md:[mask-image:none] md:[-webkit-mask-image:none]"
+      >
+        <header className="hidden md:flex flex-col items-center pt-10 pb-4 shrink-0">
+          <h1 className="md:text-[50px] lg:text-[60px] font-black uppercase leading-none tracking-tighter">
             Accueil
           </h1>
           <p className="text-base font-bold mt-1">Mon compte</p>
@@ -135,12 +165,13 @@ export default function AccueilPage() {
           </p>
         </header>
 
+        <div className="md:hidden h-[280px] shrink-0" />
         <section className="relative md:flex-1 flex items-center justify-center">
-          <div className="hidden md:block relative w-full max-w-4xl h-96">
-            <div className="absolute bottom-60 right-12">
+          <div className="hidden md:block relative w-full max-w-4xl h-96 mt-[140px]">
+            <div className="absolute bottom-60 left-12">
               <RevenuCard onSuccess={load} />
             </div>
-            <div className="absolute bottom-60 left-12">
+            <div className="absolute bottom-60 right-12">
               <DepenseCard onSuccess={load} />
             </div>
             <div className="absolute bottom-10 left-1/2 -translate-x-1/2">
@@ -150,8 +181,8 @@ export default function AccueilPage() {
 
           <div className="flex md:hidden flex-col items-center gap-2 w-full px-2">
             <div className="flex flex-col min-[450px]:flex-row gap-2 justify-center items-center w-full">
-              <DepenseCard onSuccess={load} />
               <RevenuCard onSuccess={load} />
+              <DepenseCard onSuccess={load} />
             </div>
             <BudgetCard />
           </div>
@@ -287,7 +318,7 @@ export default function AccueilPage() {
         ref={footerRef}
         className="absolute bottom-0 left-0 w-full z-[60]"
       >
-        <Footer showIcons activeIds={["dashboard", "params"]} />
+        <Footer showIcons activeIds={["dashboard", "mentions-legales", "params"]} />
       </footer>
     </main>
   );

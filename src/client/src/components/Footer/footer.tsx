@@ -5,7 +5,7 @@ interface NavItem {
   id: string;
   label: string;
   href: string;
-  src: string;
+  src?: string;
 }
 
 /**
@@ -46,6 +46,11 @@ export default function Footer({
       src: "/WEBP/Icones/Lapince-dashboard-icon.webp",
     },
     {
+      id: "mentions-legales",
+      label: "Légales",
+      href: "/mentions-legales",
+    },
+    {
       id: "params",
       label: "Paramètres",
       href: "/parametres",
@@ -65,8 +70,7 @@ export default function Footer({
       {/* ------------------------------------------------------------ */}
       {/* 1. FOOTER MOBILE (< MD)                                      */}
       {/* ------------------------------------------------------------ */}
-      <footer className="md:hidden w-full h-[35px] bg-white flex items-center px-4 relative border-t border-gray-100">
-        {/* Affichage des Mentions Légales si aucune icône n'est active */}
+      <footer className="md:hidden w-full h-[58px] bg-white flex items-center px-4 relative border-t border-gray-100">
         {!showIcons || visibleItems.length === 0 ? (
           <a
             href="/mentions-legales"
@@ -75,20 +79,33 @@ export default function Footer({
             Mentions légales
           </a>
         ) : (
-          /* Affichage dynamique des icônes sélectionnées */
-          <div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-15">
-            {visibleItems.map((item) => (
-              <a
-                key={item.id}
-                href={item.href}
-                className="flex items-center gap-1.5 shrink-0"
-              >
-                <img src={item.src} className="w-4 h-4 object-contain" alt="" />
-                <span className="text-[9px] font-black uppercase text-[#002b49]">
-                  {item.label}
-                </span>
-              </a>
-            ))}
+          <div className="absolute inset-0 flex flex-col">
+            {/* Boutons principaux */}
+            <div className="flex-1 flex items-center justify-evenly px-6">
+              {visibleItems.filter((i) => i.id !== "mentions-legales").map((item) => (
+                <a
+                  key={item.id}
+                  href={item.href}
+                  className="flex items-center gap-1.5 shrink-0"
+                >
+                  {item.src && <img src={item.src} className="w-6 h-6 object-contain" alt="" />}
+                  <span className="text-[13px] font-black uppercase text-[#002b49]">
+                    {item.label}
+                  </span>
+                </a>
+              ))}
+            </div>
+            {/* Mentions légales en bas au centre */}
+            {visibleItems.some((i) => i.id === "mentions-legales") && (
+              <div className="flex justify-center pb-1.5">
+                <a
+                  href="/mentions-legales"
+                  className="text-[8px] font-bold text-[#002b49] opacity-50 uppercase hover:opacity-100 transition-opacity"
+                >
+                  Mentions légales
+                </a>
+              </div>
+            )}
           </div>
         )}
       </footer>

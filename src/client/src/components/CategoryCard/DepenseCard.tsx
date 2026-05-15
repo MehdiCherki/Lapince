@@ -20,7 +20,7 @@ export default function DepenseCard({ onSuccess }: { onSuccess?: () => void }) {
         </div>
       )}
 
-      <div className="relative w-[220px] h-[220px] md:w-72 md:h-72 rounded-full bg-[#BC8787] flex flex-col items-center justify-center gap-2 shadow-xl shrink-0 mt-4">
+      <div className="relative w-[250px] h-[250px] md:w-72 md:h-72 rounded-full bg-[#BC8787] flex flex-col items-center justify-center gap-2 shadow-xl shrink-0 mt-4">
         {messageSuccess ? (
           <p className="text-[#002341] font-black text-3xl text-center px-4 leading-tight whitespace-pre-line">
             {messageSuccess}

@@ -84,17 +84,17 @@ export default function MentionsLegalesPage() {
 
       <button
         onClick={() => navigate(-1)}
-        className="absolute top-6 right-6 z-50 flex items-center gap-2 bg-white/40 backdrop-blur-xl border border-white/40 px-4 py-2 rounded-full text-xs font-black uppercase hover:bg-white/60 transition-all shadow-md"
+        className="fixed top-4 right-4 md:top-6 md:right-6 lg:top-10 lg:right-10 z-[60] px-8 py-2 rounded-full bg-[#002b49] text-white font-bold text-xs shadow-lg hover:bg-[#003b63] transition-colors cursor-pointer"
       >
-        ← Retour
+        Retour
       </button>
 
       <div
         className="relative z-40 flex flex-col h-full overflow-y-auto scrollbar-hide"
         style={{ paddingBottom: footerHeight + 40 }}
       >
-        <header className="flex flex-col items-center pt-40 md:pt-10 pb-8 shrink-0">
-          <h1 className="text-[35px] md:text-[50px] lg:text-[60px] font-black uppercase leading-none tracking-tighter italic">
+        <header className="flex flex-col items-center pt-30 md:pt-10 pb-8 shrink-0">
+          <h1 className="text-[35px] md:text-[50px] lg:text-[60px] font-black uppercase leading-none tracking-tighter">
             Mentions légales
           </h1>
           <p className="text-base font-bold mt-1 opacity-80">
@@ -207,7 +207,7 @@ export default function MentionsLegalesPage() {
       </div>
 
       <footer ref={footerRef} className="absolute bottom-0 left-0 w-full z-[60]">
-        <Footer showIcons={false} />
+        <Footer showIcons activeIds={["transactions"]} />
       </footer>
     </main>
   );

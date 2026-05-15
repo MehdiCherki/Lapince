@@ -98,7 +98,7 @@ export default function DashboardPage() {
         className="relative z-40 flex flex-col h-full overflow-y-auto scrollbar-hide"
         style={{ paddingBottom: footerHeight + 40 }}
       >
-        <header className="flex flex-col items-center pt-40 md:pt-10 pb-8 shrink-0">
+        <header className="flex flex-col items-center pt-30 md:pt-10 pb-8 shrink-0">
           <h1 className="text-[35px] md:text-[50px] lg:text-[60px] font-black uppercase leading-none tracking-tighter">
             Tableau de bord
           </h1>
@@ -141,7 +141,7 @@ export default function DashboardPage() {
       )}
 
       <footer ref={footerRef} className="absolute bottom-0 left-0 w-full z-[60]">
-        <Footer showIcons activeIds={["transactions", "params"]} />
+        <Footer showIcons activeIds={["transactions", "mentions-legales", "params"]} />
       </footer>
     </main>
   );

@@ -62,12 +62,12 @@ export default function ParametrePage() {
       <div className="absolute inset-0 z-40 overflow-y-auto scrollbar-hide flex flex-col items-center">
 
         {/* Mobile */}
-        <div className="flex md:hidden flex-col items-center w-full pt-24 pb-32 px-4 shrink-0">
-          <header className="text-center mb-8 relative left-0">
-            <h1 className="text-[20px] translate-x-[100px] font-black italic uppercase leading-none tracking-tighter">
+        <div className="flex md:hidden flex-col items-center w-full pt-30 pb-32 px-4 shrink-0">
+          <header className="text-center mb-8">
+            <h1 className="text-[35px] font-black uppercase leading-none tracking-tighter">
               Paramètres
             </h1>
-            <p className="text-[10px] translate-x-[100px] font-bold opacity-90 mt-2 text-[#002b49]">
+            <p className="text-sm font-bold opacity-60 mt-1">
               Personnalisez votre espace.
             </p>
           </header>
@@ -163,7 +163,7 @@ export default function ParametrePage() {
       </div>
 
       <footer className="absolute bottom-0 left-0 w-full z-50">
-        <Footer showIcons={true} activeIds={["dashboard", "transactions"]} />
+        <Footer showIcons={true} activeIds={["dashboard", "mentions-legales", "transactions"]} />
       </footer>
     </main>
   );

@@ -14,14 +14,14 @@ async function main() {
     // INCOME
   
   { name: 'Salaire', type: CategoryType.INCOME, color: '#10B981', icon: 'Banknote' },
-  { name: 'Primes / Bonus', type: CategoryType.INCOME, color: '#059669', icon: 'Trophy' },
-  { name: 'Ventes / Occasion', type: CategoryType.INCOME, color: '#22C55E', icon: 'Tag' },
+  { name: 'Primes', type: CategoryType.INCOME, color: '#059669', icon: 'Trophy' },
+  { name: 'Ventes', type: CategoryType.INCOME, color: '#22C55E', icon: 'Tag' },
   { name: 'Revenus Passifs', type: CategoryType.INCOME, color: '#16A34A', icon: 'Coins' },
   { name: 'Loyers perçus', type: CategoryType.INCOME, color: '#15803D', icon: 'KeyRound' },
   { name: 'Investissements', type: CategoryType.INCOME, color: '#16A34A', icon: 'TrendingUp' },
-  { name: 'Aides / Allocations', type: CategoryType.INCOME, color: '#059669', icon: 'HandCoins' },
+  { name: 'Aides', type: CategoryType.INCOME, color: '#059669', icon: 'HandCoins' },
   { name: 'Cadeaux reçus', type: CategoryType.INCOME, color: '#A7F3D0', icon: 'Gift' },
-  { name: 'Prestations de services / Revenus pros', type: CategoryType.INCOME, color: '#047857', icon: 'Briefcase' },
+  { name: 'Prestations', type: CategoryType.INCOME, color: '#047857', icon: 'Briefcase' },
   { name: 'Remboursements', type: CategoryType.INCOME, icon: 'Undo2' },
   { name: 'Autres revenus', type: CategoryType.INCOME, color: '#34D399', icon: 'CirclePlus' },
 
