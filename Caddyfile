@@ -1,0 +1,3 @@
+mehdicherki.fr {
+    reverse_proxy client:80
+}
