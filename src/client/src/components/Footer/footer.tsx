@@ -70,7 +70,7 @@ export default function Footer({
       {/* ------------------------------------------------------------ */}
       {/* 1. FOOTER MOBILE (< MD)                                      */}
       {/* ------------------------------------------------------------ */}
-      <footer className="md:hidden w-full h-[58px] bg-white flex items-center px-4 relative border-t border-gray-100">
+      <footer className="md:hidden w-full h-[65px] bg-white flex items-center px-4 relative border-t border-gray-100">
         {!showIcons || visibleItems.length === 0 ? (
           <a
             href="/mentions-legales"
@@ -79,9 +79,8 @@ export default function Footer({
             Mentions légales
           </a>
         ) : (
-          <div className="absolute inset-0 flex flex-col">
-            {/* Boutons principaux */}
-            <div className="flex-1 flex items-center justify-evenly px-6">
+          <>
+            <div className="absolute inset-0 flex items-center justify-evenly px-6 pb-[10px]">
               {visibleItems.filter((i) => i.id !== "mentions-legales").map((item) => (
                 <a
                   key={item.id}
@@ -95,9 +94,8 @@ export default function Footer({
                 </a>
               ))}
             </div>
-            {/* Mentions légales en bas au centre */}
             {visibleItems.some((i) => i.id === "mentions-legales") && (
-              <div className="flex justify-center pb-1.5">
+              <div className="absolute bottom-1.5 left-0 right-0 flex justify-center">
                 <a
                   href="/mentions-legales"
                   className="text-[8px] font-bold text-[#002b49] opacity-50 uppercase hover:opacity-100 transition-opacity"
@@ -106,19 +104,19 @@ export default function Footer({
                 </a>
               </div>
             )}
-          </div>
+          </>
         )}
       </footer>
 
       {/* ------------------------------------------------------------ */}
       {/* 2. FOOTER DESKTOP (MD+)                                      */}
       {/* ------------------------------------------------------------ */}
-      <footer className="hidden md:flex w-full h-[50px] bg-white items-center px-10 relative border-t border-gray-100">
+      <footer className="hidden md:flex w-full h-[60px] bg-white items-center px-10 relative border-t border-gray-100">
         {/* Texte aligné à gauche si icônes présentes, sinon centré */}
         <a
           href="/mentions-legales"
           className={`text-[11px] font-bold text-[#002b49] opacity-70 uppercase hover:opacity-100 transition-opacity ${
-            showIcons && visibleItems.length > 0
+            showIcons && visibleItems.filter((i) => i.id !== "mentions-legales").length > 0
               ? "text-left"
               : "w-full text-center"
           }`}
@@ -127,15 +125,15 @@ export default function Footer({
         </a>
 
         {/* Bloc central des icônes sélectionnées */}
-        {showIcons && visibleItems.length > 0 && (
-          <div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-50">
-            {visibleItems.map((item) => (
+        {showIcons && visibleItems.filter((i) => i.id !== "mentions-legales").length > 0 && (
+          <div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-64">
+            {visibleItems.filter((i) => i.id !== "mentions-legales").map((item) => (
               <a
                 key={item.id}
                 href={item.href}
                 className="flex items-center gap-2.5 hover:scale-105 transition-all group shrink-0"
               >
-                <img src={item.src} className="w-5 h-5 object-contain" alt="" />
+                {item.src && <img src={item.src} className="w-5 h-5 object-contain" alt="" />}
                 <span className="text-[11px] font-black uppercase tracking-widest text-[#002b49]">
                   {item.label}
                 </span>

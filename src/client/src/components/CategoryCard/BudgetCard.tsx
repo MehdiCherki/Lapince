@@ -50,12 +50,12 @@ export default function BudgetCard() {
 
       <div className="relative w-[250px] h-[250px] md:w-72 md:h-72 rounded-full bg-[#E06B56] flex flex-col items-center justify-center gap-2 shadow-xl shrink-0 mt-4">
         {messageSuccess ? (
-          <p className="text-[#002341] font-black text-3xl text-center px-4 leading-tight whitespace-pre-line">
+          <p className="text-[#002b49] font-black text-3xl text-center px-4 leading-tight whitespace-pre-line">
             {messageSuccess}
           </p>
         ) : (
           <>
-            <p className="text-[#002341] font-semibold text-base md:text-xl tracking-tight mb-1 bg-white px-3 md:px-5 py-0.5 md:py-1 rounded-full flex items-center gap-1 md:gap-2">
+            <p className="text-[#002b49] font-semibold text-base md:text-xl tracking-tight mb-1 bg-white px-3 md:px-5 py-0.5 md:py-1 rounded-full flex items-center gap-1 md:gap-2">
               <img src="/WEBP/Icones/Lapince-budget.webp" className="w-4 h-4 md:w-5 md:h-5 object-contain" alt="" />
               Budget
             </p>
@@ -78,7 +78,7 @@ export default function BudgetCard() {
                 className="w-full h-6 md:h-8 rounded-full bg-white/70 text-xs md:text-sm px-3 outline-none text-gray-500"
               />
               {messageError && (
-                <p className="text-[#002341] font-bold text-[10px] md:text-xs bg-white/80 px-2 py-0.5 rounded-full text-center">
+                <p className="text-[#002b49] font-bold text-[10px] md:text-xs bg-white/80 px-2 py-0.5 rounded-full text-center">
                   ⚠ {messageError}
                 </p>
               )}

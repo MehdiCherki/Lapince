@@ -65,11 +65,24 @@ export default function MentionsLegalesPage() {
       <img
         src="/WEBP/Desktop/Lapince-Hero-Background-Desktop.webp"
         fetchPriority="high"
-        className="absolute bottom-0 left-0 w-[60vw] opacity-20 object-contain origin-bottom-left z-0 pointer-events-none select-none"
+        className="absolute bottom-0 left-0 w-[55vw] opacity-60 object-contain origin-bottom-left z-0 pointer-events-none select-none hidden md:block"
         aria-hidden="true"
         alt=""
       />
-      <div className="absolute inset-0 bg-white/10 z-20 pointer-events-none" aria-hidden="true" />
+      <div className="absolute bottom-0 right-[5%] z-10 pointer-events-none hidden lg:block">
+        <img
+          src="/WEBP/Desktop/Lapince-Hand-Desktop.webp"
+          className="w-[24vw] h-auto object-contain"
+          alt=""
+        />
+      </div>
+      <img
+        src="/WEBP/Mobile/Lapince-Hero-Background-Mobile.webp"
+        fetchPriority="high"
+        className="absolute bottom-0 left-0 w-screen opacity-70 z-0 pointer-events-none block md:hidden"
+        alt=""
+      />
+      <div className="absolute inset-0 bg-white/30 z-20 pointer-events-none" aria-hidden="true" />
 
       <img
         src="/WEBP/Mobile/Lapince-Logo-Mobile.webp"

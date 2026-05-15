@@ -74,3 +74,12 @@ body,
 .overflow-y-auto::-webkit-scrollbar-corner {
   background-color: transparent !important;
 }
+
+/* Masquer la scrollbar visuellement tout en gardant le scroll fonctionnel */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
