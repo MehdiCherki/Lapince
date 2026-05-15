@@ -1,5 +1,7 @@
 import type { Request, Response } from "express";
 import * as budgetService from "../services/budget.service.ts";
+import { generateBudgetAlert } from "../services/alert.generator.ts"
+
 import {
   createBudgetSchema,
   updateBudgetSchema,
@@ -21,6 +23,7 @@ export const createBudget = async (req: Request, res: Response) => {
   if (!body.success)
     return res.status(400).json({ error: "Données invalides", details: body.error.issues });
   const budget = await budgetService.createBudget(req.user.id, body.data);
+  await generateBudgetAlert(budget.id, req.user.id)
   return res.status(201).json(budget);
 };
 
@@ -63,17 +66,3 @@ export const deleteBudget = async (req: Request, res: Response) => {
   return res.status(204).send();
 };
 
-// --- 6. GET /budgets/:id/status ---
-
-export const getBudgetStatus = async (req: Request, res: Response) => {
-  if (!req.user)
-    return res.status(401).json({ error: "Utilisateur non authentifié" });
-
-  const id = parseInt(req.params.id as string);
-  if (isNaN(id)) return res.status(400).json({ error: "ID invalide" });
-
-  const status = await budgetService.getBudgetStatus(id, req.user.id);
-  if (!status) return res.status(404).json({ error: "Budget introuvable" });
-
-  return res.status(200).json(status);
-};

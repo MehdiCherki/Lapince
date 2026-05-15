@@ -3,7 +3,12 @@ import CategorySelect from "./CategorySelect";
 import { useCategories } from "../../hooks/useCategories";
 import { createBudget } from "../../services/budgetApi.js";
 
-export default function BudgetCard() {
+interface BudgetCardProps {
+  onSuccess?: () => void;
+}
+
+export default function BudgetCard({ onSuccess }: BudgetCardProps) {
+
   const categories = useCategories("EXPENSE");
   const [categorie, setCategorie] = useState("");
   const [montant, setMontant] = useState("");
@@ -33,6 +38,7 @@ export default function BudgetCard() {
       setMontant("");
       setMois("");
       setCategorie("");
+      onSuccess?.();
       setMessageSuccess("✓ Budget ajouté !");
       setTimeout(() => setMessageSuccess(null), 3000);
     } catch {
