@@ -62,7 +62,6 @@ export const createTransaction = async (userId: number, data: any) => {
       date: new Date(data.date),
       categoryId: data.idcategory,
       description: data.description,
-      budgetId: data.budgetId ? Number(data.budgetId) : null,
     },
     include: { category: true }, // On inclut la catégorie pour avoir le type (income/expense) côté front
   });

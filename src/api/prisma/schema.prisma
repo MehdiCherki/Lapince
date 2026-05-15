@@ -72,12 +72,10 @@ model Transaction {
   description String?
   userId      Int      @map("iduser")
   categoryId  Int      @map("idcategory")
-  budgetId    Int?
   updatedAt   DateTime @default(now()) @updatedAt
 
   category Category  @relation(fields: [categoryId], references: [id])
   User     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  budget   Budget?   @relation(fields: [budgetId], references: [id])
 
   @@index([userId])
   @@index([userId, date])
@@ -96,9 +94,6 @@ model Budget {
 
   // Relation avec la catégorie (un budget concerne une catégorie)
   category Category @relation(fields: [id_category], references: [id])
-
-  // Relation avec les transactions (un budget peut avoir plusieurs transactions)
-  transactions Transaction[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt()

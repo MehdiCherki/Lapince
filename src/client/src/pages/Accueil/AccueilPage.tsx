@@ -175,7 +175,7 @@ export default function AccueilPage() {
               <DepenseCard onSuccess={load} />
             </div>
             <div className="absolute bottom-10 left-1/2 -translate-x-1/2">
-              <BudgetCard />
+              <BudgetCard onSuccess={load} />
             </div>
           </div>
 
@@ -184,7 +184,7 @@ export default function AccueilPage() {
               <RevenuCard onSuccess={load} />
               <DepenseCard onSuccess={load} />
             </div>
-            <BudgetCard />
+            <BudgetCard onSuccess={load} />
           </div>
         </section>
       </div>

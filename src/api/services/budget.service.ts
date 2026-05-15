@@ -16,8 +16,7 @@ export const getAllBudgets = async (userId: number) => {
   return prisma.budget.findMany({
     where: { userId },
     include: {
-      category: true, // Inclure la catégorie associée
-      transactions: true, // Inclure les transactions liées
+      category: true,
     },
   });
 };
@@ -44,7 +43,6 @@ export const getBudgetById = async (id: number, userId: number) => {
     where: { id, userId },
     include: {
       category: true,
-      transactions: true,
     },
   });
 };
@@ -68,71 +66,3 @@ export const deleteBudget = async (id: number, userId: number) => {
   return prisma.budget.delete({ where: { id, userId } });
 };
 
-// -------------------------------------------------------------
-// 6. Calculer le statut d'un budget
-//    (dépensé, restant, pourcentage consommé)
-// -------------------------------------------------------------
-
-// Cette fonction calcule le statut complet d’un budget donné pour un utilisateur.
-// Elle récupère d’abord le budget correspondant dans la base de données, ainsi que
-// toutes les transactions associées et la catégorie liée. Si aucun budget n’est trouvé
-// (soit parce qu’il n’existe pas, soit parce qu’il n’appartient pas à l’utilisateur),
-// la fonction renvoie null.
-//
-// Une fois le budget récupéré, la fonction calcule :
-//
-// 1. Le montant total dépensé (“spent”) :
-//    - en additionnant toutes les transactions liées au budget.
-//    - chaque transaction possède un montant (“amount”), converti en nombre.
-//
-// 2. Le montant restant (“remaining”) :
-//    - en soustrayant le total dépensé du montant limite du budget.
-//
-// 3. Le pourcentage consommé (“percent”) :
-//    - en divisant le total dépensé par la limite du budget, puis en multipliant par 100.
-//
-// Enfin, la fonction renvoie un objet contenant toutes les informations utiles pour
-// l’interface utilisateur :
-//    - l’identifiant du budget,
-//    - le nom de la catégorie,
-//    - la limite définie,
-//    - le total dépensé,
-//    - le montant restant,
-//    - et le pourcentage consommé.
-//
-// Ces données permettent d’afficher un suivi clair et visuel de l’état du budget,
-// par exemple sous forme de barre de progression ou de graphique.
-
-export const getBudgetStatus = async (budgetId: number, userId: number) => {
-  // Récupérer le budget avec ses transactions
-  const budget = await prisma.budget.findFirst({
-    where: { id: budgetId, userId },
-    include: {
-      transactions: true,
-      category: true,
-    },
-  });
-
-  if (!budget) return null;
-
-  // Calcul du total dépensé
-  const spent = budget.transactions.reduce(
-    (sum: number, t: { amount: any }) => sum + Number(t.amount),
-    0,
-  );
-
-  // Montant restant
-  const remaining = budget.limit_amount - spent;
-
-  // Pourcentage consommé
-  const percent = (spent / budget.limit_amount) * 100;
-
-  return {
-    budgetId: budget.id,
-    category: budget.category.name,
-    limit: budget.limit_amount,
-    spent,
-    remaining,
-    percent,
-  };
-};
