@@ -2,3 +2,7 @@ mehdicherki.fr {
     header Strict-Transport-Security "max-age=63072000; includeSubDomains; preload"
     reverse_proxy client:80
 }
+
+www.mehdicherki.fr {
+    redir https://mehdicherki.fr{uri} permanent
+}
