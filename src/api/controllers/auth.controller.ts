@@ -6,6 +6,7 @@ import { prisma } from "../lib/prisma.js";
 import { BadRequestError, UnauthorizedError } from "../lib/error.ts";
 import { generateAuthTokens } from "../lib/tokens.ts";
 import { registerSchema, loginSchema } from "../validators/auth.validator.js";
+import { sendVerificationEmail } from "../services/mail.service.ts"
 
 // POST /auth/register
 export async function register(req: Request, res: Response) {
@@ -24,9 +25,11 @@ export async function register(req: Request, res: Response) {
   }
 
   const hashedPassword = await argon2.hash(password);
+  const token = crypto.randomUUID();
+
 
   const user = await prisma.user.create({
-    data: { first_name, last_name, email, password: hashedPassword, photo: photo ?? null },
+    data: { first_name, last_name, email, password: hashedPassword, photo: photo ?? null,  emailVerificationToken: token  },
     select: {
       id: true,
       first_name: true,
@@ -36,6 +39,8 @@ export async function register(req: Request, res: Response) {
       createdAt: true,
     },
   });
+
+  await sendVerificationEmail(user.email, token);
 
   const { accessToken, refreshToken } = generateAuthTokens(user as unknown as User);
   await replaceRefreshTokenInDatabase(refreshToken, user as unknown as User);

@@ -1,0 +1,7 @@
+### -----------------------------------------
+### VARIABLES
+### -----------------------------------------
+@baseUrl = http://localhost:3007
+
+### 1. Récupérer un budget par ID
+GET {{baseUrl}}/auth/verify-email?token=e11f18b7-7ad7-4865-baa9-28cf4cd43478
