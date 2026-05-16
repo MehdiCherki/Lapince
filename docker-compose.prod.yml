@@ -30,6 +30,10 @@ services:
       JWT_SECRET: ${JWT_SECRET}       # Clé secrète pour signer les tokens JWT
       CORS_ORIGIN: ${CORS_ORIGIN}     # Origine autorisée pour les requêtes CORS
       ALLOWED_ORIGINS: ${ALLOWED_ORIGINS} # Liste des origines autorisées pour les requêtes CORS (séparées par des virgules)
+      SMTP_USER: ${SMTP_USER}
+      SMTP_PASS: ${SMTP_PASS}
+      FRONTEND_URL: ${FRONTEND_URL}
+    
     depends_on:
       db:
         condition: service_healthy  # Démarre l'API seulement quand Postgres est prêt
