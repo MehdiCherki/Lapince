@@ -8,13 +8,13 @@ import { AnimatedOrbBackground } from "../../components/AnimatedOrbBackground/An
 
 export default function RegisterPage() {
   const navigate = useNavigate();
-const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<ApiError | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [selectedAvatar, setSelectedAvatar] = useState<string>("");
   const [showPicker, setShowPicker] = useState(false);
   const [avatarSeeds] = useState<string[]>(() =>
-    Array.from({ length: 8 }, () => Math.random().toString(36).slice(2, 10))
+    Array.from({ length: 8 }, () => Math.random().toString(36).slice(2, 10)),
   );
 
   const handleSubmit = async (data: RegisterFormData) => {
@@ -23,10 +23,12 @@ const [isLoading, setIsLoading] = useState(false);
     try {
       const defaultAvatar = `https://api.dicebear.com/9.x/lorelei/svg?seed=${avatarSeeds[0]}`;
       await registerUser({ ...data, photo: selectedAvatar || defaultAvatar });
-      setSuccessMessage("Inscription réussie ! Un email de confirmation vous a été envoyé. Cliquez sur le lien pour activer votre compte.");
+      setSuccessMessage(
+        "Inscription réussie ! Un email de confirmation vous a été envoyé. Cliquez sur le lien pour activer votre compte.",
+      );
       setTimeout(() => {
         navigate("/login");
-      }, 3000);
+      }, 10000);
     } catch (err) {
       setError(err as ApiError);
     } finally {
@@ -70,7 +72,8 @@ const [isLoading, setIsLoading] = useState(false);
               compte.
             </h2>
             <p className="text-[17px] lg:text-[21px] font-normal text-[#002b49] opacity-90 mt-6 max-w-[450px] leading-snug">
-              <span className="font-bold">La Pince,</span> sans connexion bancaire,
+              <span className="font-bold">La Pince,</span> sans connexion
+              bancaire,
               <br />
               sans prise de tête.
             </p>
@@ -110,7 +113,6 @@ const [isLoading, setIsLoading] = useState(false);
       {/* 3. ZONE DE CONTENU (L'essentiel - Z-40)                      */}
       {/* ------------------------------------------------------------ */}
       <div className="absolute inset-0 z-40 overflow-y-auto flex flex-col items-center pt-2 pb-5 px-4 scrollbar-hide">
-
         {/* Titre */}
         <header className="text-center mt-12 mb-8 shrink-0">
           <h1 className="text-[35px] md:text-[50px] lg:text-[60px] font-black uppercase leading-none tracking-tighter">
@@ -122,7 +124,10 @@ const [isLoading, setIsLoading] = useState(false);
         <div className="relative mb-6 shrink-0">
           <div className="w-28 h-28 md:w-36 md:h-36 rounded-full bg-white/50 backdrop-blur-md border-2 border-white flex items-center justify-center shadow-2xl overflow-hidden">
             <img
-              src={selectedAvatar || `https://api.dicebear.com/9.x/lorelei/svg?seed=${avatarSeeds[0]}`}
+              src={
+                selectedAvatar ||
+                `https://api.dicebear.com/9.x/lorelei/svg?seed=${avatarSeeds[0]}`
+              }
               className={`w-full h-full object-cover ${selectedAvatar ? "" : "opacity-20"}`}
               alt="Aperçu"
             />
@@ -132,7 +137,13 @@ const [isLoading, setIsLoading] = useState(false);
             onClick={() => setShowPicker(!showPicker)}
             className="absolute bottom-1 right-1 bg-[#002b49] text-white p-2 rounded-full border-2 border-white shadow-lg hover:scale-110 transition-transform"
           >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="4">
+            <svg
+              className="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              strokeWidth="4"
+            >
               <path d="M12 4v16m8-8H4" />
             </svg>
           </button>
@@ -146,7 +157,10 @@ const [isLoading, setIsLoading] = useState(false);
                     <button
                       key={seed}
                       type="button"
-                      onClick={() => { setSelectedAvatar(url); setShowPicker(false); }}
+                      onClick={() => {
+                        setSelectedAvatar(url);
+                        setShowPicker(false);
+                      }}
                       className={`w-12 h-12 rounded-full border-2 overflow-hidden transition-all hover:scale-110 ${selectedAvatar === url ? "border-[#002b49]" : "border-transparent"}`}
                     >
                       <img src={url} alt={seed} className="w-full h-full" />
@@ -161,9 +175,15 @@ const [isLoading, setIsLoading] = useState(false);
         {/* Formulaire */}
         <section className="w-full max-w-[440px] min-h-[340px] flex flex-col justify-center bg-white/20 backdrop-blur-3xl rounded-[2.5rem] p-6 md:p-10 shadow-2xl border border-white/30 mb-8 shrink-0">
           {successMessage ? (
-            <p className="text-center text-xl font-black text-[#002b49]">
-              ✓ {successMessage}
-            </p>
+            <div className="text-center text-xl font-black text-[#002b49] flex flex-col gap-3">
+              <span>✓ Inscription réussie !</span>
+              <span className="text-sm font-medium">
+                Un email de confirmation vous a été envoyé.
+              </span>
+              <span className="text-sm font-medium">
+                Cliquez sur le lien pour activer votre compte.
+              </span>
+            </div>
           ) : (
             <RegisterForm
               onSubmit={handleSubmit}
@@ -180,7 +200,6 @@ const [isLoading, setIsLoading] = useState(false);
             Se connecter
           </a>
         </p>
-
       </div>
 
       {/* ------------------------------------------------------------ */}
@@ -189,7 +208,6 @@ const [isLoading, setIsLoading] = useState(false);
       <footer className="absolute bottom-0 left-0 w-full z-50">
         <Footer showIcons={true} />
       </footer>
-
     </main>
   );
 }
