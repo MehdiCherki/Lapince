@@ -4,13 +4,11 @@ import { registerUser } from "../../services/authApi";
 import type { RegisterFormData, ApiError } from "../../types/auth";
 import Footer from "../../components/Footer/footer";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../../context/AuthContext";
 import { AnimatedOrbBackground } from "../../components/AnimatedOrbBackground/AnimatedOrbBackground";
 
 export default function RegisterPage() {
   const navigate = useNavigate();
-  const { login } = useAuth();
-  const [isLoading, setIsLoading] = useState(false);
+const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<ApiError | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [selectedAvatar, setSelectedAvatar] = useState<string>("");
@@ -24,10 +22,9 @@ export default function RegisterPage() {
     setError(null);
     try {
       const defaultAvatar = `https://api.dicebear.com/9.x/lorelei/svg?seed=${avatarSeeds[0]}`;
-      const user = await registerUser({ ...data, photo: selectedAvatar || defaultAvatar });
+      await registerUser({ ...data, photo: selectedAvatar || defaultAvatar });
       setSuccessMessage("Inscription réussie ! Un email de confirmation vous a été envoyé. Cliquez sur le lien pour activer votre compte.");
       setTimeout(() => {
-        login(user);
         navigate("/login");
       }, 3000);
     } catch (err) {
