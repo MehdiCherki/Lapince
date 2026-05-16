@@ -42,13 +42,7 @@ export async function register(req: Request, res: Response) {
 
   await sendVerificationEmail(user.email, token);
 
-  const { accessToken, refreshToken } = generateAuthTokens(user as unknown as User);
-  await replaceRefreshTokenInDatabase(refreshToken, user as unknown as User);
-  setAccessTokenCookie(res, accessToken);
-  setRefreshTokenCookie(res, refreshToken);
-  setSessionIndicatorCookie(res, accessToken);
-
-  res.status(201).json({ message: "Inscription réussie", user });
+  res.status(201).json({ message: "Inscription réussi. Verifiez votre email pour activer votre compte." });
 }
 
 // POST /auth/login
@@ -64,6 +58,12 @@ export async function login(req: Request, res: Response) {
   const user = await prisma.user.findFirst({ where: { email } });
   if (!user) {
     throw new UnauthorizedError("Le login et le mot de passe ne correspondent pas");
+  };
+
+  if (!user.emailVerified) {
+
+    res.status(403).json({ error: "Veuillez confirmer votre email avant de vous connecter." })
+    return;
   }
 
   const isMatching = await argon2.verify(user.password, password);

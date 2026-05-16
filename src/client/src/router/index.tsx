@@ -9,6 +9,7 @@ import PrivateLayout from "../components/Layout/PrivateLayout";
 import MentionsLegalesPage from "../pages/MentionsLegales/MentionsLegalesPage";
 import DashboardPage from "../pages/Dashboard/DashboardPage";
 import NotFoundPage from "../pages/NotFound/NotFoundPage";
+import VerifyEmailPage from "../pages/auth/VerifyEmailPage";
 
 export const router = createBrowserRouter([
   {
@@ -18,6 +19,10 @@ export const router = createBrowserRouter([
   {
     path: "/login",
     element: <LoginPage />,
+  },
+  {
+    path: "/verify-email",
+    element: <VerifyEmailPage />,
   },
   {
     path: "/register",

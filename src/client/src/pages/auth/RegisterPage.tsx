@@ -25,11 +25,11 @@ export default function RegisterPage() {
     try {
       const defaultAvatar = `https://api.dicebear.com/9.x/lorelei/svg?seed=${avatarSeeds[0]}`;
       const user = await registerUser({ ...data, photo: selectedAvatar || defaultAvatar });
-      setSuccessMessage("Inscription réalisée avec succès !");
+      setSuccessMessage("Inscription réussie ! Un email de confirmation vous a été envoyé. Cliquez sur le lien pour activer votre compte.");
       setTimeout(() => {
         login(user);
-        navigate("/accueil");
-      }, 2000);
+        navigate("/login");
+      }, 3000);
     } catch (err) {
       setError(err as ApiError);
     } finally {

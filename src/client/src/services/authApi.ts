@@ -6,16 +6,12 @@ export interface LoginCredentials {
   password: string;
 }
 
-export async function registerUser(
-  formData: RegisterFormData,
-): Promise<AuthUser> {
+export async function registerUser(formData: RegisterFormData): Promise<void> {
   const response = await fetch(
     `${import.meta.env.VITE_API_BASE_URL}/auth/register`,
     {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(formData),
       credentials: "include",
     },
