@@ -3,7 +3,7 @@ import { useState } from "react";
 import { registerUser } from "../../services/authApi";
 import type { RegisterFormData, ApiError } from "../../types/auth";
 import Footer from "../../components/Footer/footer";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { AnimatedOrbBackground } from "../../components/AnimatedOrbBackground/AnimatedOrbBackground";
 
 export default function RegisterPage() {
@@ -23,12 +23,7 @@ export default function RegisterPage() {
     try {
       const defaultAvatar = `https://api.dicebear.com/9.x/lorelei/svg?seed=${avatarSeeds[0]}`;
       await registerUser({ ...data, photo: selectedAvatar || defaultAvatar });
-      setSuccessMessage(
-        "Inscription réussie ! Un email de confirmation vous a été envoyé. Cliquez sur le lien pour activer votre compte.",
-      );
-      setTimeout(() => {
-        navigate("/login");
-      }, 10000);
+      setSuccessMessage("success");
     } catch (err) {
       setError(err as ApiError);
     } finally {
@@ -64,7 +59,7 @@ export default function RegisterPage() {
           className="absolute top-3 left-10 w-16 lg:w-24 z-50 transition-all"
           alt="Logo"
         />
-        <div className="absolute z-50 left-0 w-full md:pl-14 lg:pl-16 pointer-events-none pt-20">
+        <div className="absolute z-50 left-0 w-full md:pl-14 lg:pl-16 pointer-events-none pt-20 hidden xl:block">
           <header className="max-w-[700px] md:mt-56 shrink-0 text-left md:pl-28">
             <h2 className="text-[50px] lg:text-[65px] font-medium leading-[0.9] tracking-tighter text-[#002b49]">
               Créez votre
@@ -173,17 +168,23 @@ export default function RegisterPage() {
         </div>
 
         {/* Formulaire */}
-        <section className="w-full max-w-[440px] min-h-[340px] flex flex-col justify-center bg-white/20 backdrop-blur-3xl rounded-[2.5rem] p-6 md:p-10 shadow-2xl border border-white/30 mb-8 shrink-0">
+        <section className="w-full max-w-[440px] min-h-[340px] flex flex-col items-center justify-center gap-6 bg-white/20 backdrop-blur-3xl rounded-[2.5rem] p-6 md:p-10 shadow-2xl border border-white/30 mb-8 shrink-0">
           {successMessage ? (
-            <div className="text-center text-xl font-black text-[#002b49] flex flex-col gap-3">
-              <span>✓ Inscription réussie !</span>
-              <span className="text-sm font-medium">
-                Un email de confirmation vous a été envoyé.
-              </span>
-              <span className="text-sm font-medium">
-                Cliquez sur le lien pour activer votre compte.
-              </span>
-            </div>
+            <>
+              <p className="text-center text-xl font-black text-[#002b49]">
+                ✓ Inscription réussie !
+              </p>
+              <p className="text-center text-sm opacity-70">
+                Un email de confirmation vous a été envoyé. Cliquez sur le lien
+                pour activer votre compte.
+              </p>
+              <Link
+                to="/login"
+                className="bg-[#002b49] text-white font-bold px-8 py-3 rounded-full hover:opacity-80 transition-opacity"
+              >
+                Se connecter
+              </Link>
+            </>
           ) : (
             <RegisterForm
               onSubmit={handleSubmit}
