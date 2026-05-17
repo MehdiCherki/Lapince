@@ -1,13 +1,17 @@
 import { useState } from "react";
 import { Loader2 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
-import { updateUserProfile, deleteUserAccount } from "../../services/user";
+import { updateUserProfile } from "../../services/user";
 import { useAuth } from "../../context/AuthContext";
 import type { AuthUser, ApiError } from "../../types/auth";
 
-export default function ParametreForm({ selectedAvatar }: { selectedAvatar: string }) {
-  const { user, login, logout } = useAuth();
-  const navigate = useNavigate();
+export default function ParametreForm({
+  selectedAvatar,
+  onDeleteRequest,
+}: {
+  selectedAvatar: string;
+  onDeleteRequest: () => void;
+}) {
+  const { user, login } = useAuth();
 
   const [form, setForm] = useState({
     first_name: user?.first_name ?? "",
@@ -55,19 +59,6 @@ export default function ParametreForm({ selectedAvatar }: { selectedAvatar: stri
     }
 
     setIsLoading(false);
-  };
-
-  const handleDelete = async () => {
-    if (!confirm("Voulez-vous vraiment supprimer votre compte ?")) return;
-
-    try {
-      await deleteUserAccount();
-      alert("Compte supprimé");
-      await logout();
-      navigate("/login");
-    } catch {
-      alert("Erreur lors de la suppression du compte.");
-    }
   };
 
   const inputStyle =
@@ -134,7 +125,7 @@ export default function ParametreForm({ selectedAvatar }: { selectedAvatar: stri
       <div className="text-center pt-1">
         <button
           type="button"
-          onClick={handleDelete}
+          onClick={onDeleteRequest}
           className="text-[11px] text-red-600 font-bold underline italic opacity-80"
         >
           Se désinscrire

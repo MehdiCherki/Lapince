@@ -32,7 +32,7 @@ export function MonthlyChart({ data }: MonthlyChartProps) {
     <section className="bg-white/50 backdrop-blur-2xl rounded-[2.5rem] p-6 md:p-10 shadow-2xl border border-white/50">
       <header className="mb-8 text-center md:text-left">
         <h3 className="text-xl font-black italic uppercase">Analyse Mensuelle</h3>
-        <p className="text-xs font-bold opacity-60">Visualisation des Revenus vs Dépenses par mois</p>
+        <p className="text-xs font-bold opacity-60">Visualisation des Revenus et des Dépenses par mois</p>
       </header>
 
       <div className="h-[300px] w-full">

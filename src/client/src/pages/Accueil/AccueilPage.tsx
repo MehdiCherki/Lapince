@@ -136,7 +136,7 @@ export default function AccueilPage() {
       </div>
 
       <div
-        className="relative z-40 flex flex-col h-full overflow-y-auto scrollbar-hide pb-40 [mask-image:linear-gradient(to_bottom,transparent_0px,transparent_260px,black_300px)] [-webkit-mask-image:linear-gradient(to_bottom,transparent_0px,transparent_260px,black_300px)] md:[mask-image:none] md:[-webkit-mask-image:none]"
+        className="relative z-40 flex flex-col h-full overflow-y-auto scrollbar-hide pb-40 [mask-image:linear-gradient(to_bottom,transparent_0px,transparent_280px,black_320px)] [-webkit-mask-image:linear-gradient(to_bottom,transparent_0px,transparent_280px,black_320px)] md:[mask-image:none] md:[-webkit-mask-image:none]"
       >
         <header className="hidden md:flex flex-col items-center pt-10 pb-4 shrink-0">
           <h1 className="md:text-[50px] lg:text-[60px] font-black uppercase leading-none tracking-tighter">
@@ -165,7 +165,7 @@ export default function AccueilPage() {
           </p>
         </header>
 
-        <div className="md:hidden h-[280px] shrink-0" />
+        <div className="md:hidden h-[320px] shrink-0" />
         <section className="relative md:flex-1 flex items-center justify-center">
           <div className="hidden md:block relative w-full max-w-4xl h-96 mt-[140px]">
             <div className="absolute bottom-60 left-12">

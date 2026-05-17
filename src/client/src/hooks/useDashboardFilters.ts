@@ -9,8 +9,7 @@ export function useDashboardFilters(
 ) {
   const [search, setSearch] = useState("");
   const [filterType, setFilterType] = useState<"ALL" | "INCOME" | "EXPENSE">("ALL");
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
+  const [selectedMonth, setSelectedMonth] = useState("");
   const [selectedCategories, setSelectedCategories] = useState<number[]>([]);
 
   const toggleCategory = (id: number) => {
@@ -20,7 +19,7 @@ export function useDashboardFilters(
   };
 
   const isFiltered =
-    !!search || filterType !== "ALL" || !!startDate || !!endDate || selectedCategories.length > 0;
+    !!search || filterType !== "ALL" || !!selectedMonth || selectedCategories.length > 0;
 
   const filteredTransactions = useMemo(() => {
     return transactions.filter((t) => {
@@ -29,14 +28,16 @@ export function useDashboardFilters(
         !search.trim() ||
         t.description?.toLowerCase().includes(search.toLowerCase()) ||
         t.category.name.toLowerCase().includes(search.toLowerCase());
-      const transactionDate = new Date(t.date).getTime();
-      const matchesStart = !startDate || transactionDate >= new Date(startDate).getTime();
-      const matchesEnd = !endDate || transactionDate <= new Date(endDate).getTime();
+      const matchesMonth = !selectedMonth || (() => {
+        const d = new Date(t.date);
+        const tMonth = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+        return tMonth === selectedMonth;
+      })();
       const matchesCategory =
         selectedCategories.length === 0 || selectedCategories.includes(t.category.id);
-      return matchesType && matchesSearch && matchesStart && matchesEnd && matchesCategory;
+      return matchesType && matchesSearch && matchesMonth && matchesCategory;
     });
-  }, [transactions, search, filterType, startDate, endDate, selectedCategories]);
+  }, [transactions, search, filterType, selectedMonth, selectedCategories]);
 
   const displayMonthlyData = useMemo((): MonthlyEntry[] => {
     if (!isFiltered) return monthly;
@@ -74,8 +75,7 @@ export function useDashboardFilters(
   return {
     search, setSearch,
     filterType, setFilterType,
-    startDate, setStartDate,
-    endDate, setEndDate,
+    selectedMonth, setSelectedMonth,
     selectedCategories,
     toggleCategory,
     resetCategories: () => setSelectedCategories([]),

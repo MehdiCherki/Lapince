@@ -62,6 +62,7 @@ export default function MentionsLegalesPage() {
     <main className="fixed inset-0 w-full h-full bg-[#b9c6d1] overflow-hidden font-sans text-[#002b49]">
       <AnimatedOrbBackground />
 
+      {/* Arrière-plans */}
       <img
         src="/WEBP/Desktop/Lapince-Hero-Background-Desktop.webp"
         fetchPriority="high"
@@ -82,8 +83,11 @@ export default function MentionsLegalesPage() {
         className="absolute bottom-0 left-0 w-screen opacity-70 z-0 pointer-events-none block md:hidden"
         alt=""
       />
+
+      {/* Overlay */}
       <div className="absolute inset-0 bg-white/30 z-20 pointer-events-none" aria-hidden="true" />
 
+      {/* Logos */}
       <img
         src="/WEBP/Mobile/Lapince-Logo-Mobile.webp"
         className="absolute top-3 left-4 w-20 z-50 md:hidden"
@@ -95,6 +99,7 @@ export default function MentionsLegalesPage() {
         alt="Logo La Pince"
       />
 
+      {/* Bouton retour */}
       <button
         onClick={() => navigate(-1)}
         className="fixed top-4 right-4 md:top-6 md:right-6 lg:top-10 lg:right-10 z-[60] px-8 py-2 rounded-full bg-[#002b49] text-white font-bold text-xs shadow-lg hover:bg-[#003b63] transition-colors cursor-pointer"
@@ -102,12 +107,30 @@ export default function MentionsLegalesPage() {
         Retour
       </button>
 
+      {/* Header fixe mobile — hors du masque */}
+      <div className="md:hidden absolute top-0 left-0 right-0 z-[45] flex flex-col items-center pt-28 pb-4 pointer-events-none">
+        <h1 className="text-[40px] font-black uppercase leading-none tracking-tighter text-center">
+          Mentions légales
+        </h1>
+        <p className="text-base font-bold mt-1 opacity-80 text-center px-4">
+          Conformément à la loi n°2004-575 du 21 juin 2004
+        </p>
+      </div>
+
+      {/* Zone scrollable avec masque mobile */}
       <div
-        className="relative z-40 flex flex-col h-full overflow-y-auto scrollbar-hide"
+        className="relative z-40 flex flex-col h-full overflow-y-auto scrollbar-hide
+          [mask-image:linear-gradient(to_bottom,transparent_0px,transparent_210px,black_250px)]
+          [-webkit-mask-image:linear-gradient(to_bottom,transparent_0px,transparent_210px,black_250px)]
+          md:[mask-image:none] md:[-webkit-mask-image:none]"
         style={{ paddingBottom: footerHeight + 40 }}
       >
-        <header className="flex flex-col items-center pt-30 md:pt-10 pb-8 shrink-0">
-          <h1 className="text-[35px] md:text-[50px] lg:text-[60px] font-black uppercase leading-none tracking-tighter">
+        {/* Spacer mobile */}
+        <div className="md:hidden h-[250px] shrink-0" />
+
+        {/* Header desktop */}
+        <header className="hidden md:flex flex-col items-center pt-10 pb-8 shrink-0">
+          <h1 className="md:text-[50px] lg:text-[60px] font-black uppercase leading-none tracking-tighter">
             Mentions légales
           </h1>
           <p className="text-base font-bold mt-1 opacity-80">
@@ -115,6 +138,7 @@ export default function MentionsLegalesPage() {
           </p>
         </header>
 
+        {/* Contenu */}
         <div className="max-w-4xl lg:max-w-6xl mx-auto w-full px-6 space-y-6">
           <LegalSection title="Éditeur du site">
             <LegalRow label="Nom du site" value="La Pince" />

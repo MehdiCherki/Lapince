@@ -1,5 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { fetchTransactions, type Transaction } from "../../services/transactionApi";
+import {
+  fetchTransactions,
+  type Transaction,
+} from "../../services/transactionApi";
 import { fetchBudgets } from "../../services/budgetApi";
 import type { Budget } from "../../types/budget";
 import { useAlerts } from "../../hooks/useAlerts";
@@ -24,10 +27,12 @@ export default function DashboardPage() {
   const [budgets, setBudgets] = useState<Budget[]>([]);
 
   const {
-    search, setSearch,
-    filterType, setFilterType,
-    startDate, setStartDate,
-    endDate, setEndDate,
+    search,
+    setSearch,
+    filterType,
+    setFilterType,
+    selectedMonth,
+    setSelectedMonth,
     selectedCategories,
     toggleCategory,
     resetCategories,
@@ -37,7 +42,10 @@ export default function DashboardPage() {
   } = useDashboardFilters(transactions, monthly, overview);
 
   const loadData = useCallback(async () => {
-    const [trans, budg] = await Promise.all([fetchTransactions(), fetchBudgets()]);
+    const [trans, budg] = await Promise.all([
+      fetchTransactions(),
+      fetchBudgets(),
+    ]);
     setTransactions(trans.data);
     setBudgets(budg);
     await loadStats();
@@ -81,7 +89,10 @@ export default function DashboardPage() {
         className="absolute bottom-0 left-0 w-screen opacity-70 z-0 pointer-events-none block md:hidden"
         alt=""
       />
-      <div className="absolute inset-0 bg-white/30 z-20 pointer-events-none" aria-hidden="true" />
+      <div
+        className="absolute inset-0 bg-white/30 z-20 pointer-events-none"
+        aria-hidden="true"
+      />
 
       <img
         src="/WEBP/Mobile/Lapince-Logo-Mobile.webp"
@@ -93,13 +104,26 @@ export default function DashboardPage() {
         className="absolute top-3 left-10 w-16 lg:w-24 z-50 transition-all hidden md:block"
         alt="Logo"
       />
+      {/* Header fixe mobile — hors du masque */}
+      <div className="md:hidden absolute top-0 left-0 right-0 z-[45] flex flex-col items-center pt-28 pb-4 pointer-events-none">
+        <h1 className="text-[50px] font-black uppercase leading-none tracking-tighter">
+          Tableau de bord
+        </h1>
+        <p className="text-base font-bold mt-1 opacity-80">
+          Analyse de vos flux financiers
+        </p>
+      </div>
 
       <div
-        className="relative z-40 flex flex-col h-full overflow-y-auto scrollbar-hide"
+        className="relative z-40 flex flex-col h-full overflow-y-auto scrollbar-hide
+  [mask-image:linear-gradient(to_bottom,transparent_0px,transparent_200px,black_240px)]
+  [-webkit-mask-image:linear-gradient(to_bottom,transparent_0px,transparent_200px,black_240px)]
+  md:[mask-image:none] md:[-webkit-mask-image:none]"
         style={{ paddingBottom: footerHeight + 40 }}
       >
-        <header className="flex flex-col items-center pt-30 md:pt-10 pb-8 shrink-0">
-          <h1 className="text-[35px] md:text-[50px] lg:text-[60px] font-black uppercase leading-none tracking-tighter">
+        <div className="md:hidden h-[250px] shrink-0" />
+        <header className="hidden md:flex flex-col items-center pt-10 pb-8 shrink-0">
+          <h1 className="md:text-[50px] lg:text-[60px] font-black uppercase leading-none tracking-tighter">
             Tableau de bord
           </h1>
           <p className="text-base font-bold mt-1 opacity-80">
@@ -109,7 +133,9 @@ export default function DashboardPage() {
 
         <div className="max-w-6xl mx-auto w-full px-6 space-y-8">
           {displayOverview && <StatsCards stats={displayOverview} />}
-          {displayMonthlyData.length > 0 && <MonthlyChart data={displayMonthlyData} />}
+          {displayMonthlyData.length > 0 && (
+            <MonthlyChart data={displayMonthlyData} />
+          )}
           {budgets.length > 0 && <BudgetHistory budgets={budgets} />}
 
           <section className="bg-white/40 backdrop-blur-xl rounded-[2.5rem] overflow-hidden shadow-2xl border border-white/40 mb-10">
@@ -118,10 +144,8 @@ export default function DashboardPage() {
               onSearchChange={setSearch}
               filterType={filterType}
               onFilterTypeChange={setFilterType}
-              startDate={startDate}
-              onStartDateChange={setStartDate}
-              endDate={endDate}
-              onEndDateChange={setEndDate}
+              selectedMonth={selectedMonth}
+              onMonthChange={setSelectedMonth}
               selectedCategories={selectedCategories}
               onCategoryToggle={toggleCategory}
               onResetCategories={resetCategories}
@@ -140,8 +164,14 @@ export default function DashboardPage() {
         />
       )}
 
-      <footer ref={footerRef} className="absolute bottom-0 left-0 w-full z-[60]">
-        <Footer showIcons activeIds={["transactions", "mentions-legales", "params"]} />
+      <footer
+        ref={footerRef}
+        className="absolute bottom-0 left-0 w-full z-[60]"
+      >
+        <Footer
+          showIcons
+          activeIds={["transactions", "mentions-legales", "params"]}
+        />
       </footer>
     </main>
   );
