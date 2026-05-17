@@ -14,6 +14,7 @@ import { errorMiddleware } from "../middlewares/error.middleware.js";
 
 // Créer une app Express
 const app = express();
+app.set("trust proxy", 1);
 const PORT = Number(process.env.PORT) || 3007;
 
 // Sécuriser les headers HTTP

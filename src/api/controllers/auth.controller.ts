@@ -6,6 +6,7 @@ import { prisma } from "../lib/prisma.js";
 import { BadRequestError, UnauthorizedError } from "../lib/error.ts";
 import { generateAuthTokens } from "../lib/tokens.ts";
 import { registerSchema, loginSchema } from "../validators/auth.validator.js";
+import { sendVerificationEmail } from "../services/mail.service.ts"
 
 // POST /auth/register
 export async function register(req: Request, res: Response) {
@@ -24,9 +25,11 @@ export async function register(req: Request, res: Response) {
   }
 
   const hashedPassword = await argon2.hash(password);
+  const token = crypto.randomUUID();
+
 
   const user = await prisma.user.create({
-    data: { first_name, last_name, email, password: hashedPassword, photo: photo ?? null },
+    data: { first_name, last_name, email, password: hashedPassword, photo: photo ?? null,  emailVerificationToken: token  },
     select: {
       id: true,
       first_name: true,
@@ -37,13 +40,9 @@ export async function register(req: Request, res: Response) {
     },
   });
 
-  const { accessToken, refreshToken } = generateAuthTokens(user as unknown as User);
-  await replaceRefreshTokenInDatabase(refreshToken, user as unknown as User);
-  setAccessTokenCookie(res, accessToken);
-  setRefreshTokenCookie(res, refreshToken);
-  setSessionIndicatorCookie(res, accessToken);
+  await sendVerificationEmail(user.email, token);
 
-  res.status(201).json({ message: "Inscription réussie", user });
+  res.status(201).json({ message: "Inscription réussi. Verifiez votre email pour activer votre compte." });
 }
 
 // POST /auth/login
@@ -59,6 +58,12 @@ export async function login(req: Request, res: Response) {
   const user = await prisma.user.findFirst({ where: { email } });
   if (!user) {
     throw new UnauthorizedError("Le login et le mot de passe ne correspondent pas");
+  };
+
+  if (!user.emailVerified) {
+
+    res.status(403).json({ error: "Veuillez confirmer votre email avant de vous connecter." })
+    return;
   }
 
   const isMatching = await argon2.verify(user.password, password);

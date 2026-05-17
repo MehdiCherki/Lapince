@@ -30,6 +30,10 @@ services:
       JWT_SECRET: ${JWT_SECRET}       # Clé secrète pour signer les tokens JWT
       CORS_ORIGIN: ${CORS_ORIGIN}     # Origine autorisée pour les requêtes CORS
       ALLOWED_ORIGINS: ${ALLOWED_ORIGINS} # Liste des origines autorisées pour les requêtes CORS (séparées par des virgules)
+      SMTP_USER: ${SMTP_USER}
+      SMTP_PASS: ${SMTP_PASS}
+      FRONTEND_URL: ${FRONTEND_URL}
+    
     depends_on:
       db:
         condition: service_healthy  # Démarre l'API seulement quand Postgres est prêt
@@ -46,20 +50,26 @@ services:
       - api
 
   # --- Caddy (reverse proxy + HTTPS automatique) ---
-  caddy:
-    image: caddy:2-alpine
+  nginx-proxy:
+    image: nginx:alpine
     restart: unless-stopped
     ports:
       - "80:80"
       - "443:443"
     volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile:ro
-      - caddy_data:/data
-      - caddy_config:/config
+      - ./nginx-proxy.conf:/etc/nginx/conf.d/default.conf:ro
+      - /etc/letsencrypt:/etc/letsencrypt:ro
+      - certbot_webroot:/var/www/certbot
     depends_on:
       - client
 
+  certbot:
+    image: certbot/certbot
+    volumes:
+      - /etc/letsencrypt:/etc/letsencrypt
+      - certbot_webroot:/var/www/certbot
+    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
+
 volumes:
   postgres_data:
-  caddy_data:
-  caddy_config:
+  certbot_webroot:
