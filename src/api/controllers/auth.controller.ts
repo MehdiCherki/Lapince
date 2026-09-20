@@ -56,21 +56,18 @@ export async function login(req: Request, res: Response) {
   const { email, password } = result.data;
 
   const user = await prisma.user.findFirst({ where: { email } });
-  if (!user) {
+
+  const isMatching = user ? await argon2.verify(user.password, password) :false;
+
+  if (!user || !isMatching) {
     throw new UnauthorizedError("Le login et le mot de passe ne correspondent pas");
   };
 
   if (!user.emailVerified) {
-
-    res.status(403).json({ error: "Veuillez confirmer votre email avant de vous connecter." })
-    return;
+    res.status(403).json({ error: "Veuillez confirmer votrer email avant de vous connecter."})
+    return
   }
-
-  const isMatching = await argon2.verify(user.password, password);
-  if (!isMatching) {
-    throw new UnauthorizedError("Le login et le mot de passe ne correspondent pas");
-  }
-
+  
   const { accessToken, refreshToken } = generateAuthTokens(user);
 
   await replaceRefreshTokenInDatabase(refreshToken, user);
