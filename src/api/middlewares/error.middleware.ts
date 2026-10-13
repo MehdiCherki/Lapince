@@ -1,5 +1,6 @@
 import type { Request, Response, NextFunction } from "express";
 import { HttpClientError } from "../lib/error.js";
+import { logger } from "../lib/logger.js"
 
 export function errorMiddleware(
   err: unknown,
@@ -12,6 +13,7 @@ export function errorMiddleware(
     return;
   }
 
-  console.error(err); // remplacé par un vrai logger plus tard
+  logger.error({ err }, "Unhandled error")
   res.status(500).json({ error: "Internal server error" });
 }
+

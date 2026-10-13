@@ -11,6 +11,7 @@ import budgetRoutes from "../routes/budget.routes.js";
 import alertRoutes from "../routes/alert.routes.js";
 import statsRoutes from "../routes/stats.routes.js";
 import { errorMiddleware } from "../middlewares/error.middleware.js";
+import { logger } from "../lib/logger.js"
 
 // Créer une app Express
 const app = express();
@@ -50,6 +51,6 @@ export default app;
 
 if (process.env.NODE_ENV !== "test") {
   app.listen(PORT, () => {
-    console.info(`🚀 Server started at http://localhost:${PORT}`);
+    logger.info(`🚀 Server started at http://localhost:${PORT}`);
   });
 }
