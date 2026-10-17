@@ -1,7 +1,13 @@
-import { describe, it, expect, afterAll } from "vitest";
+import { describe, it, expect, afterAll, vi } from "vitest";
 import request from "supertest";
 import app from "./index.js";
 import { prisma } from "../lib/prisma.js";
+import { transporter } from "../lib/mailer.js";
+
+// Remplace le vrai transporter Brevo : sendMail ne fait rien et répond OK.
+vi.mock("../lib/mailer.js", () => ({
+  transporter: { sendMail: vi.fn().mockResolvedValue({}) },
+}));
 
 const testEmail = `test_${Date.now()}@lapince.fr`;
 
@@ -11,7 +17,7 @@ afterAll(async () => {
 });
 
 describe("POST /auth/register", () => {
-  it("crée un compte et retourne 201 avec les infos (sans le mot de passe)", async () => {
+  it("crée un compte non vérifié, envoie l'email de vérification et retourne 201", async () => {
     const res = await request(app)
       .post("/auth/register")
       .send({
@@ -22,9 +28,19 @@ describe("POST /auth/register", () => {
       });
 
     expect(res.status).toBe(201);
-    expect(res.body.user).toHaveProperty("id");
-    expect(res.body.user.email).toBe(testEmail);
-    expect(res.body.user).not.toHaveProperty("password");
+    // Depuis la vérification d'email, la réponse ne renvoie plus l'utilisateur
+    expect(res.body).not.toHaveProperty("user");
+
+    // Le compte existe en base, pas encore vérifié, avec un mot de passe hashé
+    const user = await prisma.user.findUnique({ where: { email: testEmail } });
+    expect(user).not.toBeNull();
+    expect(user?.emailVerified).toBe(false);
+    expect(user?.password).not.toBe("Motdepasse1@");
+
+    // L'email de vérification part vers la bonne adresse
+    expect(transporter.sendMail).toHaveBeenCalledWith(
+      expect.objectContaining({ to: testEmail }),
+    );
   });
 
   it("refuse un doublon d'email avec 409", async () => {
