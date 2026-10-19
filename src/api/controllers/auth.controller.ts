@@ -70,7 +70,7 @@ export async function login(req: Request, res: Response) {
   
   const { accessToken, refreshToken } = generateAuthTokens(user);
 
-  await replaceRefreshTokenInDatabase(refreshToken, user);
+  await createRefreshTokenInDatabase(refreshToken, user);
   setAccessTokenCookie(res, accessToken);
   setRefreshTokenCookie(res, refreshToken);
   setSessionIndicatorCookie(res, accessToken);
@@ -98,7 +98,7 @@ export async function refresh(req: Request, res: Response) {
   const user = storedToken.user;
   const newTokens = generateAuthTokens(user);
 
-  await replaceRefreshTokenInDatabase(newTokens.refreshToken, user);
+  await rotateRefreshTokenInDatabase(refreshToken, newTokens.refreshToken, user);
   setAccessTokenCookie(res, newTokens.accessToken);
   setRefreshTokenCookie(res, newTokens.refreshToken);
   setSessionIndicatorCookie(res, newTokens.accessToken);
@@ -106,7 +106,24 @@ export async function refresh(req: Request, res: Response) {
   res.status(204).end();
 }
 
+async function rotateRefreshTokenInDatabase(oldToken: string, newToken: Token, user: User) {
+  // deleteMany (pas delete) : ne plante pas si le token a déjà disparu entre-temps
+  // (ex. deux refresh presque simultanés depuis deux onglets avec le même vieux token)
+  await prisma.refreshToken.deleteMany({ where: { token: oldToken } });
+  await prisma.refreshToken.create({
+    data: {
+      token: newToken.token,
+      userId: user.id,
+      expiresAt: new Date(Date.now() + newToken.expiresIn),
+    },
+  });
+}
+
 // POST /auth/logout
+// Déconnexion de TOUS les appareils de l'utilisateur, volontairement : le cookie refreshToken
+// n'est envoyé par le navigateur qu'à /auth/refresh (voir son path dans setRefreshTokenCookie),
+// donc cette route ne sait pas quelle session appartient à cet appareil. Pour une déconnexion
+// appareil par appareil, il faudrait élargir le path du cookie à /auth.
 export async function logoutUser(req: Request, res: Response) {
   res.clearCookie("accessToken");
   res.clearCookie("refreshToken", { path: config.isProd ? "/api/auth/refresh" : "/auth/refresh" });
@@ -117,17 +134,33 @@ export async function logoutUser(req: Request, res: Response) {
   res.status(204).end();
 }
 
-async function replaceRefreshTokenInDatabase(refreshToken: Token, user: User) {
-  await prisma.refreshToken.deleteMany({ where: { userId: user.id } });
+const MAX_SESSIONS = 5;
+
+async function createRefreshTokenInDatabase(refreshToken: Token, user: User) {
+
+  await prisma.refreshToken.deleteMany({
+    where: { userId: user.id, expiresAt: { lt: new Date() } } 
+  });
+
   await prisma.refreshToken.create({
     data: {
       token: refreshToken.token,
       userId: user.id,
-      createdAt: new Date(),
-      expiresAt: new Date(new Date().getTime() + refreshToken.expiresIn),
-    },
+      expiresAt: new Date(Date.now() + refreshToken.expiresIn),
+    }
   });
+
+  const tooMany = await prisma.refreshToken.findMany({
+    where: { userId: user.id },
+    orderBy: { createdAt: "desc" },
+    skip: MAX_SESSIONS,
+    select: { id: true } 
+  });
+  if (tooMany.length > 0 ) {
+    await prisma.refreshToken.deleteMany({ where: { id: { in: tooMany.map((t) => t.id) } } });
+  }
 }
+
 
 function setAccessTokenCookie(res: Response, accessToken: Token) {
   res.cookie("accessToken", accessToken.token, {

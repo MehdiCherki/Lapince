@@ -15,6 +15,7 @@ export function generateAuthTokens(user: User) {
   const refreshToken = jwt.sign(payload, config.jwtSecret, {
     expiresIn: "7d",
     audience: "refresh",
+    jwtid: crypto.randomUUID(),
   });
 
   return {
