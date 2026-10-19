@@ -3,52 +3,33 @@ import argon2 from "argon2";
 import { config } from "../config.ts";
 import type { Token, User } from "../models/index.ts";
 import { prisma } from "../lib/prisma.js";
-import {
-  BadRequestError,
-  ConflictError,
-  UnauthorizedError,
-} from "../lib/error.ts"
+import { BadRequestError, UnauthorizedError } from "../lib/error.ts";
 import { generateAuthTokens } from "../lib/tokens.ts";
-import { registerSchema, loginSchema } from "../validators/auth.validator.js"; // import de registerSchema ZOD
+import { registerSchema, loginSchema } from "../validators/auth.validator.js";
+import { sendVerificationEmail } from "../services/mail.service.ts"
 
-// Contrôleur appelé par POST /auth/register
-// Il reçoit les données du formulaire d'inscription et crée un nouvel utilisateur en base
+// POST /auth/register
 export async function register(req: Request, res: Response) {
-
-  // On valide le body avec le schéma Zod
-  // safeParse ne lève pas d'erreur, il retourne { success, data } ou { success, error }
   const result = registerSchema.safeParse(req.body);
-
   if (!result.success) {
-    // On récupère le premier problème de validation (ex: mot de passe trop court)
-    // et on renvoie un message lisible au front avec le nom du champ concerné
-    const firstIssue = result.error.issues[0];
-    res.status(400).json({
-      message: firstIssue?.message ?? "Données invalides",
-      field: firstIssue?.path[0] as string | undefined,
-    });
+    res.status(400).json({ error: "Données invalides", details: result.error.issues });
     return;
   }
 
-  // Si la validation passe, on extrait les champs depuis result.data (typé et sûr)
   const { first_name, last_name, email, password, photo } = result.data;
 
-  // On vérifie que l'email n'est pas déjà utilisé dans la base
-  // findUnique retourne null si aucun utilisateur n'a cet email
   const existing = await prisma.user.findUnique({ where: { email } });
   if (existing) {
-    res.status(409).json({ message: "Cet email est déjà utilisé", field: "email" });
+    res.status(409).json({ error: "Cet email est déjà utilisé", field: "email" });
     return;
   }
 
-  // On ne stocke jamais un mot de passe en clair
-  // argon2 est un algorithme de hachage sécurisé, conçu pour être lent et résistant aux attaques
   const hashedPassword = await argon2.hash(password);
+  const token = crypto.randomUUID();
 
-  // On crée l'utilisateur en base via Prisma
-  // Le champ select permet de choisir exactement ce qu'on retourne — le hash du mot de passe est volontairement exclu
+
   const user = await prisma.user.create({
-    data: { first_name, last_name, email, password: hashedPassword, photo: photo ?? null },
+    data: { first_name, last_name, email, password: hashedPassword, photo: photo ?? null,  emailVerificationToken: token  },
     select: {
       id: true,
       first_name: true,
@@ -59,124 +40,52 @@ export async function register(req: Request, res: Response) {
     },
   });
 
-  // Générer les tokens et poser les cookies comme pour le login
-  const { accessToken, refreshToken } = generateAuthTokens(user as unknown as User);
-  await replaceRefreshTokenInDatabase(refreshToken, user as unknown as User);
+  await sendVerificationEmail(user.email, token);
+
+  res.status(201).json({ message: "Inscription réussi. Verifiez votre email pour activer votre compte." });
+}
+
+// POST /auth/login
+export async function login(req: Request, res: Response) {
+  const result = await loginSchema.safeParseAsync(req.body);
+  if (!result.success) {
+    res.status(400).json({ error: "Données invalides", details: result.error.issues });
+    return;
+  }
+
+  const { email, password } = result.data;
+
+  const user = await prisma.user.findFirst({ where: { email } });
+
+  const isMatching = user ? await argon2.verify(user.password, password) :false;
+
+  if (!user || !isMatching) {
+    throw new UnauthorizedError("Le login et le mot de passe ne correspondent pas");
+  };
+
+  if (!user.emailVerified) {
+    res.status(403).json({ error: "Veuillez confirmer votrer email avant de vous connecter."})
+    return
+  }
+  
+  const { accessToken, refreshToken } = generateAuthTokens(user);
+
+  await createRefreshTokenInDatabase(refreshToken, user);
   setAccessTokenCookie(res, accessToken);
   setRefreshTokenCookie(res, refreshToken);
   setSessionIndicatorCookie(res, accessToken);
 
-  res.status(201).json({ message: "Inscription réussie", user });
+  res.status(204).end();
 }
 
-export async function login(req: Request, res: Response) {
-  // On lance la validation du body de la requete avec le schéma Zod (safeParseAsync ne plante pas en cas d'erreur)
-  const result = await loginSchema.safeParseAsync(req.body);
-  // Bouncer : si la validation échoue, on renvoie une 400 avec un message d'erreur clair (ex: mot de passe trop court) et le champ concerné
-  if (!result.success) {
-    const firstIssue = result.error.issues[0];
-    res.status(400).json({
-      message: firstIssue?.message ?? "Données invalides",
-      field: firstIssue?.path[0] as string | undefined,
-    });
-    return;
-  }
-  
-  // Si le bouncer a laissé passer la requete, on valide le payload (nature des valeurs)
-  const { email, password } = result.data;
-
-
-
-  // Récupérer l'utilisateur dans la BDD
-  const user = await prisma.user.findFirst({ where: { email } });
-  if (!user) {
-    throw new UnauthorizedError(
-      "Le login et le mot de passe ne correspondent pas",
-    );
-  }
-  // Vérifier que le mot de passe et le hash correspondent
-  const isMatching = await argon2.verify(user.password, password);
-  if (!isMatching) {
-    throw new UnauthorizedError(
-      "Le login et le mot de passe ne correspondent pas",
-    );
-  }
-
-  // Générer les 2 tokens (access/refresh)
-  const { accessToken, refreshToken } = generateAuthTokens(user);
-
-  // Stocker le refresh token en BDD
-await replaceRefreshTokenInDatabase(refreshToken, user);
-
-setAccessTokenCookie(res, accessToken);
-setRefreshTokenCookie(res, refreshToken);
-setSessionIndicatorCookie(res, accessToken);
-
-// Renvoyer les token vers l'utilisateur
-res.json({
-  accessToken,
-  refreshToken,
-});
-}
-
-
-async function replaceRefreshTokenInDatabase(refreshToken: Token, user: User) {
-  await prisma.refreshToken.deleteMany({ where: { userId: user.id } });
-
-  await prisma.refreshToken.create({
-    data: {
-      token: refreshToken.token,
-      userId: user.id,
-      createdAt: new Date(),
-      expiresAt: new Date(new Date().getTime() + refreshToken.expiresIn),
-    },
-  });
-}
-
-function setAccessTokenCookie(res: Response, accessToken: Token) {
-  res.cookie("accessToken", accessToken.token, {
-    httpOnly: true,
-    secure: config.isProd, // HTTPS uniquement en production
-    sameSite: config.isProd ? "none" : "lax", // pareil que pour le refresh token, en local on peut se permettre "lax" pour que ça fonctionne en HTTP
-    maxAge: accessToken.expiresIn,
-  });
-}
-
-function setSessionIndicatorCookie(res: Response, accessToken: Token) {
-  // Cookie lisible par JS (non-httpOnly) — contient uniquement un flag, aucune donnée sensible.
-  // Permet au frontend de savoir si une session existe sans faire d'appel API inutile.
-  res.cookie("sessionExists", "1", {
-    httpOnly: false,
-    secure: config.isProd,
-    sameSite: config.isProd ? "none" : "lax",
-    maxAge: accessToken.expiresIn,
-  });
-}
-
-function setRefreshTokenCookie(res: Response, refreshToken: Token) {
-  res.cookie("refreshToken", refreshToken.token, {
-    httpOnly: true, // Le cookie n'est pas accessible via JavaScript, ce qui protège contre les attaques XSS
-    // En production (sur Vercel/Heroku/etc. en HTTPS), secure doit être true.
-    // En développement local (sur http://localhost), secure doit être false, 
-    // sinon le navigateur refusera purement et simplement le cookie.
-    secure: config.isProd, 
-    // Si sameSite est sur "none" (requis pour des requêtes cross-domain en prod), les navigateurs EXIGENT que secure soit true.
-    // Comme en local secure est false, sameSite="none" faisait crasher le cookie. Solution : En local, on utilise "lax" (qui accepte le HTTP), et en prod "none".
-    sameSite: config.isProd ? "none" : "lax",
-    maxAge: refreshToken.expiresIn,
-    path: config.isProd ? "/api/auth/refresh" : "/auth/refresh",
-  });
-}
-
+// POST /auth/refresh
 export async function refresh(req: Request, res: Response) {
-  // Vérification d'abord dans les cookies, sinon dans le body (au cas où le client ne gère pas les cookies, en dev par exemple)
   const refreshToken = req.cookies?.refreshToken || req.body?.refreshToken;
 
   if (!refreshToken) {
     throw new BadRequestError("Refresh token manquant");
   }
 
-  //Vérifier que le refresh token existe en BDD et n'est pas expiré
   const storedToken = await prisma.refreshToken.findUnique({
     where: { token: refreshToken },
     include: { user: true },
@@ -187,22 +96,34 @@ export async function refresh(req: Request, res: Response) {
   }
 
   const user = storedToken.user;
-
-  //Générer de nouveaux tokens
   const newTokens = generateAuthTokens(user);
 
-  //Mettre à jour le refresh token en BDD (ancien token supprimé, nouveau token créé)
-  await replaceRefreshTokenInDatabase(newTokens.refreshToken, user);
-
-  //Mettre à jour les cookies
+  await rotateRefreshTokenInDatabase(refreshToken, newTokens.refreshToken, user);
   setAccessTokenCookie(res, newTokens.accessToken);
   setRefreshTokenCookie(res, newTokens.refreshToken);
   setSessionIndicatorCookie(res, newTokens.accessToken);
 
-  res.json({ accessToken: newTokens.accessToken.token });
+  res.status(204).end();
 }
 
+async function rotateRefreshTokenInDatabase(oldToken: string, newToken: Token, user: User) {
+  // deleteMany (pas delete) : ne plante pas si le token a déjà disparu entre-temps
+  // (ex. deux refresh presque simultanés depuis deux onglets avec le même vieux token)
+  await prisma.refreshToken.deleteMany({ where: { token: oldToken } });
+  await prisma.refreshToken.create({
+    data: {
+      token: newToken.token,
+      userId: user.id,
+      expiresAt: new Date(Date.now() + newToken.expiresIn),
+    },
+  });
+}
 
+// POST /auth/logout
+// Déconnexion de TOUS les appareils de l'utilisateur, volontairement : le cookie refreshToken
+// n'est envoyé par le navigateur qu'à /auth/refresh (voir son path dans setRefreshTokenCookie),
+// donc cette route ne sait pas quelle session appartient à cet appareil. Pour une déconnexion
+// appareil par appareil, il faudrait élargir le path du cookie à /auth.
 export async function logoutUser(req: Request, res: Response) {
   res.clearCookie("accessToken");
   res.clearCookie("refreshToken", { path: config.isProd ? "/api/auth/refresh" : "/auth/refresh" });
@@ -211,4 +132,60 @@ export async function logoutUser(req: Request, res: Response) {
     await prisma.refreshToken.deleteMany({ where: { userId: req.user.id } });
   }
   res.status(204).end();
+}
+
+const MAX_SESSIONS = 5;
+
+async function createRefreshTokenInDatabase(refreshToken: Token, user: User) {
+
+  await prisma.refreshToken.deleteMany({
+    where: { userId: user.id, expiresAt: { lt: new Date() } } 
+  });
+
+  await prisma.refreshToken.create({
+    data: {
+      token: refreshToken.token,
+      userId: user.id,
+      expiresAt: new Date(Date.now() + refreshToken.expiresIn),
+    }
+  });
+
+  const tooMany = await prisma.refreshToken.findMany({
+    where: { userId: user.id },
+    orderBy: { createdAt: "desc" },
+    skip: MAX_SESSIONS,
+    select: { id: true } 
+  });
+  if (tooMany.length > 0 ) {
+    await prisma.refreshToken.deleteMany({ where: { id: { in: tooMany.map((t) => t.id) } } });
   }
+}
+
+
+function setAccessTokenCookie(res: Response, accessToken: Token) {
+  res.cookie("accessToken", accessToken.token, {
+    httpOnly: true,
+    secure: config.isProd,
+    sameSite: config.isProd ? "none" : "lax",
+    maxAge: accessToken.expiresIn,
+  });
+}
+
+function setRefreshTokenCookie(res: Response, refreshToken: Token) {
+  res.cookie("refreshToken", refreshToken.token, {
+    httpOnly: true,
+    secure: config.isProd,
+    sameSite: config.isProd ? "none" : "lax",
+    maxAge: refreshToken.expiresIn,
+    path: config.isProd ? "/api/auth/refresh" : "/auth/refresh",
+  });
+}
+
+function setSessionIndicatorCookie(res: Response, accessToken: Token) {
+  res.cookie("sessionExists", "1", {
+    httpOnly: false,
+    secure: config.isProd,
+    sameSite: config.isProd ? "none" : "lax",
+    maxAge: accessToken.expiresIn,
+  });
+}

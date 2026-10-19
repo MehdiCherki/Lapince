@@ -8,7 +8,6 @@ import {
   getBudgetById,
   updateBudget,
   deleteBudget,
-  getBudgetStatus,
 } from "../controllers/budget.controller.js";
 
 import { authMiddleware } from "../middlewares/access.controller.middleware.ts";
@@ -29,8 +28,5 @@ router.patch("/:id", authMiddleware, updateBudget);
 
 // Supprimer un budget
 router.delete("/:id", authMiddleware, deleteBudget);
-
-// Obtenir le statut d'un budget (dépensé, restant, pourcentage)
-router.get("/:id/status", authMiddleware, getBudgetStatus);
 
 export default router;

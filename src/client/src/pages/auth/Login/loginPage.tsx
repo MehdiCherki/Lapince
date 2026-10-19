@@ -4,26 +4,24 @@ import {
   fetchCurrentUser,
   type LoginCredentials,
 } from "../../../services/authApi";
+import type { ApiError } from "../../../types/auth";
 import LoginForm from "../../../components/auth/LoginForm";
 import Footer from "../../../components/Footer/footer";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../../context/AuthContext";
 import { AnimatedOrbBackground } from "../../../components/AnimatedOrbBackground/AnimatedOrbBackground";
 
-/**
- * Page de Connexion - Isolation Totale Desktop/Mobile
- */
 export default function LoginPage() {
   const { login } = useAuth();
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<ApiError | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [attemptCount, setAttemptCount] = useState(0);
-  const [isBlocked, setIsBlocked] = useState(false);
+  const MAX_ATTEMPTS = 3;
 
   const handleLogin = async (credentials: LoginCredentials) => {
-    if (isBlocked) return;
+    if (attemptCount >= MAX_ATTEMPTS) return;
     setIsLoading(true);
     setError(null);
     try {
@@ -34,14 +32,13 @@ export default function LoginPage() {
         login(user);
         navigate("/accueil");
       }, 2000);
-    } catch {
+    } catch (err) {
       const newCount = attemptCount + 1;
       setAttemptCount(newCount);
-      if (newCount >= 3) {
-        setIsBlocked(true);
-        setError("Trop de tentatives, veuillez réessayer plus tard.");
+      if (newCount >= MAX_ATTEMPTS) {
+        setError({ error: "Trop de tentatives, veuillez réessayer plus tard." });
       } else {
-        setError(`Mot de passe incorrect, ${3 - newCount} tentative(s) restante(s).`);
+        setError(err as ApiError);
       }
     } finally {
       setIsLoading(false);
@@ -50,7 +47,7 @@ export default function LoginPage() {
 
   return (
     <main
-      className="fixed inset-0 w-full h-full overflow-hidden font-sans text-[#002b49]"
+      className="fixed inset-0 w-full h-full bg-[#b9c6d1] overflow-hidden font-sans text-[#002b49]"
       role="main"
     >
       <AnimatedOrbBackground />
@@ -60,10 +57,11 @@ export default function LoginPage() {
       <div className="hidden md:block">
         <img
           src="/WEBP/Desktop/Lapince-Hero-Background-Desktop.webp"
+          fetchPriority="high"
           className="absolute bottom-0 left-0 w-[55vw] opacity-60 object-contain z-0 pointer-events-none"
           alt=""
         />
-        <div className="absolute bottom-0 right-[5%] z-40 pointer-events-none hidden lg:block">
+        <div className="absolute bottom-0 right-[5%] z-10 pointer-events-none hidden lg:block">
           <img
             src="/WEBP/Desktop/Lapince-Hand-Desktop.webp"
             className="w-[24vw] h-auto"
@@ -72,7 +70,7 @@ export default function LoginPage() {
         </div>
         <img
           src="/WEBP/Desktop/Lapince-Logo-Desktop.webp"
-          className="absolute top-10 left-15 w-24 lg:w-60 z-50 transition-all"
+          className="absolute top-3 left-10 w-16 lg:w-24 z-50 transition-all"
           alt="Logo"
         />
 
@@ -100,12 +98,13 @@ export default function LoginPage() {
       <div className="block md:hidden">
         <img
           src="/WEBP/Mobile/Lapince-Hero-Background-Mobile.webp"
+          fetchPriority="high"
           className="absolute bottom-0 left-0 w-full opacity-70 z-0 pointer-events-none"
           alt=""
         />
         <img
           src="/WEBP/Mobile/Lapince-Logo-Mobile.webp"
-          className="absolute top-6 left-6 w-28 z-50"
+          className="absolute top-3 left-4 w-20 z-50"
           alt="Logo Mobile"
         />
       </div>
@@ -138,7 +137,6 @@ export default function LoginPage() {
               />
             )}
           </section>
-
         </div>
       </div>
 
@@ -163,7 +161,6 @@ export default function LoginPage() {
             />
           )}
         </section>
-
       </div>
 
       {/* ------------------------------------------------------------ */}

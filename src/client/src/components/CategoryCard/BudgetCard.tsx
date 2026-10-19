@@ -1,29 +1,20 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import CategorySelect from "./CategorySelect";
-import { fetchCategories } from "../../services/categoryApi.js";
-import type { Category } from "../../types/category.js";
+import { useCategories } from "../../hooks/useCategories";
 import { createBudget } from "../../services/budgetApi.js";
 
-export default function BudgetCard() {
-  const [categories, setCategories] = useState<Category[]>([]);
+interface BudgetCardProps {
+  onSuccess?: () => void;
+}
+
+export default function BudgetCard({ onSuccess }: BudgetCardProps) {
+
+  const categories = useCategories("EXPENSE");
   const [categorie, setCategorie] = useState("");
   const [montant, setMontant] = useState("");
   const [mois, setMois] = useState("");
-  const [_isLoading, setIsLoading] = useState(false);
   const [messageError, setError] = useState<string | null>(null);
   const [messageSuccess, setMessageSuccess] = useState<string | null>(null);
-
-  useEffect(() => {
-    async function loadCategories() {
-      try {
-        const data = await fetchCategories();
-        setCategories(data.filter((cat) => cat.type === "EXPENSE"));
-      } catch (error) {
-        console.error("Erreur lors du chargement des catégories:", error);
-      }
-    }
-    loadCategories();
-  }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -38,7 +29,6 @@ export default function BudgetCard() {
       return;
     }
 
-    setIsLoading(true);
     try {
       await createBudget({
         limit_amount: amount,
@@ -48,13 +38,11 @@ export default function BudgetCard() {
       setMontant("");
       setMois("");
       setCategorie("");
+      onSuccess?.();
       setMessageSuccess("✓ Budget ajouté !");
       setTimeout(() => setMessageSuccess(null), 3000);
-    } catch (err) {
+    } catch {
       setError("Impossible de créer le budget. Réessaie.");
-      console.error(err);
-    } finally {
-      setIsLoading(false);
     }
   }
 
@@ -66,14 +54,14 @@ export default function BudgetCard() {
         </div>
       )}
 
-      <div className="relative w-[220px] h-[220px] md:w-72 md:h-72 rounded-full bg-[#E06B56] flex flex-col items-center justify-center gap-2 shadow-xl shrink-0 mt-4">
+      <div className="relative w-[250px] h-[250px] md:w-72 md:h-72 rounded-full bg-[#E06B56] flex flex-col items-center justify-center gap-2 shadow-xl shrink-0 mt-4">
         {messageSuccess ? (
-          <p className="text-[#002341] font-black text-3xl text-center px-4 leading-tight whitespace-pre-line">
+          <p className="text-[#002b49] font-black text-3xl text-center px-4 leading-tight whitespace-pre-line">
             {messageSuccess}
           </p>
         ) : (
           <>
-            <p className="text-[#002341] font-semibold text-base md:text-xl tracking-tight mb-1 bg-white px-3 md:px-5 py-0.5 md:py-1 rounded-full flex items-center gap-1 md:gap-2">
+            <p className="text-[#002b49] font-semibold text-base md:text-xl tracking-tight mb-1 bg-white px-3 md:px-5 py-0.5 md:py-1 rounded-full flex items-center gap-1 md:gap-2">
               <img src="/WEBP/Icones/Lapince-budget.webp" className="w-4 h-4 md:w-5 md:h-5 object-contain" alt="" />
               Budget
             </p>
@@ -96,7 +84,7 @@ export default function BudgetCard() {
                 className="w-full h-6 md:h-8 rounded-full bg-white/70 text-xs md:text-sm px-3 outline-none text-gray-500"
               />
               {messageError && (
-                <p className="text-[#002341] font-bold text-[10px] md:text-xs bg-white/80 px-2 py-0.5 rounded-full text-center">
+                <p className="text-[#002b49] font-bold text-[10px] md:text-xs bg-white/80 px-2 py-0.5 rounded-full text-center">
                   ⚠ {messageError}
                 </p>
               )}

@@ -24,12 +24,15 @@ services:
       context: ./src/api
       dockerfile: api.Dockerfile  # Dockerfile de dev : lance tsx --watch (hot reload)
     environment:
-      NODE_ENV: production           # production | development
+      NODE_ENV: ${NODE_ENV:-production}
       DATABASE_URL: ${DATABASE_URL}   # URL de connexion à Postgres
       PORT: ${API_PORT}               # Port interne sur lequel l'API écoute
       JWT_SECRET: ${JWT_SECRET}       # Clé secrète pour signer les tokens JWT
-      CORS_ORIGIN: ${CORS_ORIGIN}     # Origine autorisée pour les requêtes CORS
       ALLOWED_ORIGINS: ${ALLOWED_ORIGINS} # Liste des origines autorisées pour les requêtes CORS (séparées par des virgules)
+      SMTP_USER: ${SMTP_USER}
+      SMTP_PASS: ${SMTP_PASS}
+      FRONTEND_URL: ${FRONTEND_URL}
+    
     depends_on:
       db:
         condition: service_healthy  # Démarre l'API seulement quand Postgres est prêt
@@ -38,14 +41,34 @@ services:
   client:
     build:
       context: ./src/client
-      dockerfile: client.Dockerfile     
+      dockerfile: client.Dockerfile
       args:
-        VITE_API_BASE_URL: ${VITE_API_BASE_URL}   # ← injecté au moment du build
-    ports:
-      - "${CLIENT_LOCAL_PORT}:80"       # ← Nginx écoute sur le port 80
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL}
     restart: unless-stopped
     depends_on:
       - api
 
+  # --- Caddy (reverse proxy + HTTPS automatique) ---
+  nginx-proxy:
+    image: nginx:alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx-proxy.conf:/etc/nginx/conf.d/default.conf:ro
+      - /etc/letsencrypt:/etc/letsencrypt:ro
+      - certbot_webroot:/var/www/certbot
+    depends_on:
+      - client
+
+  certbot:
+    image: certbot/certbot
+    volumes:
+      - /etc/letsencrypt:/etc/letsencrypt
+      - certbot_webroot:/var/www/certbot
+    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
+
 volumes:
   postgres_data:
+  certbot_webroot:

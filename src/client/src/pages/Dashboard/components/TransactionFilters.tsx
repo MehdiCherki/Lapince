@@ -6,10 +6,8 @@ interface TransactionFiltersProps {
   onSearchChange: (val: string) => void;
   filterType: "ALL" | "INCOME" | "EXPENSE";
   onFilterTypeChange: (val: "ALL" | "INCOME" | "EXPENSE") => void;
-  startDate: string;
-  onStartDateChange: (val: string) => void;
-  endDate: string;
-  onEndDateChange: (val: string) => void;
+  selectedMonth: string;
+  onMonthChange: (val: string) => void;
   selectedCategories: number[];
   onCategoryToggle: (id: number) => void;
   onResetCategories: () => void;
@@ -19,8 +17,7 @@ interface TransactionFiltersProps {
 export function TransactionFilters({
   search, onSearchChange,
   filterType, onFilterTypeChange,
-  startDate, onStartDateChange,
-  endDate, onEndDateChange,
+  selectedMonth, onMonthChange,
   selectedCategories,
   onCategoryToggle,
   onResetCategories,
@@ -76,7 +73,7 @@ export function TransactionFilters({
             <input
               type="text"
               placeholder="Rechercher..."
-              className="w-full sm:w-48 px-5 py-2.5 rounded-full bg-white/50 border border-white/20 text-sm font-bold focus:outline-none focus:bg-white/80 transition-all shadow-sm"
+              className="w-full sm:w-48 px-5 py-2.5 rounded-full bg-white/50 border border-white/20 text-base font-bold focus:outline-none focus:bg-white/80 transition-all shadow-sm"
               value={search}
               onChange={(e) => onSearchChange(e.target.value)}
             />
@@ -89,7 +86,7 @@ export function TransactionFilters({
                 key={value}
                 type="button"
                 onClick={() => onFilterTypeChange(value)}
-                className={`px-3 md:px-4 py-1.5 rounded-full text-[10px] md:text-xs font-black uppercase transition-all ${
+                className={`px-3 md:px-4 py-1.5 rounded-full text-xs md:text-sm font-black uppercase transition-all ${
                   filterType === value
                     ? "bg-[#002b49] text-white shadow-md"
                     : "text-[#002b49] hover:bg-white/20"
@@ -104,10 +101,10 @@ export function TransactionFilters({
           <div className="relative flex-none">
             <button
               onClick={() => setIsMenuOpen(!isMenuOpen)}
-              className={`px-4 py-2 rounded-full border text-xs md:text-sm font-bold transition-all shadow-sm min-w-[120px] ${
-                selectedCategories.length > 0 
-                ? "bg-[#002b49] text-white border-[#002b49]" 
-                : "bg-white/50 border-white/20 text-[#002b49]"
+              className={`px-3 py-1 rounded-full border text-sm md:text-base font-bold transition-all shadow-sm min-w-[90px] ${
+                selectedCategories.length > 0
+                ? "bg-[#8B4D0A] text-white border-[#8B4D0A]"
+                : "bg-[#BF6A12] text-white border-[#BF6A12]"
               }`}
             >
               Catégories {selectedCategories.length > 0 && `(${selectedCategories.length})`}
@@ -152,23 +149,13 @@ export function TransactionFilters({
             )}
           </div>
 
-          {/* Période : S'adapte en colonne sur très petit écran, ligne sinon */}
-          <div className="flex items-center gap-2 bg-white/30 px-4 md:px-5 py-2 md:py-2.5 rounded-full border border-white/20 shadow-sm w-full sm:w-auto justify-center">
-            <span className="text-[10px] font-black uppercase opacity-40">Du</span>
-            <input
-              type="date"
-              className="bg-transparent text-[10px] md:text-xs font-bold outline-none cursor-pointer text-[#002b49]"
-              value={startDate}
-              onChange={(e) => onStartDateChange(e.target.value)}
-            />
-            <span className="text-[10px] font-black uppercase opacity-40">Au</span>
-            <input
-              type="date"
-              className="bg-transparent text-[10px] md:text-xs font-bold outline-none cursor-pointer text-[#002b49]"
-              value={endDate}
-              onChange={(e) => onEndDateChange(e.target.value)}
-            />
-          </div>
+          {/* Sélecteur de mois */}
+          <input
+            type="month"
+            className="bg-white/30 px-4 py-2 md:py-2.5 rounded-full border border-white/20 text-xs md:text-sm font-bold text-[#002b49] outline-none cursor-pointer shadow-sm w-full sm:w-auto"
+            value={selectedMonth}
+            onChange={(e) => onMonthChange(e.target.value)}
+          />
 
         </div>
       </div>

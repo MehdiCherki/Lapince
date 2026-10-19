@@ -30,8 +30,10 @@ services:
       DATABASE_URL: ${DATABASE_URL}   # URL de connexion à Postgres
       PORT: ${API_PORT}               # Port interne sur lequel l'API écoute
       JWT_SECRET: ${JWT_SECRET}       # Clé secrète pour signer les tokens JWT
-      CORS_ORIGIN: ${CORS_ORIGIN}     # Origine autorisée pour les requêtes CORS
       ALLOWED_ORIGINS: ${ALLOWED_ORIGINS} # Liste des origines autorisées pour les requêtes CORS (séparées par des virgules)
+      SMTP_USER: ${SMTP_USER}
+      SMTP_PASS: ${SMTP_PASS}
+      FRONTEND_URL: ${FRONTEND_URL}
     ports:
       - "${API_LOCAL_PORT}:${API_PORT}"  # Mappe le port local vers le port interne de l'API
     depends_on:
@@ -94,7 +96,7 @@ services:
       DATABASE_URL: ${DATABASE_URL}  # Connexion à la même base que l'API
     ports:
       - "5555:5555"  # Interface Prisma Studio accessible sur http://localhost:5555
-    command: sh -c "apt-get update -y && apt-get install -y openssl && npx --yes prisma studio --port 5555 --browser none"
+    command: sh -c "apt-get update -y && apt-get install -y openssl && npm --prefix /app/src/api install && npx --yes prisma studio --port 5555 --browser none"
     tty: true
     depends_on:
       db:

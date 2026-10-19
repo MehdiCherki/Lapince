@@ -51,7 +51,88 @@ Copie ce bloc en haut de la section `## [Non publié]` et remplis-le :
 
 ## [Non publié]
 
-_Entrées pour la prochaine release._
+### Ajouté
+- Logs structurés avec pino : JSON en production, lisibles en couleur en développement, corps des requêtes masqué dans les logs d'erreur (branche `fix/logger-pino`)
+- Tests d'intégration du rate limit de l'inscription et de l'isolation des budgets entre utilisateurs, tests unitaires du générateur d'alertes de budget ; l'envoi d'emails est simulé dans les tests, aucun vrai email ne part (branche `test/alert-generator`)
+
+### Modifié
+- Connexion multi-appareils : se connecter sur un nouvel appareil ne déconnecte plus les autres (une session par appareil, 5 maximum par utilisateur, refresh token renouvelé à chaque utilisation) ; la déconnexion ferme toujours toutes les sessions (branche `feat/multi-session`)
+- CORS : l'API autorise la liste de domaines `ALLOWED_ORIGINS` au lieu d'une seule origine (`CORS_ORIGIN`, supprimée)
+- Inscription avec un email déjà utilisé : la réponse `409` est conservée volontairement, l'énumération des comptes étant freinée par le rate limit de l'inscription
+- `.env.example` à jour : ajout de `FRONTEND_URL`, `SMTP_USER` et `SMTP_PASS`, `JWT_SECRET` laissé vide au lieu d'un texte d'exemple utilisable tel quel
+
+### Corrigé
+- Sécurité : la connexion vérifie le mot de passe avant le statut « email vérifié », on ne peut plus savoir qu'un compte non vérifié existe sans connaître son mot de passe
+- Sécurité : rate limit sur l'inscription (5 par heure et par IP) et sur le rafraîchissement de session (30 par 15 min)
+- Le build Docker de production échouait sur une erreur TypeScript dans la configuration du logger
+- Le test d'inscription existant ne correspondait plus à la réponse de l'API depuis la vérification d'email
+
+### Supprimé
+- Variables d'environnement héritées du template O'Clock et jamais utilisées (`FILES_*`, `ADMINER_*`, `PROXY_*`, `LOGS_*`)
+
+### Infra
+- Nodemailer mis à jour en v9
+- Doc de déploiement : variables SMTP et `FRONTEND_URL` ajoutées, `ALLOWED_ORIGINS` pointe sur `https://mehdicherki.fr`
+
+---
+
+## [0.6.0] — 2026-05-17
+
+Mise en production sur `mehdicherki.fr`.
+
+### Ajouté
+- Vérification de l'adresse email à l'inscription : un lien de confirmation est envoyé par email (Nodemailer, SMTP Brevo) et la connexion est refusée tant qu'il n'a pas été cliqué (PR #4, branche `Nodemailer`)
+- Middleware d'erreurs centralisé : toutes les erreurs de l'API renvoient un JSON homogène (PR #2, branche `ErrorMiddlewareBugFixes`)
+- Rate limit sur la connexion : 10 tentatives par 15 min et par IP
+- Page 404
+- `robots.txt`, titre de page et langue `fr`, nouveau favicon, police Afacad servie localement
+
+### Modifié
+- Après l'inscription, l'utilisateur n'est plus connecté automatiquement : il doit d'abord confirmer son email
+- Les contrôleurs de l'API ne gèrent plus les erreurs un par un : elles remontent au middleware d'erreurs
+- Améliorations UI/UX : mise en page, footer, page d'accueil, affichage des catégories
+
+### Corrigé
+- Alertes de budget : l'alerte est aussi vérifiée à la création d'un budget, pas seulement à l'ajout d'une transaction (PR #3, branche `AlertSystemFix`)
+- Les emails de vérification ne partaient pas en production : variables SMTP et `FRONTEND_URL` absentes de `docker-compose.prod.yml`
+- Derrière le reverse proxy, l'API voit la vraie IP des visiteurs (`trust proxy`), indispensable au rate limit par IP
+- Le message de confirmation d'inscription disparaissait au bout de 3 s, trop vite pour être lu : il reste maintenant 10 s
+- Erreur TypeScript (`fetchPriority`) qui bloquait le build
+
+### Supprimé
+- Route `GET /budgets/:id/status` et lien direct entre une transaction et un budget, remplacés par le calcul par catégorie du générateur d'alertes
+
+### Infra
+- Reverse proxy Nginx avec certificats SSL Let's Encrypt renouvelés automatiquement par Certbot, redirection HTTP → HTTPS et `www` → domaine principal, HSTS (essai de Caddy abandonné)
+- Content Security Policy du client corrigée après la mise en ligne
+
+---
+
+## [0.5.0] — 2026-05-13
+
+Fonctionnalités principales de l'application, développées en équipe.
+
+### Ajouté
+- Connexion : page de login, contexte d'authentification, routes privées, JWT en cookie httpOnly avec refresh token, déconnexion, route `/users/me`
+- Catégories de dépenses et de revenus, avec icônes et catégories par défaut créées au démarrage
+- Transactions : API complète (création, lecture, modification, suppression, validation Zod), cartes Dépenses / Revenus et liste des transactions avec filtre par catégorie et recherche
+- Budgets par catégorie, créés depuis la carte Budget, et historique des budgets sur le dashboard
+- Alertes de dépassement de budget : génération automatique, marquer comme lue, tout marquer comme lu, suppression
+- Dashboard : statistiques et graphique mensuel
+- Page Paramètres : profil et avatar
+- Mentions légales, choix d'avatar, fond animé
+- Document de déploiement serveur
+
+### Corrigé
+- Bouton « afficher le mot de passe » inutilisable sur mobile
+- Rafraîchissement de session : plantage quand aucun cookie n'est envoyé, chemin du cookie de refresh incorrect derrière le proxy Nginx
+- Création des catégories par défaut rendue idempotente (plus de doublons au redémarrage)
+- Erreurs TypeScript qui bloquaient le build Docker ; fichiers de test exclus du build de production
+
+### Infra
+- Configuration de production (Dockerfiles et `docker-compose.prod.yml`)
+- En-têtes de sécurité Nginx pour Mozilla Observatory : HSTS, CSP sans `unsafe-inline`, Permissions-Policy
+- Au démarrage, l'API synchronise le schéma (`prisma db push`) et recrée les données de base (seed)
 
 ---
 
