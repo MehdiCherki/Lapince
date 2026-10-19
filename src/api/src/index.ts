@@ -12,6 +12,7 @@ import alertRoutes from "../routes/alert.routes.js";
 import statsRoutes from "../routes/stats.routes.js";
 import { errorMiddleware } from "../middlewares/error.middleware.js";
 import { logger } from "../lib/logger.js"
+import { config } from "../config.js"
 
 // Créer une app Express
 const app = express();
@@ -24,7 +25,7 @@ app.use(helmet());
 // Autoriser les requêtes cross-origin
 app.use(
   cors({
-    origin: process.env.CORS_ORIGIN || "http://localhost:5173",
+    origin: config.allowedOrigins,
     credentials: true,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],

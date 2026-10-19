@@ -68,18 +68,21 @@ NODE_ENV=production
 DATABASE_URL=postgresql://lapince:<mot_de_passe_fort>@db:5432/lapince_db
 API_PORT=3007
 
-# Client / Nginx (port exposé sur le serveur)
-CLIENT_LOCAL_PORT=80
+# Emails de vérification (SMTP Brevo) — le lien envoyé pointe sur FRONTEND_URL
+FRONTEND_URL=https://mehdicherki.fr
+SMTP_USER=<identifiant_smtp_brevo>
+SMTP_PASS=<clé_smtp_brevo>
 
 # CORS — domaine du serveur
-CORS_ORIGIN=http://mehdicherki-server.eddi.cloud
-ALLOWED_ORIGINS=http://mehdicherki-server.eddi.cloud
+ALLOWED_ORIGINS=https://mehdicherki.fr
 
 # URL de l'API vue par le frontend (proxy nginx /api/ → api:3007)
 VITE_API_BASE_URL=/api
 ```
 
-> `POSTGRES_PASSWORD` et `JWT_SECRET` doivent être identiques dans `DATABASE_URL` et leurs champs respectifs.
+> Le mot de passe dans `DATABASE_URL` doit être identique à `POSTGRES_PASSWORD`.
+>
+> Pas de port client à configurer : c'est le reverse proxy Nginx qui expose `80` et `443` (cf. `docker-compose.prod.yml`).
 
 ---
 
