@@ -6,7 +6,12 @@ vi.mock("../lib/prisma.js", () => ({
   prisma: {
     budget: { findFirst: vi.fn() },
     transaction: { findMany: vi.fn() },
-    alert: { findFirst: vi.fn(), create: vi.fn(), update: vi.fn() },
+    alert: {
+      findFirst: vi.fn(),
+      create: vi.fn(),
+      update: vi.fn(),
+      deleteMany: vi.fn(),
+    },
   },
 }));
 
@@ -68,7 +73,10 @@ describe("generateBudgetAlert", () => {
       { amount: 80 },
       { amount: 70 },
     ] as any);
-    vi.mocked(prisma.alert.findFirst).mockResolvedValue({ id: 12, isRead: true } as any);
+    vi.mocked(prisma.alert.findFirst).mockResolvedValue({
+      id: 12,
+      isRead: true,
+    } as any);
 
     // Act
     await generateBudgetAlert(1, 7);
@@ -81,7 +89,7 @@ describe("generateBudgetAlert", () => {
     expect(prisma.alert.create).not.toHaveBeenCalled();
   });
 
-  it("ne fait rien si les dépenses restent sous la limite", async () => {
+  it("retire l'alerte si les dépenses repassent sous la limite", async () => {
     // Arrange : dépenses de 60 + 40 = 100, pile à la limite → pas un dépassement
     vi.mocked(prisma.budget.findFirst).mockResolvedValue({
       limit_amount: 100,
@@ -100,5 +108,8 @@ describe("generateBudgetAlert", () => {
     expect(prisma.alert.findFirst).not.toHaveBeenCalled();
     expect(prisma.alert.create).not.toHaveBeenCalled();
     expect(prisma.alert.update).not.toHaveBeenCalled();
+    expect(prisma.alert.deleteMany).toHaveBeenCalledWith({
+      where: { userId: 7, categoryId: 3 },
+    });
   });
 });
