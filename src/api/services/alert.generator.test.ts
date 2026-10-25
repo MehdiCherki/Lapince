@@ -51,7 +51,7 @@ describe("generateBudgetAlert", () => {
       { amount: 80 },
       { amount: 70 },
     ] as any);
-    const existingAlert = { id: 12, isRead: false };
+    const existingAlert = { id: 12, isRead: false, exceededAmount: 50 };
     vi.mocked(prisma.alert.findFirst).mockResolvedValue(existingAlert as any);
 
     // Act
@@ -111,5 +111,32 @@ describe("generateBudgetAlert", () => {
     expect(prisma.alert.deleteMany).toHaveBeenCalledWith({
       where: { userId: 7, categoryId: 3 },
     });
+  });
+
+  it("met à jour le montant d'une alerte non lue si le dépassement a changé", async () => {
+    // Arrange : dépassement actuel de 50 (150 - 100), mais l'alerte stockée dit encore 30
+    vi.mocked(prisma.budget.findFirst).mockResolvedValue({
+      limit_amount: 100,
+      category: { id: 3 },
+    } as any);
+    vi.mocked(prisma.transaction.findMany).mockResolvedValue([
+      { amount: 80 },
+      { amount: 70 },
+    ] as any);
+    vi.mocked(prisma.alert.findFirst).mockResolvedValue({
+      id: 12,
+      isRead: false,
+      exceededAmount: 30,
+    } as any);
+
+    // Act
+    await generateBudgetAlert(1, 7);
+
+    // Assert : seul le montant change — l'alerte reste non lue, pas de doublon
+    expect(prisma.alert.update).toHaveBeenCalledWith({
+      where: { id: 12 },
+      data: { exceededAmount: 50 },
+    });
+    expect(prisma.alert.create).not.toHaveBeenCalled();
   });
 });
