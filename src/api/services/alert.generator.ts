@@ -20,8 +20,14 @@ export const generateBudgetAlert = async (budgetId: number, userId: number) => {
   const spent = transactionsForCategory
     .reduce((sum, t) => sum + Number(t.amount), 0);
 
-  // 3. Si le budget n'est pas dépassé → aucune alerte
-  if (spent <= budget.limit_amount) return null;
+  // 3. Budget pas (ou plus) dépassé → on retire l'alerte éventuelle de cette catégorie
+  if (spent <= budget.limit_amount) {
+    await prisma.alert.deleteMany({
+      where: { userId, categoryId: budget.category.id },
+    });
+    return null;
+  }
+
 
   // 4. Calcul du montant dépassé
   const exceededAmount = spent - budget.limit_amount;

@@ -9,6 +9,14 @@ import {
   transactionQuerySchema,
 } from "../validators/transaction.validator.js";
 
+// Recalcule l'alerte du budget lié à une catégorie (s'il y en a un)
+async function refreshBudgetAlert(userId: number, categoryId: number) {
+  const budget = await prisma.budget.findFirst({
+    where: { userId, id_category: categoryId },
+  });
+  if (budget) await generateBudgetAlert(budget.id, userId);
+}
+
 // --- 1. GET /transactions ---
 export const getAll = async (req: Request, res: Response) => {
   if (!req.user)
@@ -33,12 +41,7 @@ export const create = async (req: Request, res: Response) => {
 
   const transaction = await transactionService.createTransaction(req.user.id, body.data);
 
-  const budget = await prisma.budget.findFirst({
-    where: { userId: req.user.id, id_category: transaction.categoryId },
-  });
-  if (budget) {
-    await generateBudgetAlert(budget.id, req.user.id);
-  }
+  await refreshBudgetAlert(req.user.id, transaction.categoryId);
 
   return res.status(201).json(transaction);
 };
@@ -76,11 +79,10 @@ export const update = async (req: Request, res: Response) => {
 
   const updatedTransaction = await transactionService.updateTransaction(id, req.user.id, body.data);
 
-  const budget = await prisma.budget.findFirst({
-    where: { userId: req.user.id, id_category: updatedTransaction.categoryId },
-  });
-  if (budget) {
-    await generateBudgetAlert(budget.id, req.user.id);
+  await refreshBudgetAlert(req.user.id, updatedTransaction.categoryId);
+  // Changement de catégorie → l'ancienne catégorie a une dépense en moins
+  if (existingTransaction.categoryId !== updatedTransaction.categoryId) {
+    await refreshBudgetAlert(req.user.id, existingTransaction.categoryId);
   }
 
   return res.status(200).json(updatedTransaction);
@@ -99,5 +101,7 @@ export const remove = async (req: Request, res: Response) => {
     return res.status(404).json({ error: "Transaction introuvable ou non autorisée" });
 
   await transactionService.deleteTransaction(id, req.user.id);
+  // La dépense supprimée peut faire repasser le budget sous sa limite
+  await refreshBudgetAlert(req.user.id, existingTransaction.categoryId);
   return res.status(204).send();
 };
