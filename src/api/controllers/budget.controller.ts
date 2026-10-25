@@ -1,6 +1,6 @@
 import type { Request, Response } from "express";
 import * as budgetService from "../services/budget.service.ts";
-import { generateBudgetAlert } from "../services/alert.generator.ts"
+import { generateBudgetAlert, removeCategoryAlert } from "../services/alert.generator.ts";
 
 import {
   createBudgetSchema,
@@ -50,7 +50,19 @@ export const updateBudget = async (req: Request, res: Response) => {
   if (!body.success)
     return res.status(400).json({ error: "Données invalides", details: body.error.issues });
 
+  // Lu AVANT la mise à jour : seul moyen de connaître l'ancienne catégorie
+  const before = await budgetService.getBudgetById(id, req.user.id);
+  if (!before) return res.status(404).json({ error: "Budget introuvable" });
+
   const updated = await budgetService.updateBudget(id, req.user.id, body.data);
+
+  // Budget déplacé vers une autre catégorie → l'ancienne n'a plus de limite
+  if (before.id_category !== updated.id_category) {
+    await removeCategoryAlert(req.user.id, before.id_category);
+  }
+  // Nouvelle limite et/ou nouvelle catégorie → on recalcule (crée, met à jour ou retire)
+  await generateBudgetAlert(updated.id, req.user.id);
+
   return res.status(200).json(updated);
 };
 
@@ -62,7 +74,9 @@ export const deleteBudget = async (req: Request, res: Response) => {
   const id = parseInt(req.params.id as string);
   if (isNaN(id)) return res.status(400).json({ error: "ID invalide" });
 
-  await budgetService.deleteBudget(id, req.user.id);
+  const deleted = await budgetService.deleteBudget(id, req.user.id);
+  // Plus de budget = plus de limite : l'alerte de la catégorie disparaît avec lui
+  await removeCategoryAlert(req.user.id, deleted.id_category);
   return res.status(204).send();
 };
 

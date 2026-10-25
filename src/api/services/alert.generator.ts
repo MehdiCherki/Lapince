@@ -24,9 +24,7 @@ export const generateBudgetAlert = async (budgetId: number, userId: number) => {
 
   // 3. Budget pas (ou plus) dépassé → on retire l'alerte éventuelle de cette catégorie
   if (spent <= budget.limit_amount) {
-    await prisma.alert.deleteMany({
-      where: { userId, categoryId: budget.category.id },
-    });
+    await removeCategoryAlert(userId, budget.category.id);
     return null;
   }
 
@@ -73,3 +71,6 @@ export const generateBudgetAlert = async (budgetId: number, userId: number) => {
   // 7. Retourner l’alerte créée
   return alert;
 };
+
+export const removeCategoryAlert = (userId: number, categoryId: number) =>
+  prisma.alert.deleteMany({ where: { userId, categoryId } });
