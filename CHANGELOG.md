@@ -25,6 +25,8 @@ Copie ce bloc en haut de la section `## [Non publié]` et remplis-le :
 
 ### Corrigé
 - Bug résolu + contexte court
+- Alertes de budget : modifier la limite d'un budget, le déplacer vers une autre catégorie ou le supprimer recalcule l'alerte (elle apparaît, se met à jour ou disparaît) (branche `fix/budget-alert-recalc`)
+
 
 ### Supprimé
 - Ce qui a été retiré
@@ -66,6 +68,8 @@ Copie ce bloc en haut de la section `## [Non publié]` et remplis-le :
 - Sécurité : rate limit sur l'inscription (5 par heure et par IP) et sur le rafraîchissement de session (30 par 15 min)
 - Le build Docker de production échouait sur une erreur TypeScript dans la configuration du logger
 - Le test d'inscription existant ne correspondait plus à la réponse de l'API depuis la vérification d'email
+- Alertes de budget : l'alerte disparaît quand les dépenses repassent sous la limite (suppression ou modification d'une transaction, changement de catégorie) au lieu de rester affichée indéfiniment (PR #7, branche `fix/stale-budget-alert`)
+- Alertes de budget : le montant d'une alerte non lue est mis à jour quand le dépassement change (branche `fix/alert-unread-amount`)
 
 ### Supprimé
 - Variables d'environnement héritées du template O'Clock et jamais utilisées (`FILES_*`, `ADMINER_*`, `PROXY_*`, `LOGS_*`)
@@ -73,6 +77,7 @@ Copie ce bloc en haut de la section `## [Non publié]` et remplis-le :
 ### Infra
 - Nodemailer mis à jour en v9
 - Doc de déploiement : variables SMTP et `FRONTEND_URL` ajoutées, `ALLOWED_ORIGINS` pointe sur `https://mehdicherki.fr`
+- Docker (dev) : Prisma Studio tourne sur l'image de l'API au lieu d'installer ses dépendances dans le dossier du projet ; le watch synchronise aussi `services/`, `validators/` et `models/` (PR #6, branche `chore/docker-studio-api-image`)
 
 ---
 

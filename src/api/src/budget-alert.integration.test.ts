@@ -55,6 +55,35 @@ async function loginUser(
   return extractCookieHeader(res);
 }
 
+// Budget mensuel sur une catégorie de dépenses → renvoie son id et celui de la catégorie
+async function createBudget(cookie: string, limit: number) {
+  const category = await prisma.category.findFirstOrThrow({
+    where: { type: "EXPENSE" },
+  });
+  const res = await request(app)
+    .post("/budgets")
+    .set("Cookie", cookie)
+    .send({ limit_amount: limit, period: "monthly", id_category: category.id });
+  expect(res.status).toBe(201);
+  return { budgetId: res.body.id as number, categoryId: category.id };
+}
+
+// Dépense dans une catégorie → renvoie l'id de la transaction
+async function addExpense(cookie: string, categoryId: number, amount: number, date = new Date()) {
+  const res = await request(app)
+    .post("/transactions")
+    .set("Cookie", cookie)
+    .send({ amount, date: date.toISOString(), idcategory: categoryId });
+  expect(res.status).toBe(201);
+  return res.body.id as number;
+}
+
+async function countAlerts(cookie: string) {
+  const res = await request(app).get("/alerts").set("Cookie", cookie);
+  expect(res.status).toBe(200);
+  return res.body.length as number;
+}
+
 describe("Alerte de budget — cycle de vie", () => {
   it("l'alerte disparaît quand on supprime la dépense qui faisait dépasser", async () => {
     // 1. Un utilisateur vérifié + son cookie
@@ -103,5 +132,32 @@ describe("Alerte de budget — cycle de vie", () => {
     const alertsAfter = await request(app).get("/alerts").set("Cookie", cookie);
     expect(alertsAfter.status).toBe(200);
     expect(alertsAfter.body).toHaveLength(0);
+  });
+
+    it("l'alerte disparaît quand on remonte la limite du budget", async () => {
+    const cookie = await loginUser(await createVerifiedUser("raise"));
+    const { budgetId, categoryId } = await createBudget(cookie, 100);
+    await addExpense(cookie, categoryId, 150);
+    expect(await countAlerts(cookie)).toBe(1);
+
+    const res = await request(app)
+      .patch(`/budgets/${budgetId}`)
+      .set("Cookie", cookie)
+      .send({ limit_amount: 500 });
+    expect(res.status).toBe(200);
+
+    expect(await countAlerts(cookie)).toBe(0);
+  });
+
+  it("l'alerte disparaît quand on supprime le budget", async () => {
+    const cookie = await loginUser(await createVerifiedUser("delbudget"));
+    const { budgetId, categoryId } = await createBudget(cookie, 100);
+    await addExpense(cookie, categoryId, 150);
+    expect(await countAlerts(cookie)).toBe(1);
+
+    const res = await request(app).delete(`/budgets/${budgetId}`).set("Cookie", cookie);
+    expect(res.status).toBe(204);
+
+    expect(await countAlerts(cookie)).toBe(0);
   });
 });
