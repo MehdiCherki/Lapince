@@ -26,6 +26,7 @@ Copie ce bloc en haut de la section `## [Non publié]` et remplis-le :
 ### Corrigé
 - Bug résolu + contexte court
 
+
 ### Supprimé
 - Ce qui a été retiré
 ```
@@ -51,7 +52,110 @@ Copie ce bloc en haut de la section `## [Non publié]` et remplis-le :
 
 ## [Non publié]
 
-_Entrées pour la prochaine release._
+---
+
+## [0.7.0] — 2026-10-28
+
+### Ajouté
+- Logs structurés avec pino : JSON en production, lisibles en couleur en développement, corps des requêtes masqué dans les logs d'erreur (branche `fix/logger-pino`)
+- Tests d'intégration du rate limit de l'inscription et de l'isolation des budgets entre utilisateurs, tests unitaires du générateur d'alertes de budget ; l'envoi d'emails est simulé dans les tests, aucun vrai email ne part (branche `test/alert-generator`)
+- Un seul budget par catégorie et par utilisateur : contrainte d'unicité en base, réponse `409` avec un message clair à la création ou au déplacement d'un budget, message affiché dans le formulaire. Règle imposée par le modèle : une alerte est rattachée à une catégorie, pas à un budget (PR #10, branche `feature/one-budget-per-category`)
+- Tableau de bord : modifier la limite d'un budget (modale) ou le supprimer (avec confirmation) depuis l'historique des budgets ; boutons accessibles aux lecteurs d'écran, messages d'erreur de l'API affichés dans les modales (PR #11, branche `feature/budget-edit-delete`)
+
+### Modifié
+- Connexion multi-appareils : se connecter sur un nouvel appareil ne déconnecte plus les autres (une session par appareil, 5 maximum par utilisateur, refresh token renouvelé à chaque utilisation) ; la déconnexion ferme toujours toutes les sessions (branche `feat/multi-session`)
+- CORS : l'API autorise la liste de domaines `ALLOWED_ORIGINS` au lieu d'une seule origine (`CORS_ORIGIN`, supprimée)
+- Inscription avec un email déjà utilisé : la réponse `409` est conservée volontairement, l'énumération des comptes étant freinée par le rate limit de l'inscription
+- `.env.example` à jour : ajout de `FRONTEND_URL`, `SMTP_USER` et `SMTP_PASS`, `JWT_SECRET` laissé vide au lieu d'un texte d'exemple utilisable tel quel
+
+### Corrigé
+- Sécurité : la connexion vérifie le mot de passe avant le statut « email vérifié », on ne peut plus savoir qu'un compte non vérifié existe sans connaître son mot de passe
+- Sécurité : rate limit sur l'inscription (5 par heure et par IP) et sur le rafraîchissement de session (30 par 15 min)
+- Le build Docker de production échouait sur une erreur TypeScript dans la configuration du logger
+- Le test d'inscription existant ne correspondait plus à la réponse de l'API depuis la vérification d'email
+- Alertes de budget : l'alerte disparaît quand les dépenses repassent sous la limite (suppression ou modification d'une transaction, changement de catégorie) au lieu de rester affichée indéfiniment (PR #7, branche `fix/stale-budget-alert`)
+- Alertes de budget : le montant d'une alerte non lue est mis à jour quand le dépassement change (PR #8, branche `fix/alert-unread-amount`)
+- Alertes de budget : modifier la limite d'un budget, le déplacer vers une autre catégorie ou le supprimer recalcule l'alerte (elle apparaît, se met à jour ou disparaît) (PR #9, branche `fix/budget-alert-recalc`)
+- Le build du front échouait sur une variable inutilisée dans la page d'inscription (`tsc -b`) (PR #10)
+- Tableau de bord : la popup d'alerte de budget ne s'affichait jamais (les alertes étaient chargées dans une copie du hook que personne n'affichait) ; une alerte disparue ne reste plus affichée, sur l'accueil comme sur le tableau de bord (PR #11, branche `feature/budget-edit-delete`)
+- `deleteBudget` (front) levait une erreur sur la réponse `204` alors que la suppression avait réussi ; `updateBudget` annonçait un tableau au lieu d'un budget (PR #11, branche `feature/budget-edit-delete`)
+- Session limitée à 45 minutes : le front rafraîchit maintenant le jeton d'accès automatiquement. Sur un `401`, `apiFetch` appelle `/auth/refresh` puis rejoue la requête une fois ; plusieurs `401` simultanés partagent un seul refresh (indispensable avec la rotation des refresh tokens), y compris au démarrage de l'app ; si le refresh échoue, retour à l'accueil public. Avant, passé 45 min, toutes les actions échouaient en silence (branche `fix/session-refresh`)
+- Cookies de session : `sessionExists` vit 7 jours comme le refresh token (au lieu de 45 min, ce qui empêchait de rester connecté après un rechargement) ; le cookie `refreshToken` vise `/api/auth/refresh` en dev comme en prod (en dev, le navigateur ne l'envoyait jamais) (branche `fix/session-refresh`)
+- Accueil : une suppression ou une modification de transaction qui échoue affiche un message d'erreur au lieu d'échouer en silence (PR #13, branche `fix/front-transactions`)
+- Modifier une transaction échouait (`400`) quand seule la description changeait, ou pour une transaction sans description : le montant partait en texte et `null` était refusé par l'API (PR #13)
+- Tableau de bord : la recherche, les filtres et les totaux filtrés ne portaient que sur les 20 dernières transactions ; toutes les transactions sont maintenant chargées (PR #13)
+- Rate limit en production : derrière les deux proxys nginx, l'API voyait tous les visiteurs avec la même adresse IP (celle de `nginx-proxy`), donc les limites de connexion, d'inscription et de refresh étaient communes à tout le site (par exemple 10 connexions par 15 min pour tout le monde). L'API fait maintenant confiance aux adresses privées du réseau Docker et retrouve la vraie IP du visiteur, sans qu'il puisse en inventer une (branche `fix/trust-proxy`)
+
+### Supprimé
+- Variables d'environnement héritées du template O'Clock et jamais utilisées (`FILES_*`, `ADMINER_*`, `PROXY_*`, `LOGS_*`)
+
+### Infra
+- Nodemailer mis à jour en v9
+- Doc de déploiement : variables SMTP et `FRONTEND_URL` ajoutées, `ALLOWED_ORIGINS` pointe sur `https://mehdicherki.fr`
+- Docker (dev) : Prisma Studio tourne sur l'image de l'API au lieu d'installer ses dépendances dans le dossier du projet ; le watch synchronise aussi `services/`, `validators/` et `models/` (PR #6, branche `chore/docker-studio-api-image`)
+- ⚠️ Déploiement : la contrainte d'unicité des budgets doit être appliquée à la main en prod (`prisma db push --accept-data-loss` après vérification des doublons), le `db push` du démarrage ne le fait pas
+- Prod (28/10/2026) : le certificat HTTPS avait expiré le 14/08/2026 sans jamais être renouvelé (site inaccessible). Cause : certificat obtenu en mode `standalone`, incompatible avec nginx qui occupe le port 80. Renouvelé en mode `webroot` (valide jusqu'au 26/01/2027) ; la configuration de renouvellement automatique utilise désormais ce mode (`authenticator = webroot`)
+- Prod : nginx-proxy recharge sa configuration toutes les 6 h pour servir le certificat renouvelé par certbot (sinon il garde l'ancien en mémoire jusqu'à son expiration) ; `restart: unless-stopped` ajouté à `api` et `certbot`, qui ne redémarraient pas après un redémarrage du serveur (branche `fix/nginx-cert-reload`)
+
+---
+
+## [0.6.0] — 2026-05-17
+
+Mise en production sur `mehdicherki.fr`.
+
+### Ajouté
+- Vérification de l'adresse email à l'inscription : un lien de confirmation est envoyé par email (Nodemailer, SMTP Brevo) et la connexion est refusée tant qu'il n'a pas été cliqué (PR #4, branche `Nodemailer`)
+- Middleware d'erreurs centralisé : toutes les erreurs de l'API renvoient un JSON homogène (PR #2, branche `ErrorMiddlewareBugFixes`)
+- Rate limit sur la connexion : 10 tentatives par 15 min et par IP
+- Page 404
+- `robots.txt`, titre de page et langue `fr`, nouveau favicon, police Afacad servie localement
+
+### Modifié
+- Après l'inscription, l'utilisateur n'est plus connecté automatiquement : il doit d'abord confirmer son email
+- Les contrôleurs de l'API ne gèrent plus les erreurs un par un : elles remontent au middleware d'erreurs
+- Améliorations UI/UX : mise en page, footer, page d'accueil, affichage des catégories
+
+### Corrigé
+- Alertes de budget : l'alerte est aussi vérifiée à la création d'un budget, pas seulement à l'ajout d'une transaction (PR #3, branche `AlertSystemFix`)
+- Les emails de vérification ne partaient pas en production : variables SMTP et `FRONTEND_URL` absentes de `docker-compose.prod.yml`
+- Derrière le reverse proxy, l'API voit la vraie IP des visiteurs (`trust proxy`), indispensable au rate limit par IP
+- Le message de confirmation d'inscription disparaissait au bout de 3 s, trop vite pour être lu : il reste maintenant 10 s
+- Erreur TypeScript (`fetchPriority`) qui bloquait le build
+
+### Supprimé
+- Route `GET /budgets/:id/status` et lien direct entre une transaction et un budget, remplacés par le calcul par catégorie du générateur d'alertes
+
+### Infra
+- Reverse proxy Nginx avec certificats SSL Let's Encrypt renouvelés automatiquement par Certbot, redirection HTTP → HTTPS et `www` → domaine principal, HSTS (essai de Caddy abandonné)
+- Content Security Policy du client corrigée après la mise en ligne
+
+---
+
+## [0.5.0] — 2026-05-13
+
+Fonctionnalités principales de l'application, développées en équipe.
+
+### Ajouté
+- Connexion : page de login, contexte d'authentification, routes privées, JWT en cookie httpOnly avec refresh token, déconnexion, route `/users/me`
+- Catégories de dépenses et de revenus, avec icônes et catégories par défaut créées au démarrage
+- Transactions : API complète (création, lecture, modification, suppression, validation Zod), cartes Dépenses / Revenus et liste des transactions avec filtre par catégorie et recherche
+- Budgets par catégorie, créés depuis la carte Budget, et historique des budgets sur le dashboard
+- Alertes de dépassement de budget : génération automatique, marquer comme lue, tout marquer comme lu, suppression
+- Dashboard : statistiques et graphique mensuel
+- Page Paramètres : profil et avatar
+- Mentions légales, choix d'avatar, fond animé
+- Document de déploiement serveur
+
+### Corrigé
+- Bouton « afficher le mot de passe » inutilisable sur mobile
+- Rafraîchissement de session : plantage quand aucun cookie n'est envoyé, chemin du cookie de refresh incorrect derrière le proxy Nginx
+- Création des catégories par défaut rendue idempotente (plus de doublons au redémarrage)
+- Erreurs TypeScript qui bloquaient le build Docker ; fichiers de test exclus du build de production
+
+### Infra
+- Configuration de production (Dockerfiles et `docker-compose.prod.yml`)
+- En-têtes de sécurité Nginx pour Mozilla Observatory : HSTS, CSP sans `unsafe-inline`, Permissions-Policy
+- Au démarrage, l'API synchronise le schéma (`prisma db push`) et recrée les données de base (seed)
 
 ---
 

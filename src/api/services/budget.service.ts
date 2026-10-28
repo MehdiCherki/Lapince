@@ -7,7 +7,9 @@
 // et plus facile à maintenir.
 
 import { prisma } from "../lib/prisma.js";
-import { NotFoundError } from "../lib/error.js";
+import { ConflictError, NotFoundError } from "../lib/error.js";
+
+
 
 // -------------------------------------------------------------
 // 1. Récupérer tous les budgets d'un utilisateur
@@ -25,6 +27,11 @@ export const getAllBudgets = async (userId: number) => {
 // 2. Créer un nouveau budget
 // -------------------------------------------------------------
 export const createBudget = async (userId: number, data: any) => {
+  const existing = await prisma.budget.findFirst({
+    where: { userId, id_category: data.id_category },
+  });
+  if (existing) throw new ConflictError("Un budget existe déjà pour cette catégorie");
+
   return prisma.budget.create({
     data: {
       userId,
@@ -34,6 +41,7 @@ export const createBudget = async (userId: number, data: any) => {
     },
   });
 };
+
 
 // -------------------------------------------------------------
 // 3. Récupérer un budget spécifique par ID
@@ -53,8 +61,17 @@ export const getBudgetById = async (id: number, userId: number) => {
 export const updateBudget = async (id: number, userId: number, data: any) => {
   const budget = await prisma.budget.findFirst({ where: { id, userId } });
   if (!budget) throw new NotFoundError("Budget introuvable");
+  
+  if (data.id_category !== undefined && data.id_category !== budget.id_category) {
+    const taken = await prisma.budget.findFirst({
+      where: { userId, id_category: data.id_category },
+    });
+    if (taken) throw new ConflictError("Un budget existe déjà pour cette catégorie");
+  }
+
   return prisma.budget.update({ where: { id, userId }, data });
 };
+
 
 // -------------------------------------------------------------
 // 5. Supprimer un budget

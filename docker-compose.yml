@@ -30,7 +30,6 @@ services:
       DATABASE_URL: ${DATABASE_URL}   # URL de connexion à Postgres
       PORT: ${API_PORT}               # Port interne sur lequel l'API écoute
       JWT_SECRET: ${JWT_SECRET}       # Clé secrète pour signer les tokens JWT
-      CORS_ORIGIN: ${CORS_ORIGIN}     # Origine autorisée pour les requêtes CORS
       ALLOWED_ORIGINS: ${ALLOWED_ORIGINS} # Liste des origines autorisées pour les requêtes CORS (séparées par des virgules)
       SMTP_USER: ${SMTP_USER}
       SMTP_PASS: ${SMTP_PASS}
@@ -58,11 +57,20 @@ services:
         - action: sync
           path: ./src/api/routes
           target: /app/routes
+        - action: sync
+          path: ./src/api/services
+          target: /app/services
+        - action: sync
+          path: ./src/api/validators
+          target: /app/validators
+        - action: sync
+          path: ./src/api/models
+          target: /app/models
         # Reconstruit l'image si les dépendances ou le schéma Prisma changent
         - action: rebuild
           path: ./src/api/package.json
         - action: rebuild
-          path: ./src/api/prisma.config.js #test pour le fichier seed
+          path: ./src/api/prisma.config.ts
         - action: rebuild
           path: ./src/api/prisma/schema.prisma
 
@@ -89,19 +97,23 @@ services:
 
   # --- Prisma Studio (interface visuelle de la base de données) ---
   studio:
-    image: node:22-slim        # Même version Node que l'API
-    working_dir: /app/src/api  # Se place dans le dossier de l'API pour accéder au schéma Prisma
-    volumes:
-      - .:/app  # Monte tout le projet pour accéder à node_modules et schema.prisma
+    build:
+      context: ./src/api
+      dockerfile: api.dev.Dockerfile  # Même image que l'API : node_modules, OpenSSL et client Prisma déjà dedans
     environment:
       DATABASE_URL: ${DATABASE_URL}  # Connexion à la même base que l'API
     ports:
       - "5555:5555"  # Interface Prisma Studio accessible sur http://localhost:5555
-    command: sh -c "apt-get update -y && apt-get install -y openssl && npm --prefix /app/src/api install && npx --yes prisma studio --port 5555 --browser none"
+    command: npx prisma studio --port 5555 --browser none  # Remplace le CMD de l'image (db push + seed + serveur)
     tty: true
     depends_on:
       db:
         condition: service_healthy  # Attend que Postgres soit prêt avant de se connecter
+    develop:
+      watch:
+        # Le schéma est copié dans l'image : on la reconstruit s'il change
+        - action: rebuild
+          path: ./src/api/prisma/schema.prisma
 
 # --- Volumes nommés ---
 volumes:

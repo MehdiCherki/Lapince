@@ -22,13 +22,13 @@ services:
   api:
     build:
       context: ./src/api
-      dockerfile: api.Dockerfile  # Dockerfile de dev : lance tsx --watch (hot reload)
+      dockerfile: api.Dockerfile  # Dockerfile de prod : compile en JS puis lance node dist/
+    restart: unless-stopped  # Redémarre après un crash ou un redémarrage du serveur
     environment:
       NODE_ENV: ${NODE_ENV:-production}
       DATABASE_URL: ${DATABASE_URL}   # URL de connexion à Postgres
       PORT: ${API_PORT}               # Port interne sur lequel l'API écoute
       JWT_SECRET: ${JWT_SECRET}       # Clé secrète pour signer les tokens JWT
-      CORS_ORIGIN: ${CORS_ORIGIN}     # Origine autorisée pour les requêtes CORS
       ALLOWED_ORIGINS: ${ALLOWED_ORIGINS} # Liste des origines autorisées pour les requêtes CORS (séparées par des virgules)
       SMTP_USER: ${SMTP_USER}
       SMTP_PASS: ${SMTP_PASS}
@@ -49,10 +49,13 @@ services:
     depends_on:
       - api
 
-  # --- Caddy (reverse proxy + HTTPS automatique) ---
+  # --- Nginx (reverse proxy + HTTPS, certificats Let's Encrypt fournis par certbot) ---
   nginx-proxy:
     image: nginx:alpine
     restart: unless-stopped
+    # Nginx ne relit pas tout seul un certificat renouvelé par certbot : rechargement toutes les 6 h.
+    # exec : nginx remplace le shell (PID 1) et reçoit directement le signal d'arrêt de Docker.
+    command: "/bin/sh -c 'while :; do sleep 6h & wait $${!}; nginx -s reload; done & exec nginx -g \"daemon off;\"'"
     ports:
       - "80:80"
       - "443:443"
@@ -63,8 +66,10 @@ services:
     depends_on:
       - client
 
+  # --- Certbot (renouvellement des certificats, mode webroot, essai toutes les 12 h) ---
   certbot:
     image: certbot/certbot
+    restart: unless-stopped  # Sans ça, plus aucun renouvellement après un redémarrage du serveur
     volumes:
       - /etc/letsencrypt:/etc/letsencrypt
       - certbot_webroot:/var/www/certbot

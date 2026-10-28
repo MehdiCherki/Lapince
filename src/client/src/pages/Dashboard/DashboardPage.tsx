@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
-  fetchTransactions,
+  fetchAllTransactions,
   type Transaction,
 } from "../../services/transactionApi";
-import { fetchBudgets } from "../../services/budgetApi";
+import { fetchBudgets, updateBudget, deleteBudget } from "../../services/budgetApi";
 import type { Budget } from "../../types/budget";
 import { useAlerts } from "../../hooks/useAlerts";
 import { useStats } from "../../hooks/useStats";
@@ -17,14 +17,21 @@ import { MonthlyChart } from "./components/MonthlyChart";
 import { TransactionFilters } from "./components/TransactionFilters";
 import { TransactionTable } from "./components/TransactionTable";
 import BudgetHistory from "../../components/Budget/BudgetHistory";
+import BudgetEditModal from "../../components/Budget/BudgetEditModal";
+import ConfirmModal from "../../components/ConfirmModal/ConfirmModal";
+
 
 export default function DashboardPage() {
-  const { currentAlert, handleCloseAlert } = useAlerts();
+  const { currentAlert, handleCloseAlert, loadAlerts } = useAlerts();
   const { overview, monthly, loadStats } = useStats();
   const footerRef = useRef<HTMLElement>(null);
   const [footerHeight, setFooterHeight] = useState(0);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [budgets, setBudgets] = useState<Budget[]>([]);
+    // Budget dont la modale est ouverte (null = aucune modale)
+  const [editingBudget, setEditingBudget] = useState<Budget | null>(null);
+  const [deletingBudget, setDeletingBudget] = useState<Budget | null>(null);
+
 
   const {
     search,
@@ -43,13 +50,29 @@ export default function DashboardPage() {
 
   const loadData = useCallback(async () => {
     const [trans, budg] = await Promise.all([
-      fetchTransactions(),
+      fetchAllTransactions(),
       fetchBudgets(),
     ]);
-    setTransactions(trans.data);
+    setTransactions(trans);
     setBudgets(budg);
-    await loadStats();
-  }, [loadStats]);
+    await Promise.all([loadStats(), loadAlerts()]);
+  }, [loadStats, loadAlerts]);
+  
+  // En cas d'erreur, l'exception remonte jusqu'à la modale, qui affiche le message
+  const handleSaveBudget = async (limit: number) => {
+    if (!editingBudget) return;
+    await updateBudget(editingBudget.id, { limit_amount: limit });
+    setEditingBudget(null);
+    await loadData(); // tableau, stats et alertes à jour (l'API a recalculé l'alerte)
+  };
+
+  const handleDeleteBudget = async () => {
+    if (!deletingBudget) return;
+    await deleteBudget(deletingBudget.id);
+    setDeletingBudget(null);
+    await loadData();
+  };
+
 
   useEffect(() => {
     loadData();
@@ -136,7 +159,14 @@ export default function DashboardPage() {
           {displayMonthlyData.length > 0 && (
             <MonthlyChart data={displayMonthlyData} />
           )}
-          {budgets.length > 0 && <BudgetHistory budgets={budgets} />}
+          {budgets.length > 0 && (
+            <BudgetHistory
+              budgets={budgets}
+              onEdit={setEditingBudget}
+              onDelete={setDeletingBudget}
+            />
+          )}
+
 
           <section className="bg-white/40 backdrop-blur-xl rounded-[2.5rem] overflow-hidden shadow-2xl border border-white/40 mb-10">
             <TransactionFilters
@@ -156,6 +186,24 @@ export default function DashboardPage() {
         </div>
       </div>
 
+            {editingBudget && (
+        <BudgetEditModal
+          budget={editingBudget}
+          onSave={handleSaveBudget}
+          onCancel={() => setEditingBudget(null)}
+        />
+      )}
+
+      {deletingBudget && (
+        <ConfirmModal
+          title={`Supprimer le budget ${deletingBudget.category.name} ?`}
+          message="Son alerte éventuelle sera supprimée. Tes transactions ne sont pas touchées."
+          confirmLabel="Supprimer"
+          onConfirm={handleDeleteBudget}
+          onCancel={() => setDeletingBudget(null)}
+        />
+      )}
+      
       {currentAlert && (
         <AlertPopup
           key={currentAlert.id}
