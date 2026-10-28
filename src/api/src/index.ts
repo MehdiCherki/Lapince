@@ -16,7 +16,11 @@ import { config } from "../config.js"
 
 // Créer une app Express
 const app = express();
-app.set("trust proxy", 1);
+// Navigateur → nginx-proxy → nginx du client → API : deux proxys sur le réseau Docker (adresses privées).
+// On fait confiance aux adresses privées : req.ip devient la première adresse publique de
+// X-Forwarded-For, c'est-à-dire le vrai visiteur (indispensable au rate limit par IP).
+// Pas de nombre fixe de proxys : s'il en restait un seul, "2" ferait confiance à une adresse inventée.
+app.set("trust proxy", "loopback, uniquelocal");
 const PORT = Number(process.env.PORT) || 3007;
 
 // Sécuriser les headers HTTP
