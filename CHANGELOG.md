@@ -55,7 +55,8 @@ Copie ce bloc en haut de la section `## [Non publié]` et remplis-le :
 ### Ajouté
 - Logs structurés avec pino : JSON en production, lisibles en couleur en développement, corps des requêtes masqué dans les logs d'erreur (branche `fix/logger-pino`)
 - Tests d'intégration du rate limit de l'inscription et de l'isolation des budgets entre utilisateurs, tests unitaires du générateur d'alertes de budget ; l'envoi d'emails est simulé dans les tests, aucun vrai email ne part (branche `test/alert-generator`)
-- Un seul budget par catégorie et par utilisateur : contrainte d'unicité en base, réponse `409` avec un message clair à la création ou au déplacement d'un budget, message affiché dans le formulaire. Règle imposée par le modèle : une alerte est rattachée à une catégorie, pas à un budget (branche `feature/one-budget-per-category`)
+- Un seul budget par catégorie et par utilisateur : contrainte d'unicité en base, réponse `409` avec un message clair à la création ou au déplacement d'un budget, message affiché dans le formulaire. Règle imposée par le modèle : une alerte est rattachée à une catégorie, pas à un budget (PR #10, branche `feature/one-budget-per-category`)
+- Tableau de bord : modifier la limite d'un budget (modale) ou le supprimer (avec confirmation) depuis l'historique des budgets ; boutons accessibles aux lecteurs d'écran, messages d'erreur de l'API affichés dans les modales (branche `feature/budget-edit-delete`)
 
 ### Modifié
 - Connexion multi-appareils : se connecter sur un nouvel appareil ne déconnecte plus les autres (une session par appareil, 5 maximum par utilisateur, refresh token renouvelé à chaque utilisation) ; la déconnexion ferme toujours toutes les sessions (branche `feat/multi-session`)
@@ -71,6 +72,9 @@ Copie ce bloc en haut de la section `## [Non publié]` et remplis-le :
 - Alertes de budget : l'alerte disparaît quand les dépenses repassent sous la limite (suppression ou modification d'une transaction, changement de catégorie) au lieu de rester affichée indéfiniment (PR #7, branche `fix/stale-budget-alert`)
 - Alertes de budget : le montant d'une alerte non lue est mis à jour quand le dépassement change (PR #8, branche `fix/alert-unread-amount`)
 - Alertes de budget : modifier la limite d'un budget, le déplacer vers une autre catégorie ou le supprimer recalcule l'alerte (elle apparaît, se met à jour ou disparaît) (PR #9, branche `fix/budget-alert-recalc`)
+- Le build du front échouait sur une variable inutilisée dans la page d'inscription (`tsc -b`) (PR #10)
+- Tableau de bord : la popup d'alerte de budget ne s'affichait jamais (les alertes étaient chargées dans une copie du hook que personne n'affichait) ; une alerte disparue ne reste plus affichée, sur l'accueil comme sur le tableau de bord (branche `feature/budget-edit-delete`)
+- `deleteBudget` (front) levait une erreur sur la réponse `204` alors que la suppression avait réussi ; `updateBudget` annonçait un tableau au lieu d'un budget (branche `feature/budget-edit-delete`)
 
 ### Supprimé
 - Variables d'environnement héritées du template O'Clock et jamais utilisées (`FILES_*`, `ADMINER_*`, `PROXY_*`, `LOGS_*`)

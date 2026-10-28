@@ -6,6 +6,8 @@ import type {
 
 const API_URL = `${import.meta.env.VITE_API_BASE_URL}/budgets`;
 
+// Lève une erreur avec le message renvoyé par l'API ({ error: "..." }) quand il existe.
+// .catch(() => null) : si la réponse n'est pas du JSON (proxy en panne…), on garde un message générique.
 async function throwApiError(
   response: Response,
   fallback: string,
@@ -49,17 +51,17 @@ export async function createBudget(
 export async function updateBudget(
   id: number,
   data: Partial<CreateBudgetPayload>,
-): Promise<Budget[]> {
+): Promise<Budget> {
   const response = await fetch(`${API_URL}/${id}`, {
     method: "PATCH",
     headers: { "Content-type": "application/json" },
     credentials: "include",
     body: JSON.stringify(data),
   });
-  if (!response.ok) {
-    throw new Error(`Erreur ${response.status} en modifiant le budget`);
-  }
-  return response.json();
+  if (!response.ok)
+    await throwApiError(response, "Impossible de modifier le budget");
+
+  return response.json() as Promise<Budget>;
 }
 
 // DELETE /budgets/:id — supprimer un budget
@@ -69,10 +71,9 @@ export async function deleteBudget(id: number): Promise<void> {
     method: "DELETE",
     credentials: "include",
   });
-  if (!response.ok) {
-    throw new Error(`Erreur ${response.status} en supprimant le budget`);
-  }
-  return response.json();
+  if (!response.ok)
+    await throwApiError(response, "Impossible de supprimer le budget");
+  // 204 No Content : pas de corps à lire (response.json() lèverait une erreur)
 }
 
 // GET /budgets/:id/status — dépensé / restant / pourcentage

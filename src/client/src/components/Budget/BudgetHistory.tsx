@@ -4,12 +4,19 @@ import type { Budget } from "../../types/budget";
  * Composant BudgetHistory
  * Affiche la liste des budgets créés par l'utilisateur sous forme d'historique.
  * Reçoit la liste des budgets en props pour s'aligner sur la logique du Dashboard.
+ * Ne connaît pas l'API : signale seulement les clics (onEdit / onDelete) au parent.
  */
 interface BudgetHistoryProps {
   budgets: Budget[];
+  onEdit: (budget: Budget) => void;
+  onDelete: (budget: Budget) => void;
 }
 
-export default function BudgetHistory({ budgets }: BudgetHistoryProps) {
+export default function BudgetHistory({
+  budgets,
+  onEdit,
+  onDelete,
+}: BudgetHistoryProps) {
   // Tri des budgets par date de création (createdAt)
   // On place les plus récents en haut de la liste (ordre décroissant)
   const sorted = [...budgets].sort(
@@ -39,6 +46,7 @@ export default function BudgetHistory({ budgets }: BudgetHistoryProps) {
                 <th className="px-6 py-4 text-right">Limite</th>
                 <th className="px-6 py-4">Période</th>
                 <th className="px-6 py-4 text-right">Créé le</th>
+                <th className="px-6 py-4 text-right">Actions</th>
               </tr>
             </thead>
             {/* Corps du tableau : on boucle sur chaque budget */}
@@ -75,6 +83,27 @@ export default function BudgetHistory({ budgets }: BudgetHistoryProps) {
                         year: "numeric",
                       })}
                     </span>
+                  </td>
+                  {/* Colonne Actions : aria-label distinct par ligne pour les lecteurs d'écran */}
+                  <td className="px-6 py-4">
+                    <div className="flex justify-end gap-2">
+                      <button
+                        type="button"
+                        onClick={() => onEdit(budget)}
+                        aria-label={`Modifier le budget ${budget.category.name}`}
+                        className="text-[10px] px-2 py-1 rounded bg-blue-500 text-white hover:bg-blue-600 transition"
+                      >
+                        Modifier
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => onDelete(budget)}
+                        aria-label={`Supprimer le budget ${budget.category.name}`}
+                        className="text-[10px] px-2 py-1 rounded bg-red-500 text-white hover:bg-red-600 transition"
+                      >
+                        Supprimer
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}

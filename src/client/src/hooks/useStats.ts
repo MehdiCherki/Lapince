@@ -1,11 +1,8 @@
 import { useState, useCallback } from "react";
 import { fetchOverview, fetchMonthlyStats } from "../services/statsApi";
-import { useAlerts } from "./useAlerts";
 import type { Overview, MonthlyEntry } from "../types/stats";
 
 export function useStats() {
-  const { loadAlerts } = useAlerts();
-
   const [overview, setOverview] = useState<Overview | null>(null);
   const [monthly, setMonthly] = useState<MonthlyEntry[]>([]);
   const [loading, setLoading] = useState(false);
@@ -19,7 +16,6 @@ export function useStats() {
       const [ov, mo] = await Promise.all([
         fetchOverview(),
         fetchMonthlyStats(),
-        loadAlerts(),
       ]);
 
       setOverview(ov);
@@ -29,7 +25,7 @@ export function useStats() {
     } finally {
       setLoading(false);
     }
-  }, [loadAlerts]);
+  }, []);
 
   return {
     overview,
