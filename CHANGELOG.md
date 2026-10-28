@@ -25,7 +25,6 @@ Copie ce bloc en haut de la section `## [Non publié]` et remplis-le :
 
 ### Corrigé
 - Bug résolu + contexte court
-- Alertes de budget : modifier la limite d'un budget, le déplacer vers une autre catégorie ou le supprimer recalcule l'alerte (elle apparaît, se met à jour ou disparaît) (branche `fix/budget-alert-recalc`)
 
 
 ### Supprimé
@@ -56,6 +55,7 @@ Copie ce bloc en haut de la section `## [Non publié]` et remplis-le :
 ### Ajouté
 - Logs structurés avec pino : JSON en production, lisibles en couleur en développement, corps des requêtes masqué dans les logs d'erreur (branche `fix/logger-pino`)
 - Tests d'intégration du rate limit de l'inscription et de l'isolation des budgets entre utilisateurs, tests unitaires du générateur d'alertes de budget ; l'envoi d'emails est simulé dans les tests, aucun vrai email ne part (branche `test/alert-generator`)
+- Un seul budget par catégorie et par utilisateur : contrainte d'unicité en base, réponse `409` avec un message clair à la création ou au déplacement d'un budget, message affiché dans le formulaire. Règle imposée par le modèle : une alerte est rattachée à une catégorie, pas à un budget (branche `feature/one-budget-per-category`)
 
 ### Modifié
 - Connexion multi-appareils : se connecter sur un nouvel appareil ne déconnecte plus les autres (une session par appareil, 5 maximum par utilisateur, refresh token renouvelé à chaque utilisation) ; la déconnexion ferme toujours toutes les sessions (branche `feat/multi-session`)
@@ -69,7 +69,8 @@ Copie ce bloc en haut de la section `## [Non publié]` et remplis-le :
 - Le build Docker de production échouait sur une erreur TypeScript dans la configuration du logger
 - Le test d'inscription existant ne correspondait plus à la réponse de l'API depuis la vérification d'email
 - Alertes de budget : l'alerte disparaît quand les dépenses repassent sous la limite (suppression ou modification d'une transaction, changement de catégorie) au lieu de rester affichée indéfiniment (PR #7, branche `fix/stale-budget-alert`)
-- Alertes de budget : le montant d'une alerte non lue est mis à jour quand le dépassement change (branche `fix/alert-unread-amount`)
+- Alertes de budget : le montant d'une alerte non lue est mis à jour quand le dépassement change (PR #8, branche `fix/alert-unread-amount`)
+- Alertes de budget : modifier la limite d'un budget, le déplacer vers une autre catégorie ou le supprimer recalcule l'alerte (elle apparaît, se met à jour ou disparaît) (PR #9, branche `fix/budget-alert-recalc`)
 
 ### Supprimé
 - Variables d'environnement héritées du template O'Clock et jamais utilisées (`FILES_*`, `ADMINER_*`, `PROXY_*`, `LOGS_*`)
@@ -78,6 +79,7 @@ Copie ce bloc en haut de la section `## [Non publié]` et remplis-le :
 - Nodemailer mis à jour en v9
 - Doc de déploiement : variables SMTP et `FRONTEND_URL` ajoutées, `ALLOWED_ORIGINS` pointe sur `https://mehdicherki.fr`
 - Docker (dev) : Prisma Studio tourne sur l'image de l'API au lieu d'installer ses dépendances dans le dossier du projet ; le watch synchronise aussi `services/`, `validators/` et `models/` (PR #6, branche `chore/docker-studio-api-image`)
+- ⚠️ Déploiement : la contrainte d'unicité des budgets doit être appliquée à la main en prod (`prisma db push --accept-data-loss` après vérification des doublons), le `db push` du démarrage ne le fait pas
 
 ---
 

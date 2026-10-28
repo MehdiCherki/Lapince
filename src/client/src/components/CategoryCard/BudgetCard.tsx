@@ -8,7 +8,6 @@ interface BudgetCardProps {
 }
 
 export default function BudgetCard({ onSuccess }: BudgetCardProps) {
-
   const categories = useCategories("EXPENSE");
   const [categorie, setCategorie] = useState("");
   const [montant, setMontant] = useState("");
@@ -41,8 +40,12 @@ export default function BudgetCard({ onSuccess }: BudgetCardProps) {
       onSuccess?.();
       setMessageSuccess("✓ Budget ajouté !");
       setTimeout(() => setMessageSuccess(null), 3000);
-    } catch {
-      setError("Impossible de créer le budget. Réessaie.");
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Impossible de créer le budget. Réessaie.",
+      );
     }
   }
 
@@ -50,7 +53,11 @@ export default function BudgetCard({ onSuccess }: BudgetCardProps) {
     <div className="relative flex flex-col items-center">
       {!messageSuccess && (
         <div className="absolute top-1 md:top-4 z-30">
-          <CategorySelect categories={categories} value={categorie} onChange={setCategorie} />
+          <CategorySelect
+            categories={categories}
+            value={categorie}
+            onChange={setCategorie}
+          />
         </div>
       )}
 
@@ -62,11 +69,18 @@ export default function BudgetCard({ onSuccess }: BudgetCardProps) {
         ) : (
           <>
             <p className="text-[#002b49] font-semibold text-base md:text-xl tracking-tight mb-1 bg-white px-3 md:px-5 py-0.5 md:py-1 rounded-full flex items-center gap-1 md:gap-2">
-              <img src="/WEBP/Icones/Lapince-budget.webp" className="w-4 h-4 md:w-5 md:h-5 object-contain" alt="" />
+              <img
+                src="/WEBP/Icones/Lapince-budget.webp"
+                className="w-4 h-4 md:w-5 md:h-5 object-contain"
+                alt=""
+              />
               Budget
             </p>
 
-            <form onSubmit={handleSubmit} className="flex flex-col items-center gap-1.5 w-full px-5 md:px-10">
+            <form
+              onSubmit={handleSubmit}
+              className="flex flex-col items-center gap-1.5 w-full px-5 md:px-10"
+            >
               <div className="w-full flex items-center h-6 md:h-8 rounded-full bg-white/70 px-3 gap-1">
                 <input
                   type="number"
@@ -75,7 +89,9 @@ export default function BudgetCard({ onSuccess }: BudgetCardProps) {
                   onChange={(e) => setMontant(e.target.value)}
                   className="flex-1 bg-transparent text-xs md:text-sm outline-none placeholder:text-gray-500 min-w-0"
                 />
-                <span className="text-xs md:text-sm text-gray-500 shrink-0">€</span>
+                <span className="text-xs md:text-sm text-gray-500 shrink-0">
+                  €
+                </span>
               </div>
               <input
                 type="month"
