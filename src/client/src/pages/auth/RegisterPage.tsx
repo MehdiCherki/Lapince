@@ -3,11 +3,10 @@ import { useState } from "react";
 import { registerUser } from "../../services/authApi";
 import type { RegisterFormData, ApiError } from "../../types/auth";
 import Footer from "../../components/Footer/footer";
-import { useNavigate, Link } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { AnimatedOrbBackground } from "../../components/AnimatedOrbBackground/AnimatedOrbBackground";
 
 export default function RegisterPage() {
-  const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<ApiError | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
