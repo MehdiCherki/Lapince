@@ -67,10 +67,12 @@ export async function deleteTransactionApi(id: number) {
 
 export async function updateTransactionApi(t: Transaction) {
   const payload = {
-    amount: t.amount,
-    description: t.description,
+    // Prisma renvoie les Decimal en texte ("150") → l'API attend un nombre
+    amount: Number(t.amount),
+    // null refusé par l'API ; undefined fait disparaître la clé du JSON → champ inchangé
+    description: t.description ?? undefined,
     date: t.date,
-    categoryId: t.category.id,
+    idcategory: t.category.id,
   };
 
   const res = await apiFetch(
