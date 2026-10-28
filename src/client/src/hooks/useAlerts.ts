@@ -12,10 +12,9 @@ export function useAlerts() {
     try {
       const data = await fetchAlerts();
       const unread = data.filter((a) => !a.isRead);
-      if (unread.length > 0) {
-        setAlerts(unread);
-        setCurrentAlertIndex(0);
-      }
+      // Toujours remplacer la liste : si plus aucune alerte, la popup doit disparaître
+      setAlerts(unread);
+      setCurrentAlertIndex(unread.length > 0 ? 0 : null);
     } catch {
       // les alertes sont non-critiques, on ne bloque pas le chargement
     }
