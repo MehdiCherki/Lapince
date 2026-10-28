@@ -1,3 +1,4 @@
+import { apiFetch } from "./apiClient";
 import type {
   Budget,
   CreateBudgetPayload,
@@ -18,9 +19,8 @@ async function throwApiError(
 
 // GET /budgets — tous les budgets de l'utilisateur connecté
 export async function fetchBudgets(): Promise<Budget[]> {
-  const response = await fetch(API_URL, {
+  const response = await apiFetch(API_URL, {
     method: "GET",
-    credentials: "include",
     cache: "no-store",
   });
   if (!response.ok) {
@@ -34,10 +34,9 @@ export async function fetchBudgets(): Promise<Budget[]> {
 export async function createBudget(
   payload: CreateBudgetPayload,
 ): Promise<Budget> {
-  const response = await fetch(API_URL, {
+  const response = await apiFetch(API_URL, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    credentials: "include",
     body: JSON.stringify(payload),
   });
   if (!response.ok)
@@ -52,10 +51,9 @@ export async function updateBudget(
   id: number,
   data: Partial<CreateBudgetPayload>,
 ): Promise<Budget> {
-  const response = await fetch(`${API_URL}/${id}`, {
+  const response = await apiFetch(`${API_URL}/${id}`, {
     method: "PATCH",
     headers: { "Content-type": "application/json" },
-    credentials: "include",
     body: JSON.stringify(data),
   });
   if (!response.ok)
@@ -67,9 +65,8 @@ export async function updateBudget(
 // DELETE /budgets/:id — supprimer un budget
 
 export async function deleteBudget(id: number): Promise<void> {
-  const response = await fetch(`${API_URL}/${id}`, {
+  const response = await apiFetch(`${API_URL}/${id}`, {
     method: "DELETE",
-    credentials: "include",
   });
   if (!response.ok)
     await throwApiError(response, "Impossible de supprimer le budget");
@@ -79,9 +76,8 @@ export async function deleteBudget(id: number): Promise<void> {
 // GET /budgets/:id/status — dépensé / restant / pourcentage
 
 export async function fetchBudgetStatus(id: number): Promise<BudgetStatus[]> {
-  const response = await fetch(`${API_URL}/${id}/status`, {
+  const response = await apiFetch(`${API_URL}/${id}/status`, {
     method: "GET",
-    credentials: "include",
     cache: "no-store",
   });
   if (!response.ok) {
