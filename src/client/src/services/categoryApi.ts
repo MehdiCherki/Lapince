@@ -1,3 +1,4 @@
+import { apiFetch } from "./apiClient";
 import type { Category } from "../types/category";
 
 const API_URL = `${import.meta.env.VITE_API_BASE_URL}/categories`;
@@ -6,9 +7,8 @@ const API_URL = `${import.meta.env.VITE_API_BASE_URL}/categories`;
  * Récupère toutes les catégories — GET /categories
  */
 export async function fetchCategories(): Promise<Category[]> {
-  const response = await fetch(API_URL, {
+  const response = await apiFetch(API_URL, {
     method: "GET",
-    credentials: "include",
   });
 
   if (!response.ok) {
@@ -22,9 +22,8 @@ export async function fetchCategories(): Promise<Category[]> {
  * Récupère une catégorie spécifique par son ID — GET /categories/:id
  */
 export async function fetchCategoryById(id: number): Promise<Category> {
-  const response = await fetch(`${API_URL}/${id}`, {
+  const response = await apiFetch(`${API_URL}/${id}`, {
     method: "GET",
-    credentials: "include",
   });
 
   if (!response.ok) {

@@ -83,4 +83,22 @@ describe("Sessions multi-appareils", () => {
     ]);
     expect(cookieA).not.toBe(cookieB); // chaque session a son propre refresh token
   });
+
+  it("pose des cookies de session cohérents", async () => {
+    const email = await createVerifiedUser("cookies");
+    const res = await request(app)
+      .post("/auth/login")
+      .send({ email, password: "Motdepasse1@" });
+    expect(res.status).toBe(204);
+
+    // Une ligne par cookie : le « . » des regex ne déborde pas d'un cookie sur l'autre
+    const cookies = (res.headers["set-cookie"] as unknown as string[]).join(
+      "\n",
+    );
+
+    // Le navigateur appelle toujours /api/auth/refresh (proxy Vite en dev, Nginx en prod)
+    expect(cookies).toMatch(/refreshToken=[^;]+;.*Path=\/api\/auth\/refresh/);
+    // L'indicateur de session vit aussi longtemps que le refresh token : 7 jours = 604800 s
+    expect(cookies).toMatch(/sessionExists=1;.*Max-Age=604800/);
+  });
 });

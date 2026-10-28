@@ -1,9 +1,10 @@
+import { apiFetch } from "./apiClient";
 import type { AuthUser, ApiError } from "../types/auth";
 
 export async function fetchUserProfile(): Promise<AuthUser> {
-  const response = await fetch(
+  const response = await apiFetch(
     `${import.meta.env.VITE_API_BASE_URL}/users/me`,
-    { method: "GET", credentials: "include" },
+    { method: "GET" },
   );
   if (!response.ok) {
     throw new Error("Impossible de charger le profil utilisateur");
@@ -19,11 +20,10 @@ export async function updateUserProfile(payload: {
   password?: string;
   photo?: string | null;
 }): Promise<AuthUser> {
-  const response = await fetch(
+  const response = await apiFetch(
     `${import.meta.env.VITE_API_BASE_URL}/users/me`,
     {
       method: "PATCH",
-      credentials: "include",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     },
@@ -36,9 +36,9 @@ export async function updateUserProfile(payload: {
 }
 
 export async function deleteUserAccount(): Promise<void> {
-  const response = await fetch(
+  const response = await apiFetch(
     `${import.meta.env.VITE_API_BASE_URL}/users/me`,
-    { method: "DELETE", credentials: "include" },
+    { method: "DELETE" },
   );
   if (!response.ok) {
     throw new Error("Erreur lors de la suppression du compte");

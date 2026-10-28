@@ -3,8 +3,10 @@
 
 import { createContext, useContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
-import { fetchCurrentUser, fetchLogout, refreshSession } from '../services/authApi';
+import { fetchCurrentUser, fetchLogout } from '../services/authApi';
 import type { AuthUser } from '../types/auth';
+import { refreshOnce } from '../services/apiClient';
+
 
 interface AuthContextType {
   user: AuthUser | null;
@@ -34,7 +36,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(currentUser);
       } catch {
         try {
-          await refreshSession();
+          await refreshOnce();
           const currentUser = await fetchCurrentUser();
           setUser(currentUser);
         } catch {
@@ -45,6 +47,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     };
     checkSession();
+  }, []);
+
+  useEffect(() => {
+    const onExpired = () => setUser(null);
+    window.addEventListener("session-expired", onExpired);
+    return () => window.removeEventListener("session-expired", onExpired);
   }, []);
 
   const login = (userData: AuthUser) => {
