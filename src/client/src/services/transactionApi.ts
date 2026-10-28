@@ -36,6 +36,18 @@ export async function fetchTransactions(
   return response.json();
 }
 
+// GET toutes les transactions (toutes les pages) - pour le tableau de bord,
+// qui filtre et calcule ses totaux dans le navigateur
+export async function fetchAllTransactions(): Promise<Transaction[]> {
+  const first = await fetchTransactions(1, 100); // 100 = maximum accepté par l'API
+  const all = [...first.data];
+  for (let page = 2; page <= first.totalPages; page++) {
+    const next = await fetchTransactions(page, 100);
+    all.push(...next.data);
+  }
+  return all;
+}
+
 // POST transactions - créer une transactions
 
 export async function createTransaction(
