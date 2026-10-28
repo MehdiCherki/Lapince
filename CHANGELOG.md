@@ -77,6 +77,9 @@ Copie ce bloc en haut de la section `## [Non publié]` et remplis-le :
 - `deleteBudget` (front) levait une erreur sur la réponse `204` alors que la suppression avait réussi ; `updateBudget` annonçait un tableau au lieu d'un budget (PR #11, branche `feature/budget-edit-delete`)
 - Session limitée à 45 minutes : le front rafraîchit maintenant le jeton d'accès automatiquement. Sur un `401`, `apiFetch` appelle `/auth/refresh` puis rejoue la requête une fois ; plusieurs `401` simultanés partagent un seul refresh (indispensable avec la rotation des refresh tokens), y compris au démarrage de l'app ; si le refresh échoue, retour à l'accueil public. Avant, passé 45 min, toutes les actions échouaient en silence (branche `fix/session-refresh`)
 - Cookies de session : `sessionExists` vit 7 jours comme le refresh token (au lieu de 45 min, ce qui empêchait de rester connecté après un rechargement) ; le cookie `refreshToken` vise `/api/auth/refresh` en dev comme en prod (en dev, le navigateur ne l'envoyait jamais) (branche `fix/session-refresh`)
+- Accueil : une suppression ou une modification de transaction qui échoue affiche un message d'erreur au lieu d'échouer en silence (PR #13, branche `fix/front-transactions`)
+- Modifier une transaction échouait (`400`) quand seule la description changeait, ou pour une transaction sans description : le montant partait en texte et `null` était refusé par l'API (PR #13)
+- Tableau de bord : la recherche, les filtres et les totaux filtrés ne portaient que sur les 20 dernières transactions ; toutes les transactions sont maintenant chargées (PR #13)
 
 ### Supprimé
 - Variables d'environnement héritées du template O'Clock et jamais utilisées (`FILES_*`, `ADMINER_*`, `PROXY_*`, `LOGS_*`)
