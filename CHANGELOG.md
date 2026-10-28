@@ -90,7 +90,7 @@ Copie ce bloc en haut de la section `## [Non publié]` et remplis-le :
 - Doc de déploiement : variables SMTP et `FRONTEND_URL` ajoutées, `ALLOWED_ORIGINS` pointe sur `https://mehdicherki.fr`
 - Docker (dev) : Prisma Studio tourne sur l'image de l'API au lieu d'installer ses dépendances dans le dossier du projet ; le watch synchronise aussi `services/`, `validators/` et `models/` (PR #6, branche `chore/docker-studio-api-image`)
 - ⚠️ Déploiement : la contrainte d'unicité des budgets doit être appliquée à la main en prod (`prisma db push --accept-data-loss` après vérification des doublons), le `db push` du démarrage ne le fait pas
-- Prod (28/10/2026) : le certificat HTTPS avait expiré le 14/08/2026 sans jamais être renouvelé (site inaccessible). Cause : certificat obtenu en mode `standalone`, incompatible avec nginx qui occupe le port 80. Renouvelé en mode `webroot` (valide jusqu'au 26/01/2027)
+- Prod (28/10/2026) : le certificat HTTPS avait expiré le 14/08/2026 sans jamais être renouvelé (site inaccessible). Cause : certificat obtenu en mode `standalone`, incompatible avec nginx qui occupe le port 80. Renouvelé en mode `webroot` (valide jusqu'au 26/01/2027) ; la configuration de renouvellement automatique utilise désormais ce mode (`authenticator = webroot`)
 
 ---
 
