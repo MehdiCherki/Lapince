@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
-  fetchTransactions,
+  fetchAllTransactions,
   type Transaction,
 } from "../../services/transactionApi";
 import { fetchBudgets, updateBudget, deleteBudget } from "../../services/budgetApi";
@@ -50,10 +50,10 @@ export default function DashboardPage() {
 
   const loadData = useCallback(async () => {
     const [trans, budg] = await Promise.all([
-      fetchTransactions(),
+      fetchAllTransactions(),
       fetchBudgets(),
     ]);
-    setTransactions(trans.data);
+    setTransactions(trans);
     setBudgets(budg);
     await Promise.all([loadStats(), loadAlerts()]);
   }, [loadStats, loadAlerts]);
