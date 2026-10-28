@@ -77,6 +77,10 @@ Copie ce bloc en haut de la section `## [Non publié]` et remplis-le :
 - `deleteBudget` (front) levait une erreur sur la réponse `204` alors que la suppression avait réussi ; `updateBudget` annonçait un tableau au lieu d'un budget (PR #11, branche `feature/budget-edit-delete`)
 - Session limitée à 45 minutes : le front rafraîchit maintenant le jeton d'accès automatiquement. Sur un `401`, `apiFetch` appelle `/auth/refresh` puis rejoue la requête une fois ; plusieurs `401` simultanés partagent un seul refresh (indispensable avec la rotation des refresh tokens), y compris au démarrage de l'app ; si le refresh échoue, retour à l'accueil public. Avant, passé 45 min, toutes les actions échouaient en silence (branche `fix/session-refresh`)
 - Cookies de session : `sessionExists` vit 7 jours comme le refresh token (au lieu de 45 min, ce qui empêchait de rester connecté après un rechargement) ; le cookie `refreshToken` vise `/api/auth/refresh` en dev comme en prod (en dev, le navigateur ne l'envoyait jamais) (branche `fix/session-refresh`)
+- Accueil : une suppression ou une modification de transaction qui échoue affiche un message d'erreur au lieu d'échouer en silence (PR #13, branche `fix/front-transactions`)
+- Modifier une transaction échouait (`400`) quand seule la description changeait, ou pour une transaction sans description : le montant partait en texte et `null` était refusé par l'API (PR #13)
+- Tableau de bord : la recherche, les filtres et les totaux filtrés ne portaient que sur les 20 dernières transactions ; toutes les transactions sont maintenant chargées (PR #13)
+- Rate limit en production : derrière les deux proxys nginx, l'API voyait tous les visiteurs avec la même adresse IP (celle de `nginx-proxy`), donc les limites de connexion, d'inscription et de refresh étaient communes à tout le site (par exemple 10 connexions par 15 min pour tout le monde). L'API fait maintenant confiance aux adresses privées du réseau Docker et retrouve la vraie IP du visiteur, sans qu'il puisse en inventer une (branche `fix/trust-proxy`)
 
 ### Supprimé
 - Variables d'environnement héritées du template O'Clock et jamais utilisées (`FILES_*`, `ADMINER_*`, `PROXY_*`, `LOGS_*`)
@@ -86,6 +90,7 @@ Copie ce bloc en haut de la section `## [Non publié]` et remplis-le :
 - Doc de déploiement : variables SMTP et `FRONTEND_URL` ajoutées, `ALLOWED_ORIGINS` pointe sur `https://mehdicherki.fr`
 - Docker (dev) : Prisma Studio tourne sur l'image de l'API au lieu d'installer ses dépendances dans le dossier du projet ; le watch synchronise aussi `services/`, `validators/` et `models/` (PR #6, branche `chore/docker-studio-api-image`)
 - ⚠️ Déploiement : la contrainte d'unicité des budgets doit être appliquée à la main en prod (`prisma db push --accept-data-loss` après vérification des doublons), le `db push` du démarrage ne le fait pas
+- Prod (28/10/2026) : le certificat HTTPS avait expiré le 14/08/2026 sans jamais être renouvelé (site inaccessible). Cause : certificat obtenu en mode `standalone`, incompatible avec nginx qui occupe le port 80. Renouvelé en mode `webroot` (valide jusqu'au 26/01/2027) ; la configuration de renouvellement automatique utilise désormais ce mode (`authenticator = webroot`)
 
 ---
 
