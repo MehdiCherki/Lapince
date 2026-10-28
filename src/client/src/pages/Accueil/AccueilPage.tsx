@@ -23,7 +23,7 @@ export default function AccueilPage() {
 
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [overview, setOverview] = useState<Overview | null>(null);
-  const { remove, update } = useTransactions();
+  const { remove, update, error: transactionError } = useTransactions();
 
   type ConfirmData =
     | { action: "delete"; payload: number }
@@ -135,9 +135,7 @@ export default function AccueilPage() {
         </p>
       </div>
 
-      <div
-        className="relative z-40 flex flex-col h-full overflow-y-auto scrollbar-hide pb-40 [mask-image:linear-gradient(to_bottom,transparent_0px,transparent_280px,black_320px)] [-webkit-mask-image:linear-gradient(to_bottom,transparent_0px,transparent_280px,black_320px)] md:[mask-image:none] md:[-webkit-mask-image:none]"
-      >
+      <div className="relative z-40 flex flex-col h-full overflow-y-auto scrollbar-hide pb-40 [mask-image:linear-gradient(to_bottom,transparent_0px,transparent_280px,black_320px)] [-webkit-mask-image:linear-gradient(to_bottom,transparent_0px,transparent_280px,black_320px)] md:[mask-image:none] md:[-webkit-mask-image:none]">
         <header className="hidden md:flex flex-col items-center pt-10 pb-4 shrink-0">
           <h1 className="md:text-[50px] lg:text-[60px] font-black uppercase leading-none tracking-tighter">
             Accueil
@@ -197,6 +195,14 @@ export default function AccueilPage() {
           onClose={handleCloseAlert}
         />
       )}
+      {transactionError && (
+        <div
+          role="alert"
+          className="fixed top-4 left-1/2 -translate-x-1/2 z-[1000] bg-red-600 text-white px-4 py-2 rounded-lg shadow-lg font-bold"
+        >
+          {transactionError}
+        </div>
+      )}
 
       <TransactionSheet
         transactions={transactionsSorted}
@@ -229,16 +235,16 @@ export default function AccueilPage() {
               <button
                 className="flex-1 py-2 rounded-lg bg-red-600 text-white font-bold"
                 onClick={async () => {
-                  if (confirmData.action === "delete") {
-                    await remove(confirmData.payload);
-                  } else if (confirmData.action === "update") {
-                    await update(confirmData.payload);
+                  try {
+                    if (confirmData.action === "delete") {
+                      await remove(confirmData.payload);
+                    } else if (confirmData.action === "update") {
+                      await update(confirmData.payload);
+                    }
+                    await load(); // inclut déjà loadAlerts()
+                  } finally {
+                    setConfirmData(null);
                   }
-
-                  await load();
-                  await loadAlerts();
-
-                  setConfirmData(null);
                 }}
               >
                 Confirmer
@@ -318,7 +324,10 @@ export default function AccueilPage() {
         ref={footerRef}
         className="absolute bottom-0 left-0 w-full z-[60]"
       >
-        <Footer showIcons activeIds={["dashboard", "mentions-legales", "params"]} />
+        <Footer
+          showIcons
+          activeIds={["dashboard", "mentions-legales", "params"]}
+        />
       </footer>
     </main>
   );
