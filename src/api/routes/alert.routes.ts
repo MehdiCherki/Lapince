@@ -4,7 +4,7 @@ import {
   getAlertById,
   markAlertAsRead,
   markAllAlertsAsRead,
-  deleteAlert
+  deleteAlert,
 } from "../controllers/alert.controller.js";
 
 import { authMiddleware } from "../middlewares/access.controller.middleware.js";

@@ -1,4 +1,4 @@
-import { User } from "../models/index.ts"; 
+import { User } from "../models/index.ts";
 
 export interface UserPayload {
   id: number;
@@ -8,7 +8,7 @@ export interface UserPayload {
 declare global {
   namespace Express {
     interface Request {
-    // On définit un type léger pour la session utilisateur
+      // On définit un type léger pour la session utilisateur
       user?: UserPayload;
     }
   }

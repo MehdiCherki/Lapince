@@ -1,6 +1,10 @@
 import type { Request, Response } from "express";
 import { prisma } from "../lib/prisma.js";
-import { BadRequestError, NotFoundError, UnauthorizedError } from "../lib/error.ts";
+import {
+  BadRequestError,
+  NotFoundError,
+  UnauthorizedError,
+} from "../lib/error.ts";
 
 // GET /alerts
 export async function getAlerts(req: Request, res: Response) {
@@ -24,7 +28,10 @@ export async function getAlertById(req: Request, res: Response) {
   const id = Number(req.params.id);
   if (isNaN(id)) throw new BadRequestError("Identifiant invalide");
 
-  const alert = await prisma.alert.findUnique({ where: { id }, include: { category: true } });
+  const alert = await prisma.alert.findUnique({
+    where: { id },
+    include: { category: true },
+  });
   if (!alert) throw new NotFoundError("Alerte introuvable");
   if (alert.userId !== req.user.id) throw new UnauthorizedError("Accès refusé");
 
@@ -43,7 +50,10 @@ export async function markAlertAsRead(req: Request, res: Response) {
   if (!alert) throw new NotFoundError("Alerte introuvable");
   if (alert.userId !== req.user.id) throw new UnauthorizedError("Accès refusé");
 
-  const updated = await prisma.alert.update({ where: { id }, data: { isRead: true } });
+  const updated = await prisma.alert.update({
+    where: { id },
+    data: { isRead: true },
+  });
   return res.json(updated);
 }
 
@@ -57,7 +67,9 @@ export async function markAllAlertsAsRead(req: Request, res: Response) {
     data: { isRead: true },
   });
 
-  return res.json({ message: "Toutes les alertes ont été marquées comme lues" });
+  return res.json({
+    message: "Toutes les alertes ont été marquées comme lues",
+  });
 }
 
 // DELETE /alerts/:id

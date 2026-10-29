@@ -13,8 +13,8 @@ export const updateTransactionSchema = createTransactionSchema.partial();
 
 export const transactionQuerySchema = z.object({
   idcategory: z.coerce.number().int().positive().optional(),
-  startDate:  z.iso.datetime().optional(),
-  endDate:    z.iso.datetime().optional(),
-  page:       z.coerce.number().int().min(1).default(1),
-  limit:      z.coerce.number().int().min(1).max(100).default(20),
+  startDate: z.iso.datetime().optional(),
+  endDate: z.iso.datetime().optional(),
+  page: z.coerce.number().int().min(1).default(1),
+  limit: z.coerce.number().int().min(1).max(100).default(20),
 });

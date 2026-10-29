@@ -85,7 +85,10 @@ export default function MentionsLegalesPage() {
       />
 
       {/* Overlay */}
-      <div className="absolute inset-0 bg-white/30 z-20 pointer-events-none" aria-hidden="true" />
+      <div
+        className="absolute inset-0 bg-white/30 z-20 pointer-events-none"
+        aria-hidden="true"
+      />
 
       {/* Logos */}
       <img
@@ -142,13 +145,19 @@ export default function MentionsLegalesPage() {
         <div className="max-w-4xl lg:max-w-6xl mx-auto w-full px-6 space-y-6">
           <LegalSection title="Éditeur du site">
             <LegalRow label="Nom du site" value="La Pince" />
-            <LegalRow label="Nature" value="Application web — Projet de formation CDA, O'Clock" />
+            <LegalRow
+              label="Nature"
+              value="Application web — Projet de formation CDA, O'Clock"
+            />
             <LegalRow label="Directeur de la publication" value="L'équipe :)" />
             <LegalRow label="Contact" value="cherki.m3hdi@gmail.com" isEmail />
           </LegalSection>
 
           <LegalSection title="Hébergement">
-            <LegalRow label="Hébergeur" value="O'Clock — plateforme eddi.cloud" />
+            <LegalRow
+              label="Hébergeur"
+              value="O'Clock — plateforme eddi.cloud"
+            />
             <LegalRow label="Site web" value="https://oclock.io" />
             <LegalRow label="Adresse" value="Paris, France" />
           </LegalSection>
@@ -177,17 +186,22 @@ export default function MentionsLegalesPage() {
                 "Droit à la portabilité de vos données",
                 "Droit d'opposition au traitement",
               ].map((right) => (
-                <li key={right} className="flex items-start gap-3 text-sm font-bold opacity-80">
+                <li
+                  key={right}
+                  className="flex items-start gap-3 text-sm font-bold opacity-80"
+                >
                   <span className="font-black shrink-0">—</span>
                   {right}
                 </li>
               ))}
             </ul>
             <p className="text-sm font-bold leading-relaxed opacity-80 mt-4">
-              <strong>Données collectées :</strong> email, prénom, nom de famille.
+              <strong>Données collectées :</strong> email, prénom, nom de
+              famille.
             </p>
             <p className="text-sm font-bold leading-relaxed opacity-80 mt-2">
-              <strong>Finalité :</strong> authentification uniquement. Aucune donnée cédée à des tiers.
+              <strong>Finalité :</strong> authentification uniquement. Aucune
+              donnée cédée à des tiers.
             </p>
             <p className="text-sm font-bold leading-relaxed opacity-80 mt-2">
               Pour exercer vos droits :{" "}
@@ -243,14 +257,23 @@ export default function MentionsLegalesPage() {
         </div>
       </div>
 
-      <footer ref={footerRef} className="absolute bottom-0 left-0 w-full z-[60]">
+      <footer
+        ref={footerRef}
+        className="absolute bottom-0 left-0 w-full z-[60]"
+      >
         <Footer showIcons activeIds={["transactions"]} />
       </footer>
     </main>
   );
 }
 
-function LegalSection({ title, children }: { title: string; children: ReactNode }) {
+function LegalSection({
+  title,
+  children,
+}: {
+  title: string;
+  children: ReactNode;
+}) {
   return (
     <section className="bg-white/40 backdrop-blur-xl rounded-[2.5rem] p-6 md:p-10 shadow-2xl border border-white/40">
       <h2 className="text-lg font-black uppercase italic tracking-tight mb-4 pb-3 border-b border-[#002b49]/10">
@@ -274,7 +297,10 @@ function LegalRow({ label, value, isEmail = false }: LegalRowProps) {
         {label}
       </span>
       {isEmail ? (
-        <a href={`mailto:${value}`} className="text-sm font-bold underline hover:opacity-70 transition-opacity">
+        <a
+          href={`mailto:${value}`}
+          className="text-sm font-bold underline hover:opacity-70 transition-opacity"
+        >
           {value}
         </a>
       ) : (

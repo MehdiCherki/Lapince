@@ -3,7 +3,11 @@ import {
   fetchAllTransactions,
   type Transaction,
 } from "../../services/transactionApi";
-import { fetchBudgets, updateBudget, deleteBudget } from "../../services/budgetApi";
+import {
+  fetchBudgets,
+  updateBudget,
+  deleteBudget,
+} from "../../services/budgetApi";
 import type { Budget } from "../../types/budget";
 import { useAlerts } from "../../hooks/useAlerts";
 import { useStats } from "../../hooks/useStats";
@@ -20,7 +24,6 @@ import BudgetHistory from "../../components/Budget/BudgetHistory";
 import BudgetEditModal from "../../components/Budget/BudgetEditModal";
 import ConfirmModal from "../../components/ConfirmModal/ConfirmModal";
 
-
 export default function DashboardPage() {
   const { currentAlert, handleCloseAlert, loadAlerts } = useAlerts();
   const { overview, monthly, loadStats } = useStats();
@@ -28,10 +31,9 @@ export default function DashboardPage() {
   const [footerHeight, setFooterHeight] = useState(0);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [budgets, setBudgets] = useState<Budget[]>([]);
-    // Budget dont la modale est ouverte (null = aucune modale)
+  // Budget dont la modale est ouverte (null = aucune modale)
   const [editingBudget, setEditingBudget] = useState<Budget | null>(null);
   const [deletingBudget, setDeletingBudget] = useState<Budget | null>(null);
-
 
   const {
     search,
@@ -57,7 +59,7 @@ export default function DashboardPage() {
     setBudgets(budg);
     await Promise.all([loadStats(), loadAlerts()]);
   }, [loadStats, loadAlerts]);
-  
+
   // En cas d'erreur, l'exception remonte jusqu'à la modale, qui affiche le message
   const handleSaveBudget = async (limit: number) => {
     if (!editingBudget) return;
@@ -72,7 +74,6 @@ export default function DashboardPage() {
     setDeletingBudget(null);
     await loadData();
   };
-
 
   useEffect(() => {
     loadData();
@@ -167,7 +168,6 @@ export default function DashboardPage() {
             />
           )}
 
-
           <section className="bg-white/40 backdrop-blur-xl rounded-[2.5rem] overflow-hidden shadow-2xl border border-white/40 mb-10">
             <TransactionFilters
               search={search}
@@ -186,7 +186,7 @@ export default function DashboardPage() {
         </div>
       </div>
 
-            {editingBudget && (
+      {editingBudget && (
         <BudgetEditModal
           budget={editingBudget}
           onSave={handleSaveBudget}
@@ -203,7 +203,7 @@ export default function DashboardPage() {
           onCancel={() => setDeletingBudget(null)}
         />
       )}
-      
+
       {currentAlert && (
         <AlertPopup
           key={currentAlert.id}

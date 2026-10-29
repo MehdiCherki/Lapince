@@ -1,12 +1,11 @@
 // Ce fichier contient le contexte global d'authentification de l'application. Il gère l'état de l'utilisateur connecté, les fonctions de connexion et de déconnexion,
 // ainsi que la vérification de session au démarrage de l'application.
 
-import { createContext, useContext, useState, useEffect } from 'react';
-import type { ReactNode } from 'react';
-import { fetchCurrentUser, fetchLogout } from '../services/authApi';
-import type { AuthUser } from '../types/auth';
-import { refreshOnce } from '../services/apiClient';
-
+import { createContext, useContext, useState, useEffect } from "react";
+import type { ReactNode } from "react";
+import { fetchCurrentUser, fetchLogout } from "../services/authApi";
+import type { AuthUser } from "../types/auth";
+import { refreshOnce } from "../services/apiClient";
 
 interface AuthContextType {
   user: AuthUser | null;
@@ -68,7 +67,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, isAuthenticated: !!user, isInitializing }}>
+    <AuthContext.Provider
+      value={{ user, login, logout, isAuthenticated: !!user, isInitializing }}
+    >
       {!isInitializing && children}
     </AuthContext.Provider>
   );
@@ -77,7 +78,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 export function useAuth() {
   const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error("useAuth doit être utilisé à l'intérieur d'un AuthProvider");
+    throw new Error(
+      "useAuth doit être utilisé à l'intérieur d'un AuthProvider",
+    );
   }
   return context;
 }

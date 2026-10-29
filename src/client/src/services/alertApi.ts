@@ -2,9 +2,12 @@ import { apiFetch } from "./apiClient";
 import type { Alert } from "../types/alert.js";
 
 export async function fetchAlerts(): Promise<Alert[]> {
-  const response = await apiFetch(`${import.meta.env.VITE_API_BASE_URL}/alerts`, {
-    method: "GET",
-  });
+  const response = await apiFetch(
+    `${import.meta.env.VITE_API_BASE_URL}/alerts`,
+    {
+      method: "GET",
+    },
+  );
 
   if (!response.ok) {
     throw new Error(`Erreur ${response.status} en chargeant les alertes`);

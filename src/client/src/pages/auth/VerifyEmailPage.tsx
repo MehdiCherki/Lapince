@@ -5,7 +5,9 @@ import { AnimatedOrbBackground } from "../../components/AnimatedOrbBackground/An
 
 export default function VerifyEmailPage() {
   const [searchParams] = useSearchParams();
-  const [status, setStatus] = useState<"loading" | "success" | "error">("loading");
+  const [status, setStatus] = useState<"loading" | "success" | "error">(
+    "loading",
+  );
   const hasRun = useRef(false);
 
   useEffect(() => {
@@ -18,7 +20,9 @@ export default function VerifyEmailPage() {
       return;
     }
 
-    fetch(`${import.meta.env.VITE_API_BASE_URL}/auth/verify-email?token=${token}`)
+    fetch(
+      `${import.meta.env.VITE_API_BASE_URL}/auth/verify-email?token=${token}`,
+    )
       .then((res) => {
         if (res.ok) setStatus("success");
         else setStatus("error");
@@ -75,7 +79,9 @@ export default function VerifyEmailPage() {
 
         <section className="w-full max-w-[440px] flex flex-col items-center justify-center gap-6 bg-white/20 backdrop-blur-3xl rounded-[2.5rem] p-10 shadow-2xl border border-white/30">
           {status === "loading" && (
-            <p className="text-center text-lg font-medium">Vérification en cours...</p>
+            <p className="text-center text-lg font-medium">
+              Vérification en cours...
+            </p>
           )}
 
           {status === "success" && (

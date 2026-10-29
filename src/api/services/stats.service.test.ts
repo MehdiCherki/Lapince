@@ -16,8 +16,8 @@ describe("getOverview", () => {
   it("calcule income, expenses et balance correctement", async () => {
     vi.mocked(prisma.transaction.findMany).mockResolvedValue([
       { amount: 1000, category: { type: "INCOME" } },
-      { amount: 300,  category: { type: "EXPENSE" } },
-      { amount: 200,  category: { type: "EXPENSE" } },
+      { amount: 300, category: { type: "EXPENSE" } },
+      { amount: 200, category: { type: "EXPENSE" } },
     ] as any);
 
     const result = await getOverview(1);

@@ -118,8 +118,8 @@ export default function RegisterForm({
                 type="button"
                 onClick={() =>
                   field.id === "password"
-                    ? setShowPassword(prev => !prev)
-                    : setShowConfirm(prev => !prev)
+                    ? setShowPassword((prev) => !prev)
+                    : setShowConfirm((prev) => !prev)
                 }
               >
                 {field.id === "password" ? (

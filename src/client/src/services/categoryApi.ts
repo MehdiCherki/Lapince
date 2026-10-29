@@ -12,7 +12,9 @@ export async function fetchCategories(): Promise<Category[]> {
   });
 
   if (!response.ok) {
-    throw new Error(`Erreur ${response.status} : Impossible de récupérer les catégories.`);
+    throw new Error(
+      `Erreur ${response.status} : Impossible de récupérer les catégories.`,
+    );
   }
 
   return response.json();

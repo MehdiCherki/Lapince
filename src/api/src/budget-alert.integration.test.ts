@@ -69,7 +69,12 @@ async function createBudget(cookie: string, limit: number) {
 }
 
 // Dépense dans une catégorie → renvoie l'id de la transaction
-async function addExpense(cookie: string, categoryId: number, amount: number, date = new Date()) {
+async function addExpense(
+  cookie: string,
+  categoryId: number,
+  amount: number,
+  date = new Date(),
+) {
   const res = await request(app)
     .post("/transactions")
     .set("Cookie", cookie)
@@ -118,7 +123,9 @@ describe("Alerte de budget — cycle de vie", () => {
     const transactionId = transactionRes.body.id;
 
     // 4. Le dépassement a créé une alerte
-    const alertsBefore = await request(app).get("/alerts").set("Cookie", cookie);
+    const alertsBefore = await request(app)
+      .get("/alerts")
+      .set("Cookie", cookie);
     expect(alertsBefore.status).toBe(200);
     expect(alertsBefore.body).toHaveLength(1);
 
@@ -134,7 +141,7 @@ describe("Alerte de budget — cycle de vie", () => {
     expect(alertsAfter.body).toHaveLength(0);
   });
 
-    it("l'alerte disparaît quand on remonte la limite du budget", async () => {
+  it("l'alerte disparaît quand on remonte la limite du budget", async () => {
     const cookie = await loginUser(await createVerifiedUser("raise"));
     const { budgetId, categoryId } = await createBudget(cookie, 100);
     await addExpense(cookie, categoryId, 150);
@@ -155,7 +162,9 @@ describe("Alerte de budget — cycle de vie", () => {
     await addExpense(cookie, categoryId, 150);
     expect(await countAlerts(cookie)).toBe(1);
 
-    const res = await request(app).delete(`/budgets/${budgetId}`).set("Cookie", cookie);
+    const res = await request(app)
+      .delete(`/budgets/${budgetId}`)
+      .set("Cookie", cookie);
     expect(res.status).toBe(204);
 
     expect(await countAlerts(cookie)).toBe(0);

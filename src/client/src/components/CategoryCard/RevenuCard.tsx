@@ -16,7 +16,11 @@ export default function RevenuCard({ onSuccess }: { onSuccess?: () => void }) {
     <div className="relative flex flex-col items-center">
       {!messageSuccess && (
         <div className="absolute top-1 md:top-4 z-30">
-          <CategorySelect categories={categories} value={categorie} onChange={setCategorie} />
+          <CategorySelect
+            categories={categories}
+            value={categorie}
+            onChange={setCategorie}
+          />
         </div>
       )}
 
@@ -75,7 +79,9 @@ export default function RevenuCard({ onSuccess }: { onSuccess?: () => void }) {
                   onChange={(e) => setMontant(e.target.value)}
                   className="flex-1 bg-transparent text-xs md:text-sm outline-none placeholder:text-gray-500 min-w-0"
                 />
-                <span className="text-xs md:text-sm text-gray-500 shrink-0">€</span>
+                <span className="text-xs md:text-sm text-gray-500 shrink-0">
+                  €
+                </span>
               </div>
               <input
                 type="date"

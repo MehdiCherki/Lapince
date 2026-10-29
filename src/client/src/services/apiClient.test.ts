@@ -20,7 +20,9 @@ describe("apiFetch", () => {
     const res = await apiFetch("/api/budgets");
 
     expect(res.status).toBe(200);
-    expect(fetchMock).toHaveBeenCalledWith("/api/budgets", { credentials: "include" });
+    expect(fetchMock).toHaveBeenCalledWith("/api/budgets", {
+      credentials: "include",
+    });
     expect(refreshSession).not.toHaveBeenCalled();
   });
 
@@ -49,7 +51,9 @@ describe("apiFetch", () => {
 
   it("si le refresh échoue : renvoie le 401 et prévient l'application", async () => {
     fetchMock.mockResolvedValueOnce(unauthorized());
-    vi.mocked(refreshSession).mockRejectedValue(new Error("Refresh token invalide ou expiré"));
+    vi.mocked(refreshSession).mockRejectedValue(
+      new Error("Refresh token invalide ou expiré"),
+    );
     const onExpired = vi.fn();
     window.addEventListener("session-expired", onExpired);
 

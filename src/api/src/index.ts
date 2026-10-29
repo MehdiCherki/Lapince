@@ -11,8 +11,8 @@ import budgetRoutes from "../routes/budget.routes.js";
 import alertRoutes from "../routes/alert.routes.js";
 import statsRoutes from "../routes/stats.routes.js";
 import { errorMiddleware } from "../middlewares/error.middleware.js";
-import { logger } from "../lib/logger.js"
-import { config } from "../config.js"
+import { logger } from "../lib/logger.js";
+import { config } from "../config.js";
 
 // Créer une app Express
 const app = express();

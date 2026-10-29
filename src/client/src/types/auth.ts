@@ -1,5 +1,5 @@
 // Types liés à l'authentification
-// correpond aux champs de la route POST /auth/register 
+// correpond aux champs de la route POST /auth/register
 //C'est la forme des données dans le formulaire React, côté front. Quand l'utilisateur tape son prénom, son nom, son email et son mot de passe, ces 4 champs forment un objet de type RegisterFormData.
 export interface RegisterFormData {
   first_name: string;
@@ -7,7 +7,7 @@ export interface RegisterFormData {
   email: string;
   password: string;
   photo?: string;
-} 
+}
 
 // On ne met JAMAIS le mot de passe ni les refreshTokens dans l'interface Front-end !
 // C'est une règle de sécurité absolue (CP6).
@@ -26,4 +26,3 @@ export interface ApiError {
   error: string;
   field?: string;
 }
-
