@@ -19,3 +19,5 @@ fix/header bug ❌ Espaces non autorisés
 fix/header_bug ❌ Underscores non autorisés
 unknown/some-task ❌ Type de préfixe inconnu
 
+> ⚠️ Dans ce dépôt, utiliser `feature/` et non `feat/`. Des branches `Feat/…` (majuscule) existent déjà sur GitHub. Sous Windows, Git range les branches dans des dossiers et ne distingue pas `Feat` de `feat` : toute branche `feat/…` entre en conflit avec elles et échoue.
+

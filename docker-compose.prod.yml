@@ -21,7 +21,7 @@ services:
   # --- API Node.js (backend) ---
   api:
     build:
-      context: ./src/api
+      context: ./apps/api
       dockerfile: api.Dockerfile  # Dockerfile de prod : compile en JS puis lance node dist/
     restart: unless-stopped  # Redémarre après un crash ou un redémarrage du serveur
     environment:
@@ -41,7 +41,7 @@ services:
   # --- Client React/Vite (frontend) ---
   client:
     build:
-      context: ./src/client
+      context: ./apps/client
       dockerfile: client.Dockerfile
       args:
         VITE_API_BASE_URL: ${VITE_API_BASE_URL}

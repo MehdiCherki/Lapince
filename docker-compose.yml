@@ -23,7 +23,7 @@ services:
   # --- API Node.js (backend) ---
   api:
     build:
-      context: ./src/api
+      context: ./apps/api
       dockerfile: api.dev.Dockerfile  # Dockerfile de dev : lance tsx --watch (hot reload)
     environment:
       NODE_ENV: ${NODE_ENV}           # production | development
@@ -43,41 +43,41 @@ services:
       watch:
         # Synchronise les fichiers source dans le conteneur sans rebuild (tsx --watch détecte le changement)
         - action: sync
-          path: ./src/api/src
+          path: ./apps/api/src
           target: /app/src
         - action: sync
-          path: ./src/api/middlewares
+          path: ./apps/api/middlewares
           target: /app/middlewares
         - action: sync
-          path: ./src/api/controllers
+          path: ./apps/api/controllers
           target: /app/controllers
         - action: sync
-          path: ./src/api/lib
+          path: ./apps/api/lib
           target: /app/lib
         - action: sync
-          path: ./src/api/routes
+          path: ./apps/api/routes
           target: /app/routes
         - action: sync
-          path: ./src/api/services
+          path: ./apps/api/services
           target: /app/services
         - action: sync
-          path: ./src/api/validators
+          path: ./apps/api/validators
           target: /app/validators
         - action: sync
-          path: ./src/api/models
+          path: ./apps/api/models
           target: /app/models
         # Reconstruit l'image si les dépendances ou le schéma Prisma changent
         - action: rebuild
-          path: ./src/api/package.json
+          path: ./apps/api/package.json
         - action: rebuild
-          path: ./src/api/prisma.config.ts
+          path: ./apps/api/prisma.config.ts
         - action: rebuild
-          path: ./src/api/prisma/schema.prisma
+          path: ./apps/api/prisma/schema.prisma
 
   # --- Client React/Vite (frontend) ---
   client:
     build:
-      context: ./src/client
+      context: ./apps/client
       dockerfile: client.dev.Dockerfile  # Dockerfile de dev : lance vite --host (hot reload)
     environment:
       - VITE_API_BASE_URL=${VITE_API_BASE_URL} # URL de base pour les requêtes API (ex: http://localhost:5173/api, Vite proxy gère le reste)
@@ -89,16 +89,16 @@ services:
       watch:
         # Synchronise les fichiers source dans le conteneur sans rebuild (Vite HMR détecte le changement)
         - action: sync
-          path: ./src/client/src
+          path: ./apps/client/src
           target: /app/src
         # Reconstruit l'image si les dépendances changent
         - action: rebuild
-          path: ./src/client/package.json
+          path: ./apps/client/package.json
 
   # --- Prisma Studio (interface visuelle de la base de données) ---
   studio:
     build:
-      context: ./src/api
+      context: ./apps/api
       dockerfile: api.dev.Dockerfile  # Même image que l'API : node_modules, OpenSSL et client Prisma déjà dedans
     environment:
       DATABASE_URL: ${DATABASE_URL}  # Connexion à la même base que l'API
@@ -113,7 +113,7 @@ services:
       watch:
         # Le schéma est copié dans l'image : on la reconstruit s'il change
         - action: rebuild
-          path: ./src/api/prisma/schema.prisma
+          path: ./apps/api/prisma/schema.prisma
 
 # --- Volumes nommés ---
 volumes:
