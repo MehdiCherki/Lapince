@@ -52,6 +52,9 @@ Copie ce bloc en haut de la section `## [Non publié]` et remplis-le :
 
 ## [Non publié]
 
+### Modifié
+- Code formaté avec Prettier (réglages par défaut, fins de ligne `auto`), aucun changement de comportement ; le commit de formatage est ignoré par `git blame` via `.git-blame-ignore-revs` (branche `chore/prettier`)
+
 ---
 
 ## [0.7.0] — 2026-10-28
