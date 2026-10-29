@@ -15,22 +15,26 @@ interface TransactionFiltersProps {
 }
 
 export function TransactionFilters({
-  search, onSearchChange,
-  filterType, onFilterTypeChange,
-  selectedMonth, onMonthChange,
+  search,
+  onSearchChange,
+  filterType,
+  onFilterTypeChange,
+  selectedMonth,
+  onMonthChange,
   selectedCategories,
   onCategoryToggle,
   onResetCategories,
-  transactions
+  transactions,
 }: TransactionFiltersProps) {
-
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const availableCategories = useMemo(() => {
     if (!transactions) return [];
     const cats = new Map<number, any>();
-    transactions.forEach(t => cats.set(t.category.id, t.category));
-    return Array.from(cats.values()).sort((a, b) => a.name.localeCompare(b.name));
+    transactions.forEach((t) => cats.set(t.category.id, t.category));
+    return Array.from(cats.values()).sort((a, b) =>
+      a.name.localeCompare(b.name),
+    );
   }, [transactions]);
 
   const types = [
@@ -40,11 +44,11 @@ export function TransactionFilters({
   ] as const;
 
   // Ferme le menu si on clique en dehors
-  useEffect(() => { 
+  useEffect(() => {
     if (!isMenuOpen) return;
     const hanfleClickOutside = () => {
       setIsMenuOpen(false);
-    }
+    };
 
     // On utilise un timeout pour éviter de fermer immédiatement après l'ouverture
     const timer = setTimeout(() => {
@@ -54,7 +58,7 @@ export function TransactionFilters({
     return () => {
       clearTimeout(timer);
       document.removeEventListener("click", hanfleClickOutside);
-    }
+    };
   }, [isMenuOpen]);
 
   return (
@@ -67,7 +71,6 @@ export function TransactionFilters({
 
         {/* Grille de contrôles responsive */}
         <div className="flex flex-wrap items-center gap-2 md:gap-3 w-full lg:w-auto justify-start md:justify-end">
-          
           {/* Recherche libre : Pleine largeur sur petit mobile, fixe ensuite */}
           <div className="w-full sm:w-48 order-1 sm:order-none">
             <input
@@ -103,26 +106,30 @@ export function TransactionFilters({
               onClick={() => setIsMenuOpen(!isMenuOpen)}
               className={`px-3 py-1 rounded-full border text-sm md:text-base font-bold transition-all shadow-sm min-w-[90px] ${
                 selectedCategories.length > 0
-                ? "bg-[#8B4D0A] text-white border-[#8B4D0A]"
-                : "bg-[#BF6A12] text-white border-[#BF6A12]"
+                  ? "bg-[#8B4D0A] text-white border-[#8B4D0A]"
+                  : "bg-[#BF6A12] text-white border-[#BF6A12]"
               }`}
             >
-              Catégories {selectedCategories.length > 0 && `(${selectedCategories.length})`}
+              Catégories{" "}
+              {selectedCategories.length > 0 &&
+                `(${selectedCategories.length})`}
             </button>
 
             {isMenuOpen && (
-              
-              <div 
+              <div
                 onClick={(e) => e.stopPropagation()} // Empêche le clic de remonter jusqu'à window
                 className="absolute top-full mt-2 right-0 w-64 bg-white border border-gray-200 shadow-2xl rounded-2xl p-2 z-[999] pointer-events-auto"
-                style={{ 
-                  position: 'absolute',
-                  left: 'auto',
+                style={{
+                  position: "absolute",
+                  left: "auto",
                   margin: 0,
-                 }}>
+                }}
+              >
                 <div className="flex justify-between items-center p-2 border-b border-gray-100 mb-2">
-                  <span className="text-[10px] font-black uppercase opacity-50">Filtrer par catégorie</span>
-                  <button 
+                  <span className="text-[10px] font-black uppercase opacity-50">
+                    Filtrer par catégorie
+                  </span>
+                  <button
                     onClick={(e) => {
                       e.stopPropagation(); // Empêche la fermeture accidentelle
                       onResetCategories();
@@ -133,15 +140,20 @@ export function TransactionFilters({
                   </button>
                 </div>
                 <div className="max-h-60 overflow-y-auto scrollbar-hide">
-                  {availableCategories.map(cat => (
-                    <label key={cat.id} className="flex items-center gap-3 p-2.5 hover:bg-gray-50 rounded-xl cursor-pointer transition-colors">
+                  {availableCategories.map((cat) => (
+                    <label
+                      key={cat.id}
+                      className="flex items-center gap-3 p-2.5 hover:bg-gray-50 rounded-xl cursor-pointer transition-colors"
+                    >
                       <input
                         type="checkbox"
                         checked={selectedCategories.includes(cat.id)}
                         onChange={() => onCategoryToggle(cat.id)}
                         className="w-4 h-4 rounded border-gray-300 text-[#002b49] focus:ring-[#002b49]"
                       />
-                      <span className="text-sm font-medium text-[#002b49]">{cat.name}</span>
+                      <span className="text-sm font-medium text-[#002b49]">
+                        {cat.name}
+                      </span>
                     </label>
                   ))}
                 </div>
@@ -156,7 +168,6 @@ export function TransactionFilters({
             value={selectedMonth}
             onChange={(e) => onMonthChange(e.target.value)}
           />
-
         </div>
       </div>
     </div>

@@ -7,7 +7,11 @@ interface BudgetEditModalProps {
   onCancel: () => void;
 }
 
-export default function BudgetEditModal({ budget, onSave, onCancel }: BudgetEditModalProps) {
+export default function BudgetEditModal({
+  budget,
+  onSave,
+  onCancel,
+}: BudgetEditModalProps) {
   // Texte et non nombre : l'utilisateur doit pouvoir vider le champ pendant qu'il tape
   const [limit, setLimit] = useState(String(budget.limit_amount));
   const [error, setError] = useState<string | null>(null);
@@ -35,7 +39,11 @@ export default function BudgetEditModal({ budget, onSave, onCancel }: BudgetEdit
       await onSave(value);
       // Succès : le parent ferme la modale, rien d'autre à faire ici
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Impossible de modifier le budget.");
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Impossible de modifier le budget.",
+      );
       setSaving(false);
     }
   }
@@ -48,11 +56,15 @@ export default function BudgetEditModal({ budget, onSave, onCancel }: BudgetEdit
       className="fixed inset-0 bg-black/40 flex items-center justify-center z-[999]"
     >
       <div className="bg-white text-[#002b49] p-6 rounded-2xl w-[90%] max-w-[350px] shadow-xl">
-        <h2 id="budget-edit-title" className="text-lg font-bold">Modifier le budget</h2>
+        <h2 id="budget-edit-title" className="text-lg font-bold">
+          Modifier le budget
+        </h2>
         <p className="text-sm opacity-70 mb-4">{budget.category.name}</p>
 
         <form onSubmit={handleSubmit} noValidate className="space-y-3">
-          <label htmlFor="budget-limit" className="block text-sm font-bold">Limite (€)</label>
+          <label htmlFor="budget-limit" className="block text-sm font-bold">
+            Limite (€)
+          </label>
           <input
             id="budget-limit"
             type="number"
@@ -64,7 +76,11 @@ export default function BudgetEditModal({ budget, onSave, onCancel }: BudgetEdit
             autoFocus
           />
 
-          {error && <p role="alert" className="text-sm text-red-600">{error}</p>}
+          {error && (
+            <p role="alert" className="text-sm text-red-600">
+              {error}
+            </p>
+          )}
 
           <button
             type="submit"

@@ -17,7 +17,10 @@ export function refreshOnce(): Promise<void> {
  * fetch + cookies de session. Sur un 401 : rafraîchit la session, puis rejoue la requête UNE fois.
  * Si le refresh échoue, la session est vraiment terminée : on prévient l'application.
  */
-export async function apiFetch(url: string, init: RequestInit = {}): Promise<Response> {
+export async function apiFetch(
+  url: string,
+  init: RequestInit = {},
+): Promise<Response> {
   const send = () => fetch(url, { ...init, credentials: "include" });
 
   const response = await send();

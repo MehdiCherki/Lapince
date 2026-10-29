@@ -20,8 +20,7 @@ export default function BudgetHistory({
   // Tri des budgets par date de création (createdAt)
   // On place les plus récents en haut de la liste (ordre décroissant)
   const sorted = [...budgets].sort(
-    (a, b) =>
-      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
   );
 
   // Rendu principal de la liste des budgets
@@ -30,9 +29,15 @@ export default function BudgetHistory({
       {/* En-tête de la section avec icône et titre */}
       <div className="flex items-center gap-3 px-2">
         <div className="w-10 h-10 rounded-full bg-[#E06B56] flex items-center justify-center shadow-lg">
-          <img src="/WEBP/Icones/Lapince-budget.webp" className="w-6 h-6 object-contain" alt="Icône Budget" />
+          <img
+            src="/WEBP/Icones/Lapince-budget.webp"
+            className="w-6 h-6 object-contain"
+            alt="Icône Budget"
+          />
         </div>
-        <h3 className="text-2xl font-black uppercase tracking-tighter">Historique des budgets</h3>
+        <h3 className="text-2xl font-black uppercase tracking-tighter">
+          Historique des budgets
+        </h3>
       </div>
 
       {/* Conteneur du tableau avec effet de flou et d'ombre */}
@@ -52,7 +57,10 @@ export default function BudgetHistory({
             {/* Corps du tableau : on boucle sur chaque budget */}
             <tbody className="divide-y divide-white/20">
               {sorted.map((budget) => (
-                <tr key={budget.id} className="hover:bg-white/20 transition-colors group">
+                <tr
+                  key={budget.id}
+                  className="hover:bg-white/20 transition-colors group"
+                >
                   {/* Colonne Nom de la catégorie */}
                   <td className="px-6 py-4">
                     <span className="font-bold text-[#002b49] group-hover:text-black">
@@ -71,7 +79,11 @@ export default function BudgetHistory({
                   {/* Colonne Période (affichage lisible du type) */}
                   <td className="px-6 py-4">
                     <span className="text-xs font-bold uppercase bg-white/40 px-3 py-1 rounded-full text-[#002b49]/80">
-                      {budget.period === "monthly" ? "Mensuel" : budget.period === "weekly" ? "Hebdo" : "Perso"}
+                      {budget.period === "monthly"
+                        ? "Mensuel"
+                        : budget.period === "weekly"
+                          ? "Hebdo"
+                          : "Perso"}
                     </span>
                   </td>
                   {/* Colonne Date de création formatée */}

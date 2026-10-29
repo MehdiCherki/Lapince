@@ -31,7 +31,11 @@ describe("BudgetHistory", () => {
   it("signale le budget à supprimer", () => {
     const onDelete = vi.fn();
     render(
-      <BudgetHistory budgets={[courses]} onEdit={vi.fn()} onDelete={onDelete} />,
+      <BudgetHistory
+        budgets={[courses]}
+        onEdit={vi.fn()}
+        onDelete={onDelete}
+      />,
     );
 
     fireEvent.click(

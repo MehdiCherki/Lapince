@@ -52,12 +52,10 @@ export async function register(req: Request, res: Response) {
 
   await sendVerificationEmail(user.email, token);
 
-  res
-    .status(201)
-    .json({
-      message:
-        "Inscription réussi. Verifiez votre email pour activer votre compte.",
-    });
+  res.status(201).json({
+    message:
+      "Inscription réussi. Verifiez votre email pour activer votre compte.",
+  });
 }
 
 // POST /auth/login
@@ -85,11 +83,9 @@ export async function login(req: Request, res: Response) {
   }
 
   if (!user.emailVerified) {
-    res
-      .status(403)
-      .json({
-        error: "Veuillez confirmer votre email avant de vous connecter.",
-      });
+    res.status(403).json({
+      error: "Veuillez confirmer votre email avant de vous connecter.",
+    });
     return;
   }
 
@@ -131,7 +127,6 @@ export async function refresh(req: Request, res: Response) {
   setAccessTokenCookie(res, newTokens.accessToken);
   setRefreshTokenCookie(res, newTokens.refreshToken);
   setSessionIndicatorCookie(res, newTokens.refreshToken);
-
 
   res.status(204).end();
 }

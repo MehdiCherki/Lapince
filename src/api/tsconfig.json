@@ -23,7 +23,6 @@
     "declaration": true,
     "declarationMap": true,
 
-    
     // Stricter Typechecking Options
     "noUncheckedIndexedAccess": true,
     "exactOptionalPropertyTypes": true,
@@ -45,9 +44,8 @@
     "erasableSyntaxOnly": true, // Utiliser uniquement la syntaxe supportées par Node.js (pas d'enum, décorateurs...)
     "noUncheckedSideEffectImports": true,
     "moduleDetection": "force",
-    "skipLibCheck": true,
+    "skipLibCheck": true
   },
-  
-  
+
   "exclude": ["node_modules", "generated", "prisma", "prisma.config.ts"]
 }

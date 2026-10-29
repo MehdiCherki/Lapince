@@ -29,17 +29,19 @@ export function TransactionTable({ transactions }: TransactionTableProps) {
         {/* Corps du tableau */}
         <tbody className="divide-y divide-white/10">
           {transactions.length > 0 ? (
-            transactions.map(t => (
+            transactions.map((t) => (
               <Fragment key={t.id}>
-                <tr
-                  className="hover:bg-white/10 transition-colors animate-in fade-in slide-in-from-bottom-2 duration-300"
-                >
+                <tr className="hover:bg-white/10 transition-colors animate-in fade-in slide-in-from-bottom-2 duration-300">
                   <td className="px-2 md:px-8 py-2 md:py-4 text-xs md:text-base font-bold whitespace-nowrap">
-                    {new Date(t.date).toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit", year: "2-digit" })}
+                    {new Date(t.date).toLocaleDateString("fr-FR", {
+                      day: "2-digit",
+                      month: "2-digit",
+                      year: "2-digit",
+                    })}
                   </td>
 
                   <td className="px-2 md:px-8 py-2 md:py-4 text-xs md:text-base font-black italic uppercase max-w-[80px] md:max-w-none truncate">
-                    {t.description || 'Transaction'}
+                    {t.description || "Transaction"}
                   </td>
 
                   <td className="px-2 md:px-8 py-2 md:py-4">
@@ -48,8 +50,11 @@ export function TransactionTable({ transactions }: TransactionTableProps) {
                     </span>
                   </td>
 
-                  <td className={`px-2 md:px-8 py-2 md:py-4 text-xs md:text-base text-right font-black whitespace-nowrap ${t.category.type === 'INCOME' ? 'text-green-600' : 'text-red-600'}`}>
-                    {t.category.type === 'INCOME' ? '+' : '-'}{Number(t.amount).toFixed(2)}€
+                  <td
+                    className={`px-2 md:px-8 py-2 md:py-4 text-xs md:text-base text-right font-black whitespace-nowrap ${t.category.type === "INCOME" ? "text-green-600" : "text-red-600"}`}
+                  >
+                    {t.category.type === "INCOME" ? "+" : "-"}
+                    {Number(t.amount).toFixed(2)}€
                   </td>
                 </tr>
                 <tr aria-hidden="true">
@@ -63,7 +68,10 @@ export function TransactionTable({ transactions }: TransactionTableProps) {
           ) : (
             // Si aucun résultat (filtres trop restrictifs), on affiche un message
             <tr>
-              <td colSpan={4} className="px-8 py-10 text-center opacity-40 italic font-bold">
+              <td
+                colSpan={4}
+                className="px-8 py-10 text-center opacity-40 italic font-bold"
+              >
                 Aucun résultat pour ces filtres
               </td>
             </tr>

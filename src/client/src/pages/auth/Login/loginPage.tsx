@@ -36,7 +36,9 @@ export default function LoginPage() {
       const newCount = attemptCount + 1;
       setAttemptCount(newCount);
       if (newCount >= MAX_ATTEMPTS) {
-        setError({ error: "Trop de tentatives, veuillez réessayer plus tard." });
+        setError({
+          error: "Trop de tentatives, veuillez réessayer plus tard.",
+        });
       } else {
         setError(err as ApiError);
       }

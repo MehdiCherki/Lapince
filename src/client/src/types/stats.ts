@@ -1,11 +1,11 @@
 export type Overview = {
-    income: number;
-    expenses: number;
-    balance: number;
-}
+  income: number;
+  expenses: number;
+  balance: number;
+};
 
 export type MonthlyEntry = {
-    month: string;
-    income: number;
-    expenses: number;
-}
+  month: string;
+  income: number;
+  expenses: number;
+};

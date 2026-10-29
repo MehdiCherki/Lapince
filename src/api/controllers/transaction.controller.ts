@@ -24,9 +24,14 @@ export const getAll = async (req: Request, res: Response) => {
 
   const filters = transactionQuerySchema.safeParse(req.query || {});
   if (!filters.success)
-    return res.status(400).json({ error: "Données invalides", details: filters.error.issues });
+    return res
+      .status(400)
+      .json({ error: "Données invalides", details: filters.error.issues });
 
-  const transactions = await transactionService.getAllTransactions(req.user.id, filters.data);
+  const transactions = await transactionService.getAllTransactions(
+    req.user.id,
+    filters.data,
+  );
   return res.status(200).json(transactions);
 };
 
@@ -37,9 +42,14 @@ export const create = async (req: Request, res: Response) => {
 
   const body = createTransactionSchema.safeParse(req.body);
   if (!body.success)
-    return res.status(400).json({ error: "Données invalides", details: body.error.issues });
+    return res
+      .status(400)
+      .json({ error: "Données invalides", details: body.error.issues });
 
-  const transaction = await transactionService.createTransaction(req.user.id, body.data);
+  const transaction = await transactionService.createTransaction(
+    req.user.id,
+    body.data,
+  );
 
   await refreshBudgetAlert(req.user.id, transaction.categoryId);
 
@@ -54,7 +64,10 @@ export const getOne = async (req: Request, res: Response) => {
   const id = parseInt(req.params.id as string);
   if (isNaN(id)) return res.status(400).json({ error: "ID invalide" });
 
-  const transaction = await transactionService.getTransactionById(id, req.user.id);
+  const transaction = await transactionService.getTransactionById(
+    id,
+    req.user.id,
+  );
   if (!transaction)
     return res.status(404).json({ error: "Transaction introuvable" });
 
@@ -71,13 +84,24 @@ export const update = async (req: Request, res: Response) => {
 
   const body = updateTransactionSchema.safeParse(req.body);
   if (!body.success)
-    return res.status(400).json({ error: "Données invalides", details: body.error.issues });
+    return res
+      .status(400)
+      .json({ error: "Données invalides", details: body.error.issues });
 
-  const existingTransaction = await transactionService.getTransactionById(id, req.user.id);
+  const existingTransaction = await transactionService.getTransactionById(
+    id,
+    req.user.id,
+  );
   if (!existingTransaction)
-    return res.status(404).json({ error: "Transaction introuvable ou non autorisée" });
+    return res
+      .status(404)
+      .json({ error: "Transaction introuvable ou non autorisée" });
 
-  const updatedTransaction = await transactionService.updateTransaction(id, req.user.id, body.data);
+  const updatedTransaction = await transactionService.updateTransaction(
+    id,
+    req.user.id,
+    body.data,
+  );
 
   await refreshBudgetAlert(req.user.id, updatedTransaction.categoryId);
   // Changement de catégorie → l'ancienne catégorie a une dépense en moins
@@ -96,9 +120,14 @@ export const remove = async (req: Request, res: Response) => {
   const id = parseInt(req.params.id as string);
   if (isNaN(id)) return res.status(400).json({ error: "ID invalide" });
 
-  const existingTransaction = await transactionService.getTransactionById(id, req.user.id);
+  const existingTransaction = await transactionService.getTransactionById(
+    id,
+    req.user.id,
+  );
   if (!existingTransaction)
-    return res.status(404).json({ error: "Transaction introuvable ou non autorisée" });
+    return res
+      .status(404)
+      .json({ error: "Transaction introuvable ou non autorisée" });
 
   await transactionService.deleteTransaction(id, req.user.id);
   // La dépense supprimée peut faire repasser le budget sous sa limite

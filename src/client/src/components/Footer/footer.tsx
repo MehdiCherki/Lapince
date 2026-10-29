@@ -81,18 +81,26 @@ export default function Footer({
         ) : (
           <>
             <div className="absolute inset-0 flex items-center justify-evenly px-6 pb-[10px]">
-              {visibleItems.filter((i) => i.id !== "mentions-legales").map((item) => (
-                <a
-                  key={item.id}
-                  href={item.href}
-                  className="flex items-center gap-1.5 shrink-0"
-                >
-                  {item.src && <img src={item.src} className="w-6 h-6 object-contain" alt="" />}
-                  <span className="text-[13px] font-black uppercase text-[#002b49]">
-                    {item.label}
-                  </span>
-                </a>
-              ))}
+              {visibleItems
+                .filter((i) => i.id !== "mentions-legales")
+                .map((item) => (
+                  <a
+                    key={item.id}
+                    href={item.href}
+                    className="flex items-center gap-1.5 shrink-0"
+                  >
+                    {item.src && (
+                      <img
+                        src={item.src}
+                        className="w-6 h-6 object-contain"
+                        alt=""
+                      />
+                    )}
+                    <span className="text-[13px] font-black uppercase text-[#002b49]">
+                      {item.label}
+                    </span>
+                  </a>
+                ))}
             </div>
             {visibleItems.some((i) => i.id === "mentions-legales") && (
               <div className="absolute bottom-1.5 left-0 right-0 flex justify-center">
@@ -116,7 +124,8 @@ export default function Footer({
         <a
           href="/mentions-legales"
           className={`text-[11px] font-bold text-[#002b49] opacity-70 uppercase hover:opacity-100 transition-opacity ${
-            showIcons && visibleItems.filter((i) => i.id !== "mentions-legales").length > 0
+            showIcons &&
+            visibleItems.filter((i) => i.id !== "mentions-legales").length > 0
               ? "text-left"
               : "w-full text-center"
           }`}
@@ -125,22 +134,32 @@ export default function Footer({
         </a>
 
         {/* Bloc central des icônes sélectionnées */}
-        {showIcons && visibleItems.filter((i) => i.id !== "mentions-legales").length > 0 && (
-          <div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-64">
-            {visibleItems.filter((i) => i.id !== "mentions-legales").map((item) => (
-              <a
-                key={item.id}
-                href={item.href}
-                className="flex items-center gap-2.5 hover:scale-105 transition-all group shrink-0"
-              >
-                {item.src && <img src={item.src} className="w-5 h-5 object-contain" alt="" />}
-                <span className="text-[11px] font-black uppercase tracking-widest text-[#002b49]">
-                  {item.label}
-                </span>
-              </a>
-            ))}
-          </div>
-        )}
+        {showIcons &&
+          visibleItems.filter((i) => i.id !== "mentions-legales").length >
+            0 && (
+            <div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-64">
+              {visibleItems
+                .filter((i) => i.id !== "mentions-legales")
+                .map((item) => (
+                  <a
+                    key={item.id}
+                    href={item.href}
+                    className="flex items-center gap-2.5 hover:scale-105 transition-all group shrink-0"
+                  >
+                    {item.src && (
+                      <img
+                        src={item.src}
+                        className="w-5 h-5 object-contain"
+                        alt=""
+                      />
+                    )}
+                    <span className="text-[11px] font-black uppercase tracking-widest text-[#002b49]">
+                      {item.label}
+                    </span>
+                  </a>
+                ))}
+            </div>
+          )}
       </footer>
     </>
   );

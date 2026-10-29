@@ -1,6 +1,9 @@
 import type { Request, Response } from "express";
 import * as budgetService from "../services/budget.service.ts";
-import { generateBudgetAlert, removeCategoryAlert } from "../services/alert.generator.ts";
+import {
+  generateBudgetAlert,
+  removeCategoryAlert,
+} from "../services/alert.generator.ts";
 
 import {
   createBudgetSchema,
@@ -21,9 +24,11 @@ export const createBudget = async (req: Request, res: Response) => {
     return res.status(401).json({ error: "Utilisateur non authentifié" });
   const body = createBudgetSchema.safeParse(req.body);
   if (!body.success)
-    return res.status(400).json({ error: "Données invalides", details: body.error.issues });
+    return res
+      .status(400)
+      .json({ error: "Données invalides", details: body.error.issues });
   const budget = await budgetService.createBudget(req.user.id, body.data);
-  await generateBudgetAlert(budget.id, req.user.id)
+  await generateBudgetAlert(budget.id, req.user.id);
   return res.status(201).json(budget);
 };
 
@@ -48,7 +53,9 @@ export const updateBudget = async (req: Request, res: Response) => {
 
   const body = updateBudgetSchema.safeParse(req.body);
   if (!body.success)
-    return res.status(400).json({ error: "Données invalides", details: body.error.issues });
+    return res
+      .status(400)
+      .json({ error: "Données invalides", details: body.error.issues });
 
   // Lu AVANT la mise à jour : seul moyen de connaître l'ancienne catégorie
   const before = await budgetService.getBudgetById(id, req.user.id);
@@ -79,4 +86,3 @@ export const deleteBudget = async (req: Request, res: Response) => {
   await removeCategoryAlert(req.user.id, deleted.id_category);
   return res.status(204).send();
 };
-

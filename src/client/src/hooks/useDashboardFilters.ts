@@ -8,7 +8,9 @@ export function useDashboardFilters(
   overview: Overview | null,
 ) {
   const [search, setSearch] = useState("");
-  const [filterType, setFilterType] = useState<"ALL" | "INCOME" | "EXPENSE">("ALL");
+  const [filterType, setFilterType] = useState<"ALL" | "INCOME" | "EXPENSE">(
+    "ALL",
+  );
   const [selectedMonth, setSelectedMonth] = useState("");
   const [selectedCategories, setSelectedCategories] = useState<number[]>([]);
 
@@ -19,22 +21,29 @@ export function useDashboardFilters(
   };
 
   const isFiltered =
-    !!search || filterType !== "ALL" || !!selectedMonth || selectedCategories.length > 0;
+    !!search ||
+    filterType !== "ALL" ||
+    !!selectedMonth ||
+    selectedCategories.length > 0;
 
   const filteredTransactions = useMemo(() => {
     return transactions.filter((t) => {
-      const matchesType = filterType === "ALL" || t.category.type === filterType;
+      const matchesType =
+        filterType === "ALL" || t.category.type === filterType;
       const matchesSearch =
         !search.trim() ||
         t.description?.toLowerCase().includes(search.toLowerCase()) ||
         t.category.name.toLowerCase().includes(search.toLowerCase());
-      const matchesMonth = !selectedMonth || (() => {
-        const d = new Date(t.date);
-        const tMonth = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-        return tMonth === selectedMonth;
-      })();
+      const matchesMonth =
+        !selectedMonth ||
+        (() => {
+          const d = new Date(t.date);
+          const tMonth = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+          return tMonth === selectedMonth;
+        })();
       const matchesCategory =
-        selectedCategories.length === 0 || selectedCategories.includes(t.category.id);
+        selectedCategories.length === 0 ||
+        selectedCategories.includes(t.category.id);
       return matchesType && matchesSearch && matchesMonth && matchesCategory;
     });
   }, [transactions, search, filterType, selectedMonth, selectedCategories]);
@@ -48,7 +57,9 @@ export function useDashboardFilters(
     );
 
     sorted.forEach((t) => {
-      const monthName = new Date(t.date).toLocaleString("fr-FR", { month: "short" });
+      const monthName = new Date(t.date).toLocaleString("fr-FR", {
+        month: "short",
+      });
       if (!monthlyMap[monthName]) {
         monthlyMap[monthName] = { month: monthName, income: 0, expenses: 0 };
       }
@@ -73,9 +84,12 @@ export function useDashboardFilters(
   }, [filteredTransactions, overview, isFiltered]);
 
   return {
-    search, setSearch,
-    filterType, setFilterType,
-    selectedMonth, setSelectedMonth,
+    search,
+    setSearch,
+    filterType,
+    setFilterType,
+    selectedMonth,
+    setSelectedMonth,
     selectedCategories,
     toggleCategory,
     resetCategories: () => setSelectedCategories([]),

@@ -18,14 +18,12 @@ afterAll(async () => {
 
 describe("POST /auth/register", () => {
   it("crée un compte non vérifié, envoie l'email de vérification et retourne 201", async () => {
-    const res = await request(app)
-      .post("/auth/register")
-      .send({
-        first_name: "Test",
-        last_name:  "User",
-        email:      testEmail,
-        password:   "Motdepasse1@",
-      });
+    const res = await request(app).post("/auth/register").send({
+      first_name: "Test",
+      last_name: "User",
+      email: testEmail,
+      password: "Motdepasse1@",
+    });
 
     expect(res.status).toBe(201);
     // Depuis la vérification d'email, la réponse ne renvoie plus l'utilisateur
@@ -44,27 +42,23 @@ describe("POST /auth/register", () => {
   });
 
   it("refuse un doublon d'email avec 409", async () => {
-    const res = await request(app)
-      .post("/auth/register")
-      .send({
-        first_name: "Test",
-        last_name:  "User",
-        email:      testEmail,
-        password:   "Motdepasse1@",
-      });
+    const res = await request(app).post("/auth/register").send({
+      first_name: "Test",
+      last_name: "User",
+      email: testEmail,
+      password: "Motdepasse1@",
+    });
 
     expect(res.status).toBe(409);
   });
 
   it("refuse un mot de passe sans majuscule ni caractère spécial avec 400", async () => {
-    const res = await request(app)
-      .post("/auth/register")
-      .send({
-        first_name: "Test",
-        last_name:  "User",
-        email:      "autre@lapince.fr",
-        password:   "trop_court",
-      });
+    const res = await request(app).post("/auth/register").send({
+      first_name: "Test",
+      last_name: "User",
+      email: "autre@lapince.fr",
+      password: "trop_court",
+    });
 
     expect(res.status).toBe(400);
   });

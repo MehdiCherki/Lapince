@@ -1,5 +1,5 @@
 import { Router } from "express";
-import * as transactionController from "../controllers/transaction.controller.js" // On importe les fonctions du contrôleur de transaction. Ces fonctions contiennent la logique pour gérer les différentes opérations sur les transactions (création, récupération, mise à jour, suppression). En les important ici, on peut les associer aux routes correspondantes dans ce fichier de routing.
+import * as transactionController from "../controllers/transaction.controller.js"; // On importe les fonctions du contrôleur de transaction. Ces fonctions contiennent la logique pour gérer les différentes opérations sur les transactions (création, récupération, mise à jour, suppression). En les important ici, on peut les associer aux routes correspondantes dans ce fichier de routing.
 // Importe ici ton middleware d'authentification (ajuste le chemin selon ton projet)
 import { authMiddleware } from "../middlewares/access.controller.middleware.ts"; // On importe le middleware d'authentification. Ce middleware vérifie que l'utilisateur est authentifié avant de lui permettre d'accéder aux routes protégées. En l'appliquant à ce router, on s'assure que toutes les routes de transaction nécessitent une authentification, ce qui est essentiel pour protéger les données sensibles des utilisateurs.
 

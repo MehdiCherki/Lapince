@@ -9,10 +9,7 @@ export const createBudgetSchema = z.object({
 
 // Schéma pour PATCH /budgets/:id
 export const updateBudgetSchema = z.object({
-  limit_amount: z
-    .number()
-    .positive("Le montant doit être positif")
-    .optional(),
+  limit_amount: z.number().positive("Le montant doit être positif").optional(),
 
   period: z
     .enum(["weekly", "monthly", "custom"], {

@@ -1,6 +1,6 @@
-import { transporter } from "../lib/mailer.ts"
+import { transporter } from "../lib/mailer.ts";
 
-export async function sendVerificationEmail(to: string, token: string){
+export async function sendVerificationEmail(to: string, token: string) {
   const link = `${process.env.FRONTEND_URL}/verify-email?token=${token}`;
 
   await transporter.sendMail({

@@ -40,11 +40,15 @@ export function AnimatedOrbBackground() {
   }, []);
 
   return (
-    <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none" aria-hidden="true">
+    <div
+      className="absolute inset-0 z-0 overflow-hidden pointer-events-none"
+      aria-hidden="true"
+    >
       <div
         className="absolute top-0 left-0 w-[65vw] h-[65vw] rounded-full"
         style={{
-          background: "radial-gradient(circle, rgba(255,255,255,0.95) 0%, rgba(200,225,245,0.6) 40%, transparent 68%)",
+          background:
+            "radial-gradient(circle, rgba(255,255,255,0.95) 0%, rgba(200,225,245,0.6) 40%, transparent 68%)",
           filter: "blur(35px)",
           transform: `translate(${orb1.x}vw, ${orb1.y}vh)`,
           transition: "transform 2.5s ease-in-out",
@@ -55,7 +59,8 @@ export function AnimatedOrbBackground() {
       <div
         className="absolute top-0 left-0 w-[55vw] h-[55vw] rounded-full"
         style={{
-          background: "radial-gradient(circle, rgba(67,140,202,0.7) 0%, rgba(30,80,140,0.4) 45%, transparent 68%)",
+          background:
+            "radial-gradient(circle, rgba(67,140,202,0.7) 0%, rgba(30,80,140,0.4) 45%, transparent 68%)",
           filter: "blur(50px)",
           transform: `translate(${orb2.x}vw, ${orb2.y}vh)`,
           transition: "transform 3s ease-in-out",

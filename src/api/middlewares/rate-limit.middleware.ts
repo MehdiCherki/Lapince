@@ -9,17 +9,19 @@ export const loginRateLimit = rateLimit({
 });
 
 export const registerRateLimit = rateLimit({
-  windowMs: 60 *60 * 1000,
+  windowMs: 60 * 60 * 1000,
   max: 5,
   message: { error: "Trop de tentatives d'inscription, réessayez plus tard." },
   standardHeaders: true,
   legacyHeaders: false,
-})
+});
 
 export const refreshRateLimit = rateLimit({
-  windowMs: 15 *60 * 1000,
+  windowMs: 15 * 60 * 1000,
   max: 30,
-  message: { error: "Trop de requêtes de rafraichissement, réessayez plus tard." },
+  message: {
+    error: "Trop de requêtes de rafraichissement, réessayez plus tard.",
+  },
   standardHeaders: true,
   legacyHeaders: false,
-})
+});

@@ -32,14 +32,18 @@ export default function ParametreForm({
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    if (!confirm("Êtes-vous sûr de vouloir modifier vos informations ?")) return;
+    if (!confirm("Êtes-vous sûr de vouloir modifier vos informations ?"))
+      return;
 
     setIsLoading(true);
     setApiError(null);
 
     try {
       if (form.password && form.password !== form.confirm) {
-        setApiError({ error: "Les mots de passe ne correspondent pas.", field: "confirm" });
+        setApiError({
+          error: "Les mots de passe ne correspondent pas.",
+          field: "confirm",
+        });
         setIsLoading(false);
         return;
       }
@@ -70,7 +74,13 @@ export default function ParametreForm({
     <form onSubmit={handleSubmit} className="space-y-3">
       <div>
         <label className={labelStyle}>Prénom</label>
-        <input name="first_name" value={form.first_name} onChange={handleChange} className={inputStyle} placeholder="Prénom" />
+        <input
+          name="first_name"
+          value={form.first_name}
+          onChange={handleChange}
+          className={inputStyle}
+          placeholder="Prénom"
+        />
         {apiError?.field === "first_name" && (
           <p className="text-red-500 text-xs ml-4">{apiError.error}</p>
         )}
@@ -78,7 +88,13 @@ export default function ParametreForm({
 
       <div>
         <label className={labelStyle}>Nom</label>
-        <input name="last_name" value={form.last_name} onChange={handleChange} className={inputStyle} placeholder="Nom de famille" />
+        <input
+          name="last_name"
+          value={form.last_name}
+          onChange={handleChange}
+          className={inputStyle}
+          placeholder="Nom de famille"
+        />
         {apiError?.field === "last_name" && (
           <p className="text-red-500 text-xs ml-4">{apiError.error}</p>
         )}
@@ -86,7 +102,14 @@ export default function ParametreForm({
 
       <div>
         <label className={labelStyle}>e-mail</label>
-        <input name="email" type="email" value={form.email} onChange={handleChange} className={inputStyle} placeholder="e-mail" />
+        <input
+          name="email"
+          type="email"
+          value={form.email}
+          onChange={handleChange}
+          className={inputStyle}
+          placeholder="e-mail"
+        />
         {apiError?.field === "email" && (
           <p className="text-red-500 text-xs ml-4">{apiError.error}</p>
         )}
@@ -94,7 +117,14 @@ export default function ParametreForm({
 
       <div>
         <label className={labelStyle}>Nouveau mot de passe</label>
-        <input name="password" type="password" value={form.password} onChange={handleChange} className={inputStyle} placeholder="mot de passe" />
+        <input
+          name="password"
+          type="password"
+          value={form.password}
+          onChange={handleChange}
+          className={inputStyle}
+          placeholder="mot de passe"
+        />
         {apiError?.field === "password" && (
           <p className="text-red-500 text-xs ml-4">{apiError.error}</p>
         )}
@@ -102,7 +132,14 @@ export default function ParametreForm({
 
       <div>
         <label className={labelStyle}>Confirmer le mot de passe</label>
-        <input name="confirm" type="password" value={form.confirm} onChange={handleChange} className={inputStyle} placeholder="mot de passe" />
+        <input
+          name="confirm"
+          type="password"
+          value={form.confirm}
+          onChange={handleChange}
+          className={inputStyle}
+          placeholder="mot de passe"
+        />
         {apiError?.field === "confirm" && (
           <p className="text-red-500 text-xs ml-4">{apiError.error}</p>
         )}
@@ -118,7 +155,11 @@ export default function ParametreForm({
           disabled={isLoading}
           className="w-fit px-10 py-2 bg-[#002b49] text-white rounded-full font-bold text-sm shadow-lg hover:bg-[#003b63] transition-all disabled:opacity-50"
         >
-          {isLoading ? <Loader2 className="animate-spin w-4 h-4" /> : "Soumettre"}
+          {isLoading ? (
+            <Loader2 className="animate-spin w-4 h-4" />
+          ) : (
+            "Soumettre"
+          )}
         </button>
       </div>
 

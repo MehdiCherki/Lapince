@@ -76,7 +76,7 @@ export default function LoginForm({
           />
           <button
             type="button"
-            onClick={() => setShowPassword(prev => !prev)}
+            onClick={() => setShowPassword((prev) => !prev)}
           >
             {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
           </button>

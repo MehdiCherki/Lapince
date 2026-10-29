@@ -8,7 +8,13 @@ interface ConfirmModalProps {
   onCancel: () => void;
 }
 
-export default function ConfirmModal({ title, message, confirmLabel, onConfirm, onCancel }: ConfirmModalProps) {
+export default function ConfirmModal({
+  title,
+  message,
+  confirmLabel,
+  onConfirm,
+  onCancel,
+}: ConfirmModalProps) {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -40,11 +46,23 @@ export default function ConfirmModal({ title, message, confirmLabel, onConfirm, 
       className="fixed inset-0 bg-black/40 flex items-center justify-center z-[999]"
     >
       <div className="bg-white text-[#002b49] rounded-xl p-6 w-80 text-center shadow-xl">
-        <p id="confirm-title" className="font-bold text-lg mb-4">{title}</p>
-        <p id="confirm-message" className="text-sm opacity-70 mb-6">{message}</p>
-        {error && <p role="alert" className="text-sm text-red-600 mb-4">{error}</p>}
+        <p id="confirm-title" className="font-bold text-lg mb-4">
+          {title}
+        </p>
+        <p id="confirm-message" className="text-sm opacity-70 mb-6">
+          {message}
+        </p>
+        {error && (
+          <p role="alert" className="text-sm text-red-600 mb-4">
+            {error}
+          </p>
+        )}
         <div className="flex justify-between gap-3">
-          <button type="button" onClick={onCancel} className="flex-1 py-2 rounded-lg bg-gray-300 font-bold">
+          <button
+            type="button"
+            onClick={onCancel}
+            className="flex-1 py-2 rounded-lg bg-gray-300 font-bold"
+          >
             Annuler
           </button>
           <button

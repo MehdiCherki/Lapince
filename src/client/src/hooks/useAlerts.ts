@@ -4,7 +4,9 @@ import type { Alert } from "../types/alert";
 
 export function useAlerts() {
   const [alerts, setAlerts] = useState<Alert[]>([]);
-  const [currentAlertIndex, setCurrentAlertIndex] = useState<number | null>(null);
+  const [currentAlertIndex, setCurrentAlertIndex] = useState<number | null>(
+    null,
+  );
 
   // useCallback [] : la référence est stable entre les renders.
   // Les composants peuvent l'inclure dans leurs deps de useEffect sans boucle infinie.
@@ -27,7 +29,8 @@ export function useAlerts() {
     setCurrentAlertIndex(next < alerts.length ? next : null);
   }
 
-  const currentAlert = currentAlertIndex !== null ? alerts[currentAlertIndex] : null;
+  const currentAlert =
+    currentAlertIndex !== null ? alerts[currentAlertIndex] : null;
 
   return { currentAlert, handleCloseAlert, loadAlerts };
 }

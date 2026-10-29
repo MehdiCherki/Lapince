@@ -30,7 +30,10 @@ export async function updateUserProfile(payload: {
   );
   const data = await response.json();
   if (!response.ok) {
-    throw { error: data.error ?? "Erreur lors de la mise à jour", field: data.field } as ApiError;
+    throw {
+      error: data.error ?? "Erreur lors de la mise à jour",
+      field: data.field,
+    } as ApiError;
   }
   return data.user;
 }

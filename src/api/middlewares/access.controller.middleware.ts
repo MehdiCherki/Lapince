@@ -18,9 +18,7 @@ export function authMiddleware(
       return next(error);
     }
     return next(
-      new ForbiddenError(
-        "Vous n'êtes pas autorisé à accéder à cette resource",
-      ),
+      new ForbiddenError("Vous n'êtes pas autorisé à accéder à cette resource"),
     );
   }
 }
@@ -54,5 +52,3 @@ function verifyAndDecodeJWT(accessToken: string): JwtPayload {
     );
   }
 }
-
-
