@@ -1,172 +1,157 @@
-# Procédure de déploiement — La Pince (depuis zéro)
+# Déploiement — La Pince
 
-Serveur : `student@****nom****-server.eddi.cloud`  
-Repo : `git@github.com:O-clock-Geneve/cda-la-pince.git`
+Site : https://mehdicherki.fr
+Serveur : VPS Linux, dépôt cloné dans `/opt/lapince`.
+Dépôt : `MehdiCherki/Lapince` sur GitHub, branche `main`.
 
----
-
-## 1. Se connecter au serveur
-
-```bash
-ssh student@****Nom****-server.eddi.cloud
-```
+> Aucun secret dans ce fichier : mots de passe, clés et jetons restent dans le `.env` du serveur.
 
 ---
 
-## 2. Vérifier que Docker est installé
+## 1. Architecture de la prod
 
-```bash
-docker --version
-docker compose version
+```
+Internet ──► nginx-proxy (:80, :443) ──► client (nginx, fichiers du build Vite)
+                 │                          └── /api/ ──► api (:3007) ──► db (PostgreSQL)
+                 └── /.well-known/acme-challenge/ ◄── certbot (renouvellement HTTPS)
 ```
 
-Si Docker n'est pas installé :
+| Service | Rôle |
+|---|---|
+| `db` | PostgreSQL 17, données dans le volume `postgres_data` |
+| `api` | API compilée (`node dist/…`). Au démarrage : `prisma db push`, puis seed des catégories |
+| `client` | nginx qui sert le front et relaie `/api/` vers `api` |
+| `nginx-proxy` | Seul service exposé (ports 80 et 443). HTTP → HTTPS, `www` → domaine nu. Recharge sa configuration toutes les 6 h pour servir un certificat renouvelé |
+| `certbot` | Tente un renouvellement toutes les 12 h, en mode **webroot** |
+
+Tous les services ont `restart: unless-stopped` : ils repartent seuls après un redémarrage du serveur.
+
+Toutes les commandes ci-dessous se lancent depuis `/opt/lapince`, avec cet alias :
 
 ```bash
-curl -fsSL https://get.docker.com | sh
-sudo usermod -aG docker $USER
-newgrp docker
+cd /opt/lapince
+alias dc='docker compose -f docker-compose.prod.yml'
 ```
 
----
+### Le `.env` du serveur
 
-## 3. Cloner le dépôt
-
-```bash
-cd ~
-git clone git@github.com:O-clock-Geneve/cda-la-pince.git
-cd cda-la-pince
-```
-
-> Si la clé SSH n'est pas configurée sur le serveur, générer une clé et l'ajouter aux deploy keys GitHub :
-> ```bash
-> ssh-keygen -t ed25519 -C "eddi-server"
-> cat ~/.ssh/id_ed25519.pub
-> # Copier la clé → GitHub → Settings du repo → Deploy keys → Add
-> ```
-
----
-
-## 4. Créer le fichier `.env`
-
-```bash
-cp .env.example .env
-nano .env
-```
-
-Remplir avec les valeurs de production :
+Copie de `.env.example`, avec ces valeurs propres à la prod :
 
 ```env
-# Base de données
-POSTGRES_USER=lapince
-POSTGRES_PASSWORD=<mot_de_passe_fort>
-POSTGRES_DB=lapince_db
-
-# API
-JWT_SECRET=<secret_très_long_et_aléatoire>
 NODE_ENV=production
-DATABASE_URL=postgresql://lapince:<mot_de_passe_fort>@db:5432/lapince_db
-API_PORT=3007
-
-# Emails de vérification (SMTP Brevo) — le lien envoyé pointe sur FRONTEND_URL
+DATABASE_URL=postgresql://<POSTGRES_USER>:<POSTGRES_PASSWORD>@db:5432/<POSTGRES_DB>
 FRONTEND_URL=https://mehdicherki.fr
-SMTP_USER=<identifiant_smtp_brevo>
-SMTP_PASS=<clé_smtp_brevo>
-
-# CORS — domaine du serveur
 ALLOWED_ORIGINS=https://mehdicherki.fr
-
-# URL de l'API vue par le frontend (proxy nginx /api/ → api:3007)
 VITE_API_BASE_URL=/api
 ```
 
-> Le mot de passe dans `DATABASE_URL` doit être identique à `POSTGRES_PASSWORD`.
->
-> Pas de port client à configurer : c'est le reverse proxy Nginx qui expose `80` et `443` (cf. `docker-compose.prod.yml`).
+Les ports locaux (`*_LOCAL_PORT`) ne servent pas en prod : seul `nginx-proxy` est exposé.
+
+> Ce document décrit le serveur **existant**. L'installation complète d'un nouveau serveur (Docker, premier certificat) n'est pas décrite ici, car elle n'a pas été rejouée depuis la mise en place.
 
 ---
 
-## 5. Builder et démarrer les conteneurs
+## 2. Mettre en production une nouvelle version
+
+Procédure utilisée pour la 0.7.0 (28/10/2026). Prérequis : la version est mergée dans `main`.
+
+### A — Vérifier et sauvegarder
 
 ```bash
-docker compose -f docker-compose.prod.yml up -d --build
+git status --short          # doit être vide : rien de modifié à la main sur le serveur
+git log --oneline -1        # NOTER ce commit : c'est le point de retour arrière
+dc exec -T db sh -c 'pg_dump -U "$POSTGRES_USER" "$POSTGRES_DB"' > ~/backup-lapince-$(date +%F).sql
+ls -lh ~/backup-lapince-*.sql   # la sauvegarde du jour ne doit pas être vide
 ```
 
-Cette commande :
-- Build l'image API (compile le TypeScript)
-- Build l'image client (build Vite → Nginx)
-- Démarre PostgreSQL, l'API et le client
-- L'API exécute automatiquement `prisma db push` + `prisma db seed` au démarrage
+### B — Déployer
+
+```bash
+git pull --ff-only origin main
+dc up -d --build
+```
+
+`--build` est indispensable : sans lui, Docker relance les anciennes images.
+
+### C — Contrôler
+
+```bash
+dc ps                       # tous les services « Up », db « healthy »
+dc logs api --tail 20       # « Server started », aucune erreur
+curl -s -o /dev/null -w "%{http_code}\n" https://mehdicherki.fr/api/categories   # 401 (route protégée : l'API répond)
+```
+
+Puis dans le navigateur : connexion, ajout d'une transaction, tableau de bord.
+
+### D — Retour arrière (si C échoue)
+
+```bash
+git checkout <commit noté en A>
+dc up -d --build
+```
+
+Si le schéma de la base a changé entre les deux versions, restaurer aussi la sauvegarde de l'étape A.
 
 ---
 
-## 6. Vérifier que tout tourne
+## 3. Accès GitHub du serveur
 
-```bash
-# État des conteneurs
-docker compose -f docker-compose.prod.yml ps
+Le serveur lit le dépôt avec une **deploy key** : une clé SSH dédiée, en **lecture seule**, ajoutée dans GitHub → Settings du dépôt → Deploy keys. Elle ne donne accès qu'à ce dépôt et ne permet pas de pousser.
 
-# Logs de l'API (vérifier "Server started" et "prisma db push" OK)
-docker compose -f docker-compose.prod.yml logs api
-
-# Logs du client (vérifier Nginx démarré)
-docker compose -f docker-compose.prod.yml logs client
-```
-
-L'app est accessible sur : `http://mehdicherki-server.eddi.cloud`
+Elle est déclarée dans `~/.ssh/config` sous l'alias `github-lapince`, et l'URL du dépôt (`git remote -v`) utilise cet alias à la place de `github.com`.
 
 ---
 
-## 7. Mettre à jour après un push git
+## 4. Certificats HTTPS
+
+Let's Encrypt, certificat `mehdicherki.fr` (couvre aussi `www.mehdicherki.fr`), stocké dans `/etc/letsencrypt` sur le serveur.
+
+**Renouvellement automatique** : `certbot` dépose un fichier de preuve dans le volume `certbot_webroot`, que `nginx-proxy` sert sur `/.well-known/acme-challenge/`. Pas besoin d'arrêter nginx.
+
+> ⚠️ Le mode doit rester **webroot**. En août 2026, le certificat avait été obtenu en mode `standalone` : certbot voulait alors ouvrir lui-même le port 80, déjà occupé par nginx. Chaque renouvellement échouait en silence, et le site est devenu inaccessible à l'expiration (14/08/2026).
 
 ```bash
-cd ~/cda-la-pince
-git pull origin main
-docker compose -f docker-compose.prod.yml up -d --build
-```
+# État et date d'expiration
+dc run --rm --entrypoint certbot certbot certificates
 
-> `--build` force le rebuild des images pour prendre en compte les nouveaux fichiers.
+# Mode de renouvellement : doit afficher « authenticator = webroot »
+grep authenticator /etc/letsencrypt/renewal/mehdicherki.fr.conf
 
----
+# Simulation de renouvellement (ne change rien)
+dc run --rm --entrypoint certbot certbot renew --dry-run
 
-## 8. Commandes utiles
-
-```bash
-# Arrêter les conteneurs
-docker compose -f docker-compose.prod.yml down
-
-# Arrêter ET supprimer les volumes (⚠ efface la base de données)
-docker compose -f docker-compose.prod.yml down -v
-
-# Redémarrer un seul service
-docker compose -f docker-compose.prod.yml restart api
-
-# Ouvrir un shell dans l'API (debug, prisma studio, etc.)
-docker compose -f docker-compose.prod.yml exec api sh
-
-# Voir les logs en temps réel
-docker compose -f docker-compose.prod.yml logs -f
-
-# Relancer uniquement le seed manuellement
-docker compose -f docker-compose.prod.yml exec api npx prisma db seed
+# Journal des tentatives de renouvellement
+dc logs certbot --tail 30
 ```
 
 ---
 
-## 9. En cas de problème
+## 5. Commandes utiles
 
-**Conteneur qui redémarre en boucle :**
 ```bash
-docker compose -f docker-compose.prod.yml logs api --tail=50
+dc ps                              # état des services
+dc logs -f api                     # logs de l'API en continu
+dc restart api                     # redémarrer un service (ne relit pas le .env)
+dc up -d api                       # recréer un service (relit le .env)
+dc exec api sh                     # shell dans l'API
+dc exec api npx prisma db seed     # relancer le seed
+dc down                            # tout arrêter (les données restent)
 ```
 
-**Erreur de connexion DB :**
-- Vérifier que `DATABASE_URL` dans `.env` correspond bien à `POSTGRES_USER` / `POSTGRES_PASSWORD` / `POSTGRES_DB`
-- Attendre que le healthcheck de `db` passe (`docker compose -f docker-compose.prod.yml ps` → `healthy`)
+> ⚠️ **Jamais `dc down -v`** : `-v` supprime les volumes, donc la base de production.
 
-**Rebuild propre (si cache Docker problématique) :**
+---
+
+## 6. En cas de problème
+
+**Service qui redémarre en boucle** : `dc logs <service> --tail 50`.
+
+**Erreur de connexion à la base** : dans `.env`, `DATABASE_URL` doit reprendre `POSTGRES_USER`, `POSTGRES_PASSWORD` et `POSTGRES_DB`, avec l'hôte `db`. Attendre que `db` soit `healthy` (`dc ps`).
+
+**Site injoignable en HTTPS** : vérifier la date d'expiration du certificat (section 4), puis `dc logs nginx-proxy --tail 30`.
+
+**Rebuild sans cache Docker** :
 ```bash
-docker compose -f docker-compose.prod.yml down
-docker compose -f docker-compose.prod.yml build --no-cache
-docker compose -f docker-compose.prod.yml up -d
+dc build --no-cache
+dc up -d
 ```
