@@ -1,5 +1,10 @@
 import { apiFetch } from "./apiClient";
-import type { Alert } from "@/types/alert";
+import type { Alert, AlertResponse } from "@/types/alert";
+
+// Le dépassement reçu en texte (Decimal) devient un nombre, une seule fois, ici
+function toAlert(raw: AlertResponse): Alert {
+  return { ...raw, exceededAmount: Number(raw.exceededAmount) };
+}
 
 export async function fetchAlerts(): Promise<Alert[]> {
   const response = await apiFetch(
@@ -13,9 +18,8 @@ export async function fetchAlerts(): Promise<Alert[]> {
     throw new Error(`Erreur ${response.status} en chargeant les alertes`);
   }
 
-  return response.json();
-  // Le JSON renvoyé a exactement la même shape que notre type Alert :
-  // { id, categoryName, exceededAmount, isRead, userId, createdAt
+  const alerts: AlertResponse[] = await response.json();
+  return alerts.map(toAlert);
 }
 
 // Marque une alerte comme lue — PATCH /alerts/:id/read

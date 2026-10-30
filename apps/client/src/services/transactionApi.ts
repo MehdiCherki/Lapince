@@ -1,12 +1,18 @@
 import { apiFetch } from "./apiClient";
 import type {
   Transaction,
+  TransactionResponse,
   CreateTransactionPayload,
   UpdateTransactionPayload,
 } from "@/types/transaction";
 import type { Paginated } from "@/types/api";
 
 const API_URL = `${import.meta.env.VITE_API_BASE_URL}/transactions`;
+
+// Seul endroit où le montant reçu en texte devient un nombre : le reste de l'app manipule des nombres
+function toTransaction(raw: TransactionResponse): Transaction {
+  return { ...raw, amount: Number(raw.amount) };
+}
 
 // GET transactions - toutes les transactions de l'utilisateur connecté
 export async function fetchTransactions(
@@ -22,7 +28,8 @@ export async function fetchTransactions(
       `Erreur ${response.status} : Impossible de récupérer les transactions`,
     );
   }
-  return response.json();
+  const body: Paginated<TransactionResponse> = await response.json();
+  return { ...body, data: body.data.map(toTransaction) };
 }
 
 // GET toutes les transactions (toutes les pages) - pour le tableau de bord,
@@ -52,8 +59,8 @@ export async function createTransaction(
       `Erreur ${response.status} : Impossible de créer la transaction.`,
     );
   }
-  const transaction = await response.json();
-  return transaction;
+  const transaction: TransactionResponse = await response.json();
+  return toTransaction(transaction);
 }
 
 export async function deleteTransactionApi(id: number) {
@@ -66,9 +73,12 @@ export async function deleteTransactionApi(id: number) {
   if (!res.ok) throw new Error("Delete failed");
 }
 
-export async function updateTransactionApi(t: Transaction) {
+export async function updateTransactionApi(
+  t: Transaction,
+): Promise<Transaction> {
   const payload: UpdateTransactionPayload = {
-    // Prisma renvoie les Decimal en texte ("150") → l'API attend un nombre
+    // Déjà un nombre (toTransaction), mais le formulaire de modification écrit dans t.amount :
+    // la conversion garantit un nombre à l'API quoi que la saisie y ait mis
     amount: Number(t.amount),
     // null refusé par l'API ; undefined fait disparaître la clé du JSON → champ inchangé
     description: t.description ?? undefined,
@@ -89,5 +99,6 @@ export async function updateTransactionApi(t: Transaction) {
     throw new Error("Erreur API");
   }
 
-  return await res.json();
+  const updated: TransactionResponse = await res.json();
+  return toTransaction(updated);
 }

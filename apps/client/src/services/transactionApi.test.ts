@@ -1,5 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { fetchAllTransactions } from "./transactionApi";
+import {
+  fetchAllTransactions,
+  fetchTransactions,
+  createTransaction,
+} from "./transactionApi";
 import { apiFetch } from "./apiClient";
 
 vi.mock("./apiClient", () => ({ apiFetch: vi.fn() }));
@@ -30,6 +34,23 @@ describe("fetchAllTransactions", () => {
     );
   });
 
+  it("convertit en nombre le montant envoyé en texte par l'API", async () => {
+    vi.mocked(apiFetch).mockResolvedValueOnce(
+      new Response(
+        JSON.stringify({
+          data: [{ id: 1, amount: "150" }],
+          page: 1,
+          totalPages: 1,
+        }),
+        { status: 200 },
+      ),
+    );
+
+    const all = await fetchAllTransactions();
+
+    expect(all[0]?.amount).toBe(150);
+  });
+
   it("une seule requête quand l'utilisateur n'a aucune transaction", async () => {
     // L'API renvoie totalPages = Math.ceil(0 / 100) = 0
     vi.mocked(apiFetch).mockResolvedValueOnce(pageResponse([], 1, 0));
@@ -38,5 +59,42 @@ describe("fetchAllTransactions", () => {
 
     expect(all).toEqual([]);
     expect(apiFetch).toHaveBeenCalledTimes(1);
+  });
+});
+
+// Prisma envoie les Decimal en texte ("150") : chaque réponse est convertie à l'entrée
+describe("montants reçus de l'API", () => {
+  beforeEach(() => vi.resetAllMocks());
+
+  it("fetchTransactions renvoie des montants numériques", async () => {
+    vi.mocked(apiFetch).mockResolvedValueOnce(
+      new Response(
+        JSON.stringify({
+          data: [{ id: 1, amount: "12.5" }],
+          page: 1,
+          totalPages: 1,
+        }),
+        { status: 200 },
+      ),
+    );
+
+    const page = await fetchTransactions();
+
+    expect(page.data[0]?.amount).toBe(12.5);
+  });
+
+  it("createTransaction renvoie un montant numérique", async () => {
+    vi.mocked(apiFetch).mockResolvedValueOnce(
+      new Response(JSON.stringify({ id: 2, amount: "40" }), { status: 201 }),
+    );
+
+    const created = await createTransaction({
+      amount: 40,
+      date: "2026-10-30T10:00:00.000Z",
+      description: "",
+      idcategory: 16,
+    });
+
+    expect(created.amount).toBe(40);
   });
 });

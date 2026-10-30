@@ -10,6 +10,12 @@ export type Transaction = {
   category: Pick<Category, "id" | "name" | "type" | "icon">;
 };
 
+// Forme brute reçue de l'API : amount est un Decimal en base, que Prisma envoie en texte ("150").
+// Convertie en Transaction à l'entrée des services (toTransaction dans transactionApi.ts).
+export type TransactionResponse = Omit<Transaction, "amount"> & {
+  amount: string;
+};
+
 // Body du POST /transactions
 export interface CreateTransactionPayload {
   amount: number;
