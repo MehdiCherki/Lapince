@@ -1,5 +1,5 @@
 import { apiFetch } from "./apiClient";
-import type { Category } from "../types/category";
+import type { Category } from "@/types/category";
 
 const API_URL = `${import.meta.env.VITE_API_BASE_URL}/categories`;
 

@@ -1,6 +1,6 @@
 import { useState, useCallback } from "react";
-import { fetchOverview, fetchMonthlyStats } from "../services/statsApi";
-import type { Overview, MonthlyEntry } from "../types/stats";
+import { fetchOverview, fetchMonthlyStats } from "@/services/statsApi";
+import type { Overview, MonthlyEntry } from "@/types/stats";
 
 export function useStats() {
   const [overview, setOverview] = useState<Overview | null>(null);

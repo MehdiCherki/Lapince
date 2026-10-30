@@ -1,9 +1,5 @@
 import { apiFetch } from "./apiClient";
-import type {
-  Budget,
-  CreateBudgetPayload,
-  BudgetStatus,
-} from "../types/budget";
+import type { Budget, CreateBudgetPayload, BudgetStatus } from "@/types/budget";
 
 const API_URL = `${import.meta.env.VITE_API_BASE_URL}/budgets`;
 

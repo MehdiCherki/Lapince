@@ -1,20 +1,17 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import {
-  fetchTransactions,
-  type Transaction,
-} from "../../services/transactionApi";
+import { fetchTransactions, type Transaction } from "@/services/transactionApi";
 
-import Footer from "../../components/Footer/footer";
-import { AnimatedOrbBackground } from "../../components/AnimatedOrbBackground/AnimatedOrbBackground";
-import DepenseCard from "../../components/CategoryCard/DepenseCard";
-import RevenuCard from "../../components/CategoryCard/RevenuCard";
-import BudgetCard from "../../components/CategoryCard/BudgetCard";
-import TransactionSheet from "../../components/TransactionList/TransactionSheet";
-import AlertPopup from "../../components/Alert/AlertPopup";
-import { useAlerts } from "../../hooks/useAlerts";
-import { fetchOverview } from "../../services/statsApi";
-import type { Overview } from "../../types/stats";
-import { useTransactions } from "../../hooks/useTransactions";
+import Footer from "@/components/layout/Footer";
+import { AnimatedOrbBackground } from "@/components/ui/AnimatedOrbBackground";
+import DepenseCard from "./components/DepenseCard";
+import RevenuCard from "./components/RevenuCard";
+import BudgetCard from "./components/BudgetCard";
+import TransactionSheet from "./components/TransactionSheet";
+import AlertPopup from "@/components/alerts/AlertPopup";
+import { useAlerts } from "@/hooks/useAlerts";
+import { fetchOverview } from "@/services/statsApi";
+import type { Overview } from "@/types/stats";
+import { useTransactions } from "@/hooks/useTransactions";
 
 export default function AccueilPage() {
   const { currentAlert, handleCloseAlert, loadAlerts } = useAlerts();

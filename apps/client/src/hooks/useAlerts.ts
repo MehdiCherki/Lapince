@@ -1,6 +1,6 @@
 import { useState, useCallback } from "react";
-import { fetchAlerts, markAlertAsRead } from "../services/alertApi";
-import type { Alert } from "../types/alert";
+import { fetchAlerts, markAlertAsRead } from "@/services/alertApi";
+import type { Alert } from "@/types/alert";
 
 export function useAlerts() {
   const [alerts, setAlerts] = useState<Alert[]>([]);

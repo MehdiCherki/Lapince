@@ -1,13 +1,16 @@
+import { fileURLToPath, URL } from "node:url";
 import { defineConfig } from "vitest/config";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],
+  // « @/ » = src/ : imports indépendants de la profondeur du fichier (même alias dans tsconfig.app.json)
+  resolve: { alias: { "@": fileURLToPath(new URL("./src", import.meta.url)) } },
   test: {
     environment: "jsdom",
     globals: true,
-    setupFiles: "./src/test-setup.ts",
+    setupFiles: "./src/test/setup.ts",
   },
   server: {
     host: true, // Écoute sur 0.0.0.0 — indispensable pour être accessible depuis l'hôte via Docker

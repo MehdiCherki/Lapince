@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
-import { type Transaction } from "../../../services/transactionApi";
+import { type Transaction } from "@/services/transactionApi";
 
 interface TransactionFiltersProps {
   search: string;

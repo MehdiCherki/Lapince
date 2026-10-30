@@ -1,5 +1,5 @@
 // fichier qui permet de faire les appels à l'API d'authentification
-import type { RegisterFormData, AuthUser, ApiError } from "../types/auth";
+import type { RegisterFormData, AuthUser, ApiError } from "@/types/auth";
 
 export interface LoginCredentials {
   email: string;

@@ -1,4 +1,4 @@
-import type { Overview } from "../../../types/stats";
+import type { Overview } from "@/types/stats";
 
 interface StatsCardsProps {
   stats: Overview;

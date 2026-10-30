@@ -2,27 +2,23 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import {
   fetchAllTransactions,
   type Transaction,
-} from "../../services/transactionApi";
-import {
-  fetchBudgets,
-  updateBudget,
-  deleteBudget,
-} from "../../services/budgetApi";
-import type { Budget } from "../../types/budget";
-import { useAlerts } from "../../hooks/useAlerts";
-import { useStats } from "../../hooks/useStats";
-import { useDashboardFilters } from "../../hooks/useDashboardFilters";
+} from "@/services/transactionApi";
+import { fetchBudgets, updateBudget, deleteBudget } from "@/services/budgetApi";
+import type { Budget } from "@/types/budget";
+import { useAlerts } from "@/hooks/useAlerts";
+import { useStats } from "@/hooks/useStats";
+import { useDashboardFilters } from "./hooks/useDashboardFilters";
 
-import Footer from "../../components/Footer/footer";
-import { AnimatedOrbBackground } from "../../components/AnimatedOrbBackground/AnimatedOrbBackground";
-import AlertPopup from "../../components/Alert/AlertPopup";
+import Footer from "@/components/layout/Footer";
+import { AnimatedOrbBackground } from "@/components/ui/AnimatedOrbBackground";
+import AlertPopup from "@/components/alerts/AlertPopup";
 import { StatsCards } from "./components/StatsCards";
 import { MonthlyChart } from "./components/MonthlyChart";
 import { TransactionFilters } from "./components/TransactionFilters";
 import { TransactionTable } from "./components/TransactionTable";
-import BudgetHistory from "../../components/Budget/BudgetHistory";
-import BudgetEditModal from "../../components/Budget/BudgetEditModal";
-import ConfirmModal from "../../components/ConfirmModal/ConfirmModal";
+import BudgetHistory from "./components/BudgetHistory";
+import BudgetEditModal from "./components/BudgetEditModal";
+import ConfirmModal from "@/components/ui/ConfirmModal";
 
 export default function DashboardPage() {
   const { currentAlert, handleCloseAlert, loadAlerts } = useAlerts();
