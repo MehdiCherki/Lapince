@@ -15,4 +15,5 @@ COPY ./ ./
 RUN npx prisma generate
 
 # Lance le serveur en mode watch : tsx recompile à chaque modification de fichier
-CMD ["sh", "-c", "npx prisma db push --accept-data-loss && npx prisma db seed && npm run dev"]
+# Migrations versionnées (prisma/migrations) : applique seulement celles qui ne l'ont pas encore été
+CMD ["sh", "-c", "npx prisma migrate deploy && npx prisma db seed && npm run dev"]

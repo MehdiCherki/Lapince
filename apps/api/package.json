@@ -10,11 +10,11 @@
     "test": "vitest",
     "test:unit": "vitest run --project unit",
     "test:integration": "vitest run --project integration",
-    "test:db:push": "DATABASE_URL=$DATABASE_URL_TEST prisma db push --accept-data-loss && DATABASE_URL=$DATABASE_URL_TEST prisma db seed",
+    "test:db:setup": "DATABASE_URL=$DATABASE_URL_TEST prisma migrate deploy && DATABASE_URL=$DATABASE_URL_TEST prisma db seed",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio",
-    "docker:start": "prisma db push && prisma db seed && node dist/server.js"
+    "docker:start": "prisma migrate deploy && prisma db seed && node dist/server.js"
   },
   "keywords": [],
   "author": "",

@@ -19,7 +19,7 @@ Internet ──► nginx-proxy (:80, :443) ──► client (nginx, fichiers du 
 | Service | Rôle |
 |---|---|
 | `db` | PostgreSQL 17, données dans le volume `postgres_data` |
-| `api` | API compilée (`node dist/…`). Au démarrage : `prisma db push`, puis seed des catégories |
+| `api` | API compilée (`node dist/…`). Au démarrage : `prisma migrate deploy` (applique les migrations versionnées non encore jouées), puis seed des catégories |
 | `client` | nginx qui sert le front et relaie `/api/` vers `api` |
 | `nginx-proxy` | Seul service exposé (ports 80 et 443). HTTP → HTTPS, `www` → domaine nu. Recharge sa configuration toutes les 6 h pour servir un certificat renouvelé |
 | `certbot` | Tente un renouvellement toutes les 12 h, en mode **webroot** |
@@ -52,6 +52,13 @@ Les ports locaux (`*_LOCAL_PORT`) ne servent pas en prod : seul `nginx-proxy` es
 ---
 
 ## 2. Mettre en production une nouvelle version
+
+> **Une seule fois, au premier déploiement avec migrations (0.9.0)** : la base de prod existait avant les migrations versionnées. Avant de lancer la nouvelle version, il faut l'inscrire comme déjà conforme à la migration initiale, sinon `migrate deploy` refuse de démarrer (base non vide). Après `git pull`, et avant `dc up -d --build` :
+> ```bash
+> dc build api
+> dc run --rm --entrypoint npx api prisma migrate diff --from-config-datasource --to-schema prisma/schema.prisma --exit-code; echo $?   # doit afficher 0 (aucun écart)
+> dc run --rm --entrypoint npx api prisma migrate resolve --applied 0_init
+> ```
 
 Procédure utilisée pour la 0.7.0 (28/10/2026). Prérequis : la version est mergée dans `main`.
 

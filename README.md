@@ -116,7 +116,7 @@ docker compose up -d --build
 docker compose watch   # optionnel : synchronise les fichiers modifiés dans les conteneurs
 ```
 
-Au démarrage, l'API applique le schéma Prisma à la base (`prisma db push`) puis lance le seed des catégories : aucune migration à lancer à la main.
+Au démarrage, l'API applique les **migrations** de la base qui ne l'ont pas encore été (`prisma migrate deploy`, dossier `apps/api/prisma/migrations`), puis lance le seed des catégories.
 
 | Service | Adresse |
 |---|---|
@@ -137,7 +137,7 @@ docker compose exec client npm test                # client
 Les tests d'intégration n'utilisent jamais la base de dev : ils tournent sur `lapince_test` (`DATABASE_URL_TEST` dans `.env`) et refusent de démarrer sur une autre base. Mise en place, une seule fois :
 ```bash
 echo "CREATE DATABASE lapince_test;" | docker compose exec -T db sh -c 'psql -U $POSTGRES_USER -d $POSTGRES_DB'
-docker compose exec api npm run test:db:push   # schéma + catégories ; à relancer après chaque modification de schema.prisma
+docker compose exec api npm run test:db:setup  # migrations + catégories ; à relancer après chaque nouvelle migration
 ```
 
 
@@ -213,11 +213,12 @@ Vérifier que le conteneur PostgreSQL est bien lancé :
 docker compose ps
 ```
 
-### Schéma Prisma modifié
-Le schéma est appliqué au démarrage de l'API. Pour l'appliquer sans redémarrer :
+### Modifier la base de données (migrations)
+Toute modification de `schema.prisma` passe par une **migration versionnée** : un fichier SQL daté, relu et commité avec le code.
 ```bash
-docker compose exec api npx prisma db push
+docker compose exec api npx prisma migrate dev --name <description>   # crée et applique la migration en dev
 ```
+Le nouveau dossier `apps/api/prisma/migrations/<date>_<description>/` doit être commité. En prod, l'API l'applique toute seule au démarrage (`prisma migrate deploy`).
 
 ### Problème de dépendances
 Les dépendances sont installées dans l'image : après un changement de `package.json`, reconstruire le service.

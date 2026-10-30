@@ -52,6 +52,9 @@ Copie ce bloc en haut de la section `## [Non publié]` et remplis-le :
 
 ## [Non publié]
 
+### Modifié
+- **Migrations de base versionnées** (Prisma Migrate) à la place de `prisma db push` : le schéma évolue par fichiers SQL datés, relus et commités (`apps/api/prisma/migrations`) ; l'API applique au démarrage les migrations non encore jouées (`prisma migrate deploy`), sans jamais deviner une modification ni demander `--accept-data-loss` (cause de l'incident de la mise en production 0.8.0). Migration initiale `0_init` générée depuis le schéma : vérifiée identique aux bases existantes (aucun écart), et testée sur une base vide (schéma complet + seed des 39 catégories, aucun écart). Bases de dev et de test inscrites (`migrate resolve --applied 0_init`). Script `test:db:push` → `test:db:setup`. ⚠️ **Déploiement** : inscrire la base de prod une seule fois avant de démarrer la nouvelle version (procédure dans `docs/deploiement-serveur.md`) (branche `feature/prisma-migrations`)
+
 ---
 
 ## [0.8.0] — 2026-10-30
