@@ -2,6 +2,7 @@ import type { Request, Response } from "express";
 import argon2 from "argon2";
 import { prisma } from "../lib/prisma.ts";
 import { updateUserSchema } from "../validators/user.validator.ts";
+import { validationError } from "../lib/validation.ts";
 
 // GET /users/me
 export async function getMe(req: Request, res: Response) {
@@ -32,9 +33,7 @@ export async function updateMe(req: Request, res: Response) {
 
   const result = updateUserSchema.safeParse(req.body);
   if (!result.success)
-    return res
-      .status(400)
-      .json({ error: "Données invalides", details: result.error.issues });
+    return res.status(400).json(validationError(result.error));
 
   const { first_name, last_name, email, password, photo, currentPassword } =
     result.data;
@@ -56,12 +55,10 @@ export async function updateMe(req: Request, res: Response) {
       });
     // 403 et non 401 : le client traite tout 401 comme une session expirée (refresh puis nouvel essai)
     if (!(await argon2.verify(current.password, currentPassword)))
-      return res
-        .status(403)
-        .json({
-          error: "Mot de passe actuel incorrect",
-          field: "currentPassword",
-        });
+      return res.status(403).json({
+        error: "Mot de passe actuel incorrect",
+        field: "currentPassword",
+      });
   }
 
   if (email) {

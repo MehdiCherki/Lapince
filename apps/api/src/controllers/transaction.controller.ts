@@ -8,6 +8,7 @@ import {
   updateTransactionSchema,
   transactionQuerySchema,
 } from "../validators/transaction.validator.ts";
+import { validationError } from "../lib/validation.ts";
 
 // Recalcule l'alerte du budget lié à une catégorie (s'il y en a un)
 async function refreshBudgetAlert(userId: number, categoryId: number) {
@@ -24,9 +25,7 @@ export const getAll = async (req: Request, res: Response) => {
 
   const filters = transactionQuerySchema.safeParse(req.query || {});
   if (!filters.success)
-    return res
-      .status(400)
-      .json({ error: "Données invalides", details: filters.error.issues });
+    return res.status(400).json(validationError(filters.error));
 
   const transactions = await transactionService.getAllTransactions(
     req.user.id,
@@ -41,10 +40,7 @@ export const create = async (req: Request, res: Response) => {
     return res.status(401).json({ error: "Utilisateur non authentifié" });
 
   const body = createTransactionSchema.safeParse(req.body);
-  if (!body.success)
-    return res
-      .status(400)
-      .json({ error: "Données invalides", details: body.error.issues });
+  if (!body.success) return res.status(400).json(validationError(body.error));
 
   const transaction = await transactionService.createTransaction(
     req.user.id,
@@ -83,10 +79,7 @@ export const update = async (req: Request, res: Response) => {
   if (isNaN(id)) return res.status(400).json({ error: "ID invalide" });
 
   const body = updateTransactionSchema.safeParse(req.body);
-  if (!body.success)
-    return res
-      .status(400)
-      .json({ error: "Données invalides", details: body.error.issues });
+  if (!body.success) return res.status(400).json(validationError(body.error));
 
   const existingTransaction = await transactionService.getTransactionById(
     id,

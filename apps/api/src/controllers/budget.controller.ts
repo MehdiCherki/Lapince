@@ -9,6 +9,7 @@ import {
   createBudgetSchema,
   updateBudgetSchema,
 } from "../validators/budget.validator.ts";
+import { validationError } from "../lib/validation.ts";
 
 // --- 1. GET /budgets ---
 export const getBudgets = async (req: Request, res: Response) => {
@@ -23,10 +24,7 @@ export const createBudget = async (req: Request, res: Response) => {
   if (!req.user)
     return res.status(401).json({ error: "Utilisateur non authentifié" });
   const body = createBudgetSchema.safeParse(req.body);
-  if (!body.success)
-    return res
-      .status(400)
-      .json({ error: "Données invalides", details: body.error.issues });
+  if (!body.success) return res.status(400).json(validationError(body.error));
   const budget = await budgetService.createBudget(req.user.id, body.data);
   await generateBudgetAlert(budget.id, req.user.id);
   return res.status(201).json(budget);
@@ -52,10 +50,7 @@ export const updateBudget = async (req: Request, res: Response) => {
   if (isNaN(id)) return res.status(400).json({ error: "ID invalide" });
 
   const body = updateBudgetSchema.safeParse(req.body);
-  if (!body.success)
-    return res
-      .status(400)
-      .json({ error: "Données invalides", details: body.error.issues });
+  if (!body.success) return res.status(400).json(validationError(body.error));
 
   // Lu AVANT la mise à jour : seul moyen de connaître l'ancienne catégorie
   const before = await budgetService.getBudgetById(id, req.user.id);

@@ -8,14 +8,13 @@ import { BadRequestError, UnauthorizedError } from "../lib/error.ts";
 import { generateAuthTokens } from "../lib/tokens.ts";
 import { registerSchema, loginSchema } from "../validators/auth.validator.ts";
 import { sendVerificationEmail } from "../services/mail.service.ts";
+import { validationError } from "../lib/validation.ts";
 
 // POST /auth/register
 export async function register(req: Request, res: Response) {
   const result = registerSchema.safeParse(req.body);
   if (!result.success) {
-    res
-      .status(400)
-      .json({ error: "Données invalides", details: result.error.issues });
+    res.status(400).json(validationError(result.error));
     return;
   }
 
@@ -63,9 +62,7 @@ export async function register(req: Request, res: Response) {
 export async function login(req: Request, res: Response) {
   const result = await loginSchema.safeParseAsync(req.body);
   if (!result.success) {
-    res
-      .status(400)
-      .json({ error: "Données invalides", details: result.error.issues });
+    res.status(400).json(validationError(result.error));
     return;
   }
 
