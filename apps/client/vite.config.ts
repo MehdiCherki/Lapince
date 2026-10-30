@@ -10,7 +10,7 @@ export default defineConfig({
   test: {
     environment: "jsdom",
     globals: true,
-    setupFiles: "./src/test-setup.ts",
+    setupFiles: "./src/test/setup.ts",
   },
   server: {
     host: true, // Écoute sur 0.0.0.0 — indispensable pour être accessible depuis l'hôte via Docker

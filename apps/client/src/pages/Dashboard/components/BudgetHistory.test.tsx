@@ -1,18 +1,7 @@
 import { describe, it, expect, vi } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 import BudgetHistory from "./BudgetHistory";
-import type { Budget } from "@/types/budget";
-
-const courses: Budget = {
-  id: 1,
-  limit_amount: 300,
-  period: "monthly",
-  id_category: 3,
-  userId: 7,
-  createdAt: "2026-10-01T10:00:00.000Z",
-  updatedAt: "2026-10-01T10:00:00.000Z",
-  category: { id: 3, name: "Courses", type: "EXPENSE" },
-};
+import { coursesBudget as courses } from "@/test/fixtures";
 
 describe("BudgetHistory", () => {
   it("signale le budget à modifier", () => {
