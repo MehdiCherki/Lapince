@@ -22,13 +22,3 @@ export type CreateBudgetPayload = {
 
 // Body du PATCH /budgets/:id : seuls les champs envoyés sont modifiés
 export type UpdateBudgetPayload = Partial<CreateBudgetPayload>;
-
-// Type pour la réponse de GET /budgets/:id/status
-export type BudgetStatus = {
-  budgetId: number;
-  category: string;
-  limit: number;
-  spent: number;
-  remaining: number;
-  percent: number;
-};

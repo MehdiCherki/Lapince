@@ -3,7 +3,6 @@ import type {
   Budget,
   CreateBudgetPayload,
   UpdateBudgetPayload,
-  BudgetStatus,
 } from "@/types/budget";
 
 const API_URL = `${import.meta.env.VITE_API_BASE_URL}/budgets`;
@@ -72,19 +71,4 @@ export async function deleteBudget(id: number): Promise<void> {
   if (!response.ok)
     await throwApiError(response, "Impossible de supprimer le budget");
   // 204 No Content : pas de corps à lire (response.json() lèverait une erreur)
-}
-
-// GET /budgets/:id/status — dépensé / restant / pourcentage
-
-export async function fetchBudgetStatus(id: number): Promise<BudgetStatus[]> {
-  const response = await apiFetch(`${API_URL}/${id}/status`, {
-    method: "GET",
-    cache: "no-store",
-  });
-  if (!response.ok) {
-    throw new Error(
-      `Erreur ${response.status} en chargeant le statut du budget`,
-    );
-  }
-  return response.json();
 }
