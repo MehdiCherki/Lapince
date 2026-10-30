@@ -1,7 +1,7 @@
 import { useRef, useState } from "react";
 import { ChevronUp } from "lucide-react";
-import type { Transaction } from "@/types/transaction.js";
-import TransactionLine from "./TransactionLine.js";
+import type { Transaction } from "@/types/transaction";
+import TransactionLine from "./TransactionLine";
 
 // La hauteur visible quand le panneau est "fermé"
 // Si modification, ajuster cette constante

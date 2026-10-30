@@ -1,4 +1,4 @@
-import type { Alert } from "@/types/alert.js";
+import type { Alert } from "@/types/alert";
 
 type Props = {
   alert: Alert;

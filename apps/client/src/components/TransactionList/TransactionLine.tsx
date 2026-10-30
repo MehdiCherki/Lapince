@@ -1,6 +1,6 @@
 import * as Icons from "lucide-react";
 
-import type { Transaction } from "@/types/transaction.js";
+import type { Transaction } from "@/types/transaction";
 
 function CategoryIcon({ name }: { name: string | null }) {
   if (!name) return null;
