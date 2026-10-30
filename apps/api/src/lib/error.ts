@@ -49,9 +49,3 @@ export class ServiceUnavailableError extends HttpClientError {
     super(message, { status: 503 });
   }
 }
-
-export class ForbidenError extends HttpClientError {
-  constructor(message: string) {
-    super(message, { status: 403 });
-  }
-}
