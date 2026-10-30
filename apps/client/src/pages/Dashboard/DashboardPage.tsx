@@ -45,15 +45,19 @@ export default function DashboardPage() {
     displayOverview,
   } = useDashboardFilters(transactions, monthly, overview);
 
-  const loadData = useCallback(async () => {
-    const [trans, budg] = await Promise.all([
-      fetchAllTransactions(),
-      fetchBudgets(),
-    ]);
-    setTransactions(trans);
-    setBudgets(budg);
-    await Promise.all([loadStats(), loadAlerts()]);
-  }, [loadStats, loadAlerts]);
+  // L'état est mis à jour dans le .then, une fois les réponses reçues : jamais pendant l'effet
+  // qui lance le chargement (sinon rendus en cascade, règle react-hooks/set-state-in-effect)
+  const loadData = useCallback(
+    () =>
+      Promise.all([fetchAllTransactions(), fetchBudgets()]).then(
+        ([trans, budg]) => {
+          setTransactions(trans);
+          setBudgets(budg);
+          return Promise.all([loadStats(), loadAlerts()]);
+        },
+      ),
+    [loadStats, loadAlerts],
+  );
 
   // En cas d'erreur, l'exception remonte jusqu'à la modale, qui affiche le message
   const handleSaveBudget = async (limit: number) => {
