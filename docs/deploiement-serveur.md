@@ -77,6 +77,7 @@ Les ports locaux (`*_LOCAL_PORT`) ne servent pas en prod : seul `nginx-proxy` es
 >
 > Procédure **répétée le 30/10/2026** sur une copie restaurée de la sauvegarde de prod (section 5) : sans inscription, `migrate deploy` refuse (erreur P3005, base non vide) ; avec la copie dans l'état de la prod actuelle, contrôle d'écart à `0`, inscription, `migrate deploy` (« No pending migrations »), seed, écart final à `0`, données intactes.
 > Contrôle 1 vérifié le 30/10/2026 sur une base créée à l'état `0_init` : `0` avec le schéma de 673dcd2, `2` avec le schéma actuel ; puis inscription, migration de nommage appliquée par `migrate deploy`, écart final à `0`.
+> Procédure 0.9.0 complète **répétée le 30/10/2026** sur une copie de la sauvegarde de prod du jour (6 utilisateurs, 6 transactions, 3 budgets, 1 alerte) : contrôles 1 et 2 à `0`, `deploy` sans inscription refusé (P3005), inscription, migration de nommage appliquée, empreinte (MD5) du contenu de chaque table identique avant et après, sommes des montants identiques, seed, écart final à `0`. Copie et base jetable supprimées ensuite.
 
 Procédure utilisée pour la 0.7.0 (28/10/2026). Prérequis : la version est mergée dans `main`.
 
