@@ -12,14 +12,8 @@ export async function registerUser(formData: RegisterPayload): Promise<void> {
       credentials: "include",
     },
   );
-  if (!response.ok) {
-    const contentType = response.headers.get("content-type");
-    if (contentType?.includes("application/json")) {
-      const error: ApiError = await response.json();
-      throw error;
-    }
-    throw new Error("Une erreur est survenue, réessaie.");
-  }
+  // Toujours une ApiError lisible, même si la réponse n'est pas du JSON (proxy en panne…)
+  if (!response.ok) throw await toApiError(response);
   const data = await response.json();
   return data.user;
 }
@@ -34,14 +28,8 @@ export async function loginUser(credentials: LoginPayload): Promise<void> {
       credentials: "include",
     },
   );
-  if (!response.ok) {
-    const contentType = response.headers.get("content-type");
-    if (contentType?.includes("application/json")) {
-      const error: ApiError = await response.json();
-      throw error;
-    }
-    throw { error: "Email ou mot de passe incorrect." } as ApiError;
-  }
+  // Toujours une ApiError lisible, même si la réponse n'est pas du JSON (proxy en panne…)
+  if (!response.ok) throw await toApiError(response);
 }
 
 export async function fetchCurrentUser(): Promise<AuthUser> {
