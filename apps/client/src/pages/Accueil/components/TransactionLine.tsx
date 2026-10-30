@@ -2,6 +2,7 @@ import * as Icons from "lucide-react";
 
 import type { Transaction } from "@/types/transaction";
 import type { CategoryType } from "@/types/category";
+import { transactionLabel } from "@/lib/transaction";
 
 function CategoryIcon({ name }: { name: string | null }) {
   if (!name) return null;
@@ -48,7 +49,7 @@ export default function TransactionLine({
       </div>
 
       <p className="flex-1 text-sm font-medium truncate min-w-0">
-        {transaction.description ?? transaction.category.name}
+        {transactionLabel(transaction)}
       </p>
 
       <span className="text-xs text-white/60 shrink-0 w-10 md:w-12 text-right">
