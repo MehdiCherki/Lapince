@@ -62,7 +62,7 @@ export function useDashboardFilters(
       if (!monthlyMap[monthName]) {
         monthlyMap[monthName] = { month: monthName, income: 0, expenses: 0 };
       }
-      const amount = Math.abs(Number(t.amount || 0));
+      const amount = Math.abs(t.amount);
       if (t.category.type === "INCOME") monthlyMap[monthName].income += amount;
       else monthlyMap[monthName].expenses += amount;
     });
@@ -75,10 +75,10 @@ export function useDashboardFilters(
 
     const income = filteredTransactions
       .filter((t) => t.category.type === "INCOME")
-      .reduce((acc, t) => acc + Number(t.amount || 0), 0);
+      .reduce((acc, t) => acc + t.amount, 0);
     const expenses = filteredTransactions
       .filter((t) => t.category.type === "EXPENSE")
-      .reduce((acc, t) => acc + Number(t.amount || 0), 0);
+      .reduce((acc, t) => acc + t.amount, 0);
     return { income, expenses, balance: income - expenses };
   }, [filteredTransactions, overview, isFiltered]);
 

@@ -7,8 +7,8 @@ type AlertPopupProps = {
 
 // Recoit 5.5 -> renvoie "5.50"
 
-function formatAmount(amount: number | string): string {
-  return Number(amount).toFixed(2).replace(".", ",");
+function formatAmount(amount: number): string {
+  return amount.toFixed(2).replace(".", ",");
 }
 
 export default function AlertPopup({ alert, onClose }: AlertPopupProps) {
