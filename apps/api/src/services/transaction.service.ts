@@ -5,6 +5,7 @@
 
 import { prisma } from "../lib/prisma.ts";
 import { withAlertRefresh } from "./alert.service.ts";
+import { assertCategoryExists } from "./category.service.ts";
 import type {
   CreateTransactionInput,
   UpdateTransactionInput,
@@ -57,13 +58,7 @@ export const createTransaction = async (
   data: CreateTransactionInput,
 ) => {
   // A. Vérification de la catégorie
-  const category = await prisma.category.findUnique({
-    where: { id: data.idcategory },
-  });
-
-  if (!category) {
-    throw new Error("Catégorie introuvable");
-  }
+  await assertCategoryExists(data.idcategory);
 
   // B. Création de la transaction, avec l'alerte du budget de sa catégorie
   return withAlertRefresh(userId, [data.idcategory], (tx) =>
@@ -112,6 +107,9 @@ export const updateTransaction = async (
 
   const existing = await getTransactionById(id, userId);
   if (!existing) return null;
+  // Après le contrôle de propriété : la dépense d'un autre reste un 404, quelle que soit la catégorie
+  if (data.idcategory !== undefined)
+    await assertCategoryExists(data.idcategory);
 
   // Changement de catégorie → l'ancienne a une dépense en moins, la nouvelle une en plus
   const categoryIds = [
