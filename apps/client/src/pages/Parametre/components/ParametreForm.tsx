@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 import { updateUserProfile } from "@/services/userApi";
 import { useAuth } from "@/hooks/useAuth";
@@ -12,7 +13,8 @@ export default function ParametreForm({
   selectedAvatar: string;
   onDeleteRequest: () => void;
 }) {
-  const { user, login } = useAuth();
+  const { user, login, logout } = useAuth();
+  const navigate = useNavigate();
 
   const [form, setForm] = useState({
     first_name: user?.first_name ?? "",
@@ -20,6 +22,7 @@ export default function ParametreForm({
     email: user?.email ?? "",
     password: "",
     confirm: "",
+    currentPassword: "",
   });
 
   const [apiError, setApiError] = useState<ApiError | null>(null);
@@ -54,10 +57,21 @@ export default function ParametreForm({
         last_name: form.last_name,
         email: form.email,
         password: form.password || undefined,
+        // Exigé par l'API pour changer l'email ou le mot de passe
+        currentPassword: form.currentPassword || undefined,
         photo: selectedAvatar || undefined,
       });
 
+      // Nouveau mot de passe : l'API a fermé toutes les sessions → reconnexion
+      if (form.password) {
+        alert("Mot de passe modifié : reconnectez-vous avec le nouveau.");
+        await logout();
+        navigate("/login");
+        return;
+      }
+
       login(updatedUser as AuthUser);
+      setForm({ ...form, currentPassword: "" });
       alert("Vos informations ont été mises à jour avec succès !");
     } catch (err) {
       setApiError(err as ApiError);
@@ -142,6 +156,22 @@ export default function ParametreForm({
           placeholder="mot de passe"
         />
         {apiError?.field === "confirm" && (
+          <p className="text-red-500 text-xs ml-4">{apiError.error}</p>
+        )}
+      </div>
+
+      <div>
+        <label className={labelStyle}>Mot de passe actuel</label>
+        <input
+          name="currentPassword"
+          type="password"
+          autoComplete="current-password"
+          value={form.currentPassword}
+          onChange={handleChange}
+          className={inputStyle}
+          placeholder="requis pour changer l'e-mail ou le mot de passe"
+        />
+        {apiError?.field === "currentPassword" && (
           <p className="text-red-500 text-xs ml-4">{apiError.error}</p>
         )}
       </div>

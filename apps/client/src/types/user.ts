@@ -5,4 +5,6 @@ export type UpdateProfilePayload = {
   email?: string;
   password?: string;
   photo?: string | null;
+  // Exigé par l'API pour changer l'email ou le mot de passe
+  currentPassword?: string;
 };

@@ -20,4 +20,6 @@ export const updateUserSchema = z.object({
       "Le mot de passe doit contenir au moins un caractère spécial (@, $, !, %, *, ?, &)",
     )
     .optional(),
+  // Exigé par le contrôleur pour changer le mot de passe ou l'email (ré-authentification)
+  currentPassword: z.string().optional(),
 });
