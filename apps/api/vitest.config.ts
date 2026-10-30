@@ -13,6 +13,8 @@ export default defineConfig({
           name: "integration",
           include: ["tests/integration/**/*.test.ts"],
           setupFiles: ["tests/setup/integration.ts"],
+          // Jamais la base de dev : le code testé lit DATABASE_URL, on la remplace par la base de test
+          env: { DATABASE_URL: process.env.DATABASE_URL_TEST ?? "" },
         },
       },
     ],
