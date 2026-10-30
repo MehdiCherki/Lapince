@@ -1,5 +1,10 @@
 import { z } from "zod";
 
+// Email normalisé AVANT la vérification du format : sans espaces autour, en minuscules
+// (une adresse ne dépend pas de la casse ; un clavier mobile met souvent une majuscule)
+export const emailSchema = (message: string) =>
+  z.string().trim().toLowerCase().pipe(z.email(message));
+
 // Règles du mot de passe, communes à l'inscription et à la réinitialisation
 export const passwordSchema = z
   .string()
@@ -15,18 +20,18 @@ export const registerSchema = z.object({
   first_name: z.string().min(1, "Le prénom est requis"),
   last_name: z.string().min(1, "Le nom est requis"),
   photo: z.string().optional(),
-  email: z.email("Format d'email invalide"), // La REGEX PRECEDENTE N'ETAIT PAS FIABLE, ELLE LAISSAIT PASSER DES EMAILS NON VALIDES, J'AI DONC UTILISÉ LA FONCTION EMAIL DE ZOD QUI EST PLUS FIABLE ET PLUS SIMPLE À UTILISER.
+  email: emailSchema("Format d'email invalide"),
   password: passwordSchema,
 });
 
 export const loginSchema = z.object({
-  email: z.email("Veuillez fournir une adresse email valide"),
+  email: emailSchema("Veuillez fournir une adresse email valide"),
   password: z.string("Le mot de passe est requis"),
 });
 
 // POST /auth/forgot-password
 export const forgotPasswordSchema = z.object({
-  email: z.email("Veuillez fournir une adresse email valide"),
+  email: emailSchema("Veuillez fournir une adresse email valide"),
 });
 
 // POST /auth/reset-password
