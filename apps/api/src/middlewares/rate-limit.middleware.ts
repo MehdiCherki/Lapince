@@ -25,3 +25,21 @@ export const refreshRateLimit = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
 });
+
+// Mot de passe oublié : limite l'envoi d'emails (boîte inondée, coût d'envoi) et les essais de jetons
+export const passwordResetRateLimit = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 5,
+  message: { error: "Trop de demandes, réessayez dans une heure." },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+// Saisie du nouveau mot de passe (jeton de 256 bits : la limite protège surtout le serveur)
+export const resetPasswordRateLimit = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  message: { error: "Trop de tentatives, réessayez dans 15 minutes." },
+  standardHeaders: true,
+  legacyHeaders: false,
+});

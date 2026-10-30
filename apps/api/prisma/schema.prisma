@@ -24,6 +24,9 @@ model User {
   photo      String?
   emailVerified   Boolean   @default(false)
   emailVerificationToken  String?
+  // Mot de passe oublié : seul le hash SHA-256 du jeton est stocké (le jeton en clair n'existe que dans l'email)
+  passwordResetTokenHash  String?   @unique
+  passwordResetExpiresAt  DateTime?
   
   // Relations
   budgets       Budget[]
