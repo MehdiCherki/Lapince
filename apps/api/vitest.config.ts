@@ -12,6 +12,7 @@ export default defineConfig({
         test: {
           name: "integration",
           include: ["tests/integration/**/*.test.ts"],
+          setupFiles: ["tests/setup/integration.ts"],
         },
       },
     ],

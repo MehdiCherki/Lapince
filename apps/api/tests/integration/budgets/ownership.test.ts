@@ -1,72 +1,9 @@
-import { describe, it, expect, afterAll, vi } from "vitest";
+import { describe, it, expect } from "vitest";
 import request from "supertest";
 import app from "../../../src/app.ts";
 import { prisma } from "../../../src/lib/prisma.ts";
-
-vi.mock("../../../src/lib/mailer.ts", () => ({
-  transporter: { sendMail: vi.fn().mockResolvedValue({}) },
-}));
-
-const emails: string[] = [];
-
-afterAll(async () => {
-  await prisma.user.deleteMany({ where: { email: { in: emails } } });
-  await prisma.$disconnect();
-});
-
-function extractCookieHeader(res: {
-  headers: Record<string, unknown>;
-}): string {
-  const raw = (res.headers["set-cookie"] as string[] | undefined) ?? [];
-  return raw.map((c) => c.split(";")[0]).join("; ");
-}
-
-async function createVerifiedUser(label: string): Promise<string> {
-  const email = `${label}_${Date.now()}@lapince.fr`;
-  emails.push(email);
-
-  const res = await request(app).post("/auth/register").send({
-    first_name: "Test",
-    last_name: "User",
-    email,
-    password: "Motdepasse1@",
-  });
-  expect(res.status).toBe(201);
-
-  await prisma.user.update({
-    where: { email },
-    data: { emailVerified: true },
-  });
-  return email;
-}
-
-async function loginUser(
-  email: string,
-  password = "Motdepasse1@",
-): Promise<string> {
-  const res = await request(app).post("/auth/login").send({
-    email,
-    password,
-  });
-  if (res.status !== 204) {
-    console.log("Error body: ", res.body || res.text);
-  }
-  expect(res.status).toBe(204);
-  return extractCookieHeader(res);
-}
-
-async function createBudget(cookie: string): Promise<number> {
-  const category = await prisma.category.findFirstOrThrow({
-    where: { type: "EXPENSE" },
-  });
-  const res = await request(app).post("/budgets").set("Cookie", cookie).send({
-    limit_amount: 500,
-    period: "monthly",
-    id_category: category.id,
-  });
-  expect(res.status).toBe(201);
-  return res.body.id;
-}
+import { createVerifiedUser, loginUser } from "../../helpers/auth.ts";
+import { createBudget } from "../../helpers/budgets.ts";
 
 async function getBudgetStatus(
   method: "get" | "delete",
@@ -87,8 +24,8 @@ describe("Budget — isolation entre utilisateurs", () => {
     const cookieA = await loginUser(emailA);
     const cookieB = await loginUser(emailB);
 
-    const budgetIdA = await createBudget(cookieA);
-    const budgetIdB = await createBudget(cookieB);
+    const { budgetId: budgetIdA } = await createBudget(cookieA);
+    const { budgetId: budgetIdB } = await createBudget(cookieB);
 
     expect(await getBudgetStatus("get", budgetIdA, cookieB)).toBe(404);
     expect(await getBudgetStatus("delete", budgetIdA, cookieB)).toBe(404);
