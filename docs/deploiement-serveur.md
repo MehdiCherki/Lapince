@@ -59,6 +59,9 @@ Les ports locaux (`*_LOCAL_PORT`) ne servent pas en prod : seul `nginx-proxy` es
 > dc run --rm --entrypoint npx api prisma migrate diff --from-config-datasource --to-schema prisma/schema.prisma --exit-code; echo $?   # doit afficher 0 (aucun écart)
 > dc run --rm --entrypoint npx api prisma migrate resolve --applied 0_init
 > ```
+> **Si le premier contrôle n'affiche pas `0` : STOP.** La base diffère du schéma ; l'inscrire ferait croire à un historique faux. Afficher les différences (même commande sans `--exit-code`) et les comprendre avant d'aller plus loin.
+>
+> Procédure **répétée le 30/10/2026** sur une copie restaurée de la sauvegarde de prod (section 5) : sans inscription, `migrate deploy` refuse (erreur P3005, base non vide) ; avec la copie dans l'état de la prod actuelle, contrôle d'écart à `0`, inscription, `migrate deploy` (« No pending migrations »), seed, écart final à `0`, données intactes.
 
 Procédure utilisée pour la 0.7.0 (28/10/2026). Prérequis : la version est mergée dans `main`.
 
@@ -133,7 +136,51 @@ dc logs certbot --tail 30
 
 ---
 
-## 5. Commandes utiles
+## 5. Sauvegarde et restauration de la base
+
+### Sauvegarder
+
+Avant chaque mise en production (étape A), et avant toute opération sur les données :
+```bash
+dc exec -T db sh -c 'pg_dump -U "$POSTGRES_USER" "$POSTGRES_DB"' > ~/backup-lapince-$(date +%F).sql
+ls -lh ~/backup-lapince-*.sql      # le fichier du jour ne doit pas être vide
+```
+Le fichier est un script SQL complet (structure + données), lisible et restaurable avec `psql`. Il contient des données personnelles : il reste sur le serveur ; une copie sortie pour un test est supprimée juste après.
+
+### Vérifier qu'une sauvegarde se restaure (sans toucher à la base de prod)
+
+On restaure dans une base **jetable**, puis on compare le nombre de lignes de chaque table avec celui du fichier :
+```bash
+F=~/backup-lapince-AAAA-MM-JJ.sql
+echo "CREATE DATABASE lapince_restore_check;" | dc exec -T db sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB"'
+dc exec -T db sh -c 'psql -U "$POSTGRES_USER" -d lapince_restore_check -v ON_ERROR_STOP=1 -q' < "$F"
+# lignes attendues, d'après le fichier :
+awk '/^COPY public\./{t=$2; n=0; on=1; next} on && /^\\\.$/{print t, n; on=0; next} on{n++}' "$F"
+# lignes obtenues :
+echo "SELECT 'users', count(*) FROM users UNION ALL SELECT 'transactions', count(*) FROM transactions UNION ALL SELECT 'budgets', count(*) FROM budgets UNION ALL SELECT 'alerts', count(*) FROM alerts;" | dc exec -T db sh -c 'psql -U "$POSTGRES_USER" -d lapince_restore_check -At'
+echo "DROP DATABASE lapince_restore_check;" | dc exec -T db sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB"'
+```
+`ON_ERROR_STOP=1` : la restauration s'arrête à la première erreur au lieu de continuer à moitié.
+
+> **Restaurer sur une autre machine** (ex. le poste de développement) : si le rôle PostgreSQL n'a pas le même nom (`"Lapince"` en prod, `LaPince` en dev : les guillemets rendent la casse significative), les instructions `ALTER … OWNER TO` échouent. On les retire au passage, comme l'option `--no-owner` de `pg_restore` :
+> `sed -E '/^ALTER .* OWNER TO /d' "$F" | psql …`
+
+**Testé le 30/10/2026** : sauvegarde de prod du jour restaurée sur le poste de développement, sans erreur ; nombres de lignes identiques au fichier pour les 6 tables (5 utilisateurs, 6 transactions, 2 budgets, 0 alerte, 39 catégories, 3 sessions) ; copie et base jetable supprimées ensuite.
+
+### Restaurer la base de prod (incident)
+
+Les mêmes commandes, sur la vraie base, API arrêtée pour qu'aucune écriture ne se mêle à la restauration :
+```bash
+dc stop api
+echo 'DROP DATABASE "Lapince"; CREATE DATABASE "Lapince";' | dc exec -T db sh -c 'psql -U "$POSTGRES_USER" -d postgres'
+dc exec -T db sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -v ON_ERROR_STOP=1 -q' < ~/backup-lapince-AAAA-MM-JJ.sql
+dc start api                       # migrate deploy rejoue les migrations postérieures à la sauvegarde, s'il y en a
+```
+Avant de lancer cette restauration réelle, vérifier le fichier par la procédure précédente (base jetable). Cette restauration réelle n'a **pas** été exécutée en prod : seule la restauration de vérification l'a été (30/10/2026) ; les commandes sont les mêmes, appliquées à la base principale.
+
+---
+
+## 6. Commandes utiles
 
 ```bash
 dc ps                              # état des services
@@ -149,7 +196,7 @@ dc down                            # tout arrêter (les données restent)
 
 ---
 
-## 6. En cas de problème
+## 7. En cas de problème
 
 **Service qui redémarre en boucle** : `dc logs <service> --tail 50`.
 

@@ -52,6 +52,9 @@ Copie ce bloc en haut de la section `## [Non publié]` et remplis-le :
 
 ## [Non publié]
 
+### Ajouté
+- Documentation **sauvegarde et restauration** de la base (`docs/deploiement-serveur.md`, §5) : sauvegarde, vérification d'une sauvegarde par restauration dans une base jetable (comptage des lignes comparé au fichier), restauration sur une autre machine (rôle PostgreSQL différent), restauration de prod en cas d'incident. **Testé le 30/10/2026** avec la sauvegarde de prod du jour : restauration sans erreur, nombres de lignes identiques au fichier pour les 6 tables. Inscription de la prod aux migrations **répétée** sur cette copie : sans inscription, `migrate deploy` refuse (P3005) ; avec la copie dans l'état de la prod actuelle, aucun écart, inscription, aucune migration en attente, données intactes. Règle ajoutée : si le contrôle d'écart n'est pas à 0, STOP (branche `docs/backup-restore`)
+
 ### Modifié
 - **Migrations de base versionnées** (Prisma Migrate) à la place de `prisma db push` : le schéma évolue par fichiers SQL datés, relus et commités (`apps/api/prisma/migrations`) ; l'API applique au démarrage les migrations non encore jouées (`prisma migrate deploy`), sans jamais deviner une modification ni demander `--accept-data-loss` (cause de l'incident de la mise en production 0.8.0). Migration initiale `0_init` générée depuis le schéma : vérifiée identique aux bases existantes (aucun écart), et testée sur une base vide (schéma complet + seed des 39 catégories, aucun écart). Bases de dev et de test inscrites (`migrate resolve --applied 0_init`). Script `test:db:push` → `test:db:setup`. ⚠️ **Déploiement** : inscrire la base de prod une seule fois avant de démarrer la nouvelle version (procédure dans `docs/deploiement-serveur.md`) (branche `feature/prisma-migrations`)
 
