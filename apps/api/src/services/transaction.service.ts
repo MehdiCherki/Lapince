@@ -31,7 +31,10 @@ export const getAllTransactions = async (
   const [data, total] = await Promise.all([
     prisma.transaction.findMany({
       where,
-      orderBy: { date: "desc" },
+      // id en départage : les transactions d'un même jour ont la même date (saisie au jour),
+      // sans lui PostgreSQL renvoie l'ordre physique, qui change après une modification
+      // (et la pagination peut alors répéter ou sauter une transaction)
+      orderBy: [{ date: "desc" }, { id: "desc" }],
       include: { category: true },
       skip,
       take: filters.limit,

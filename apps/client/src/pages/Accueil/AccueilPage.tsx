@@ -13,6 +13,7 @@ import { useAlerts } from "@/hooks/useAlerts";
 import { fetchOverview } from "@/services/statsApi";
 import type { Overview } from "@/types/stats";
 import { useTransactions } from "@/hooks/useTransactions";
+import { newestFirst } from "@/lib/sort";
 
 export default function AccueilPage() {
   const { currentAlert, handleCloseAlert, loadAlerts } = useAlerts();
@@ -58,10 +59,7 @@ export default function AccueilPage() {
   }, []);
 
   const transactionsSorted = useMemo(
-    () =>
-      [...transactions].sort(
-        (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
-      ),
+    () => [...transactions].sort(newestFirst),
     [transactions],
   );
 
