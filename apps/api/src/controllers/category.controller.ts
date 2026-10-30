@@ -4,7 +4,8 @@ import { prisma } from "../lib/prisma.ts";
 export async function getAllCategory(req: Request, res: Response) {
   if (!req.user)
     return res.status(401).json({ error: "Utilisateur non authentifié" });
-  const categories = await prisma.category.findMany();
+  // Ordre explicite : sans orderBy, PostgreSQL renvoie l'ordre physique des lignes, qui change après une mise à jour
+  const categories = await prisma.category.findMany({ orderBy: { id: "asc" } });
   return res.status(200).json(categories);
 }
 
