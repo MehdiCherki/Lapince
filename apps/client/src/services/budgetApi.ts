@@ -1,11 +1,17 @@
 import { apiFetch } from "./apiClient";
 import type {
   Budget,
+  BudgetResponse,
   CreateBudgetPayload,
   UpdateBudgetPayload,
 } from "@/types/budget";
 
 const API_URL = `${import.meta.env.VITE_API_BASE_URL}/budgets`;
+
+// La limite reçue en texte (DECIMAL) devient un nombre, une seule fois, ici
+function toBudget(raw: BudgetResponse): Budget {
+  return { ...raw, limit_amount: Number(raw.limit_amount) };
+}
 
 // Lève une erreur avec le message renvoyé par l'API ({ error: "..." }) quand il existe.
 // .catch(() => null) : si la réponse n'est pas du JSON (proxy en panne…), on garde un message générique.
@@ -26,7 +32,8 @@ export async function fetchBudgets(): Promise<Budget[]> {
   if (!response.ok) {
     throw new Error(`Erreur ${response.status} en chargeant les budgets`);
   }
-  return response.json();
+  const budgets: BudgetResponse[] = await response.json();
+  return budgets.map(toBudget);
 }
 
 // POST /budgets — créer un budget
@@ -42,7 +49,8 @@ export async function createBudget(
   if (!response.ok)
     await throwApiError(response, "Impossible de créer le budget");
 
-  return response.json() as Promise<Budget>;
+  const budget: BudgetResponse = await response.json();
+  return toBudget(budget);
 }
 
 // PATCH /budgets/:id — modifier un budget
@@ -59,7 +67,8 @@ export async function updateBudget(
   if (!response.ok)
     await throwApiError(response, "Impossible de modifier le budget");
 
-  return response.json() as Promise<Budget>;
+  const budget: BudgetResponse = await response.json();
+  return toBudget(budget);
 }
 
 // DELETE /budgets/:id — supprimer un budget

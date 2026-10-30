@@ -1,15 +1,16 @@
 import { z } from "zod";
+import { amountSchema } from "./amount.ts";
 
 // Schéma pour POST /budgets
 export const createBudgetSchema = z.object({
-  limit_amount: z.number().positive(),
+  limit_amount: amountSchema("Le montant doit être positif"),
   period: z.enum(["weekly", "monthly", "custom"]),
   id_category: z.number().int().positive(),
 });
 
 // Schéma pour PATCH /budgets/:id
 export const updateBudgetSchema = z.object({
-  limit_amount: z.number().positive("Le montant doit être positif").optional(),
+  limit_amount: amountSchema("Le montant doit être positif").optional(),
 
   period: z
     .enum(["weekly", "monthly", "custom"], {
