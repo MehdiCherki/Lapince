@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { Loader2 } from "lucide-react";
-import { updateUserProfile } from "../../services/user";
-import { useAuth } from "../../context/AuthContext";
-import type { AuthUser, ApiError } from "../../types/auth";
+import { updateUserProfile } from "@/services/user";
+import { useAuth } from "@/context/AuthContext";
+import type { AuthUser, ApiError } from "@/types/auth";
 
 export default function ParametreForm({
   selectedAvatar,

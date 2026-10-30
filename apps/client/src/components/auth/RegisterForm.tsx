@@ -1,7 +1,7 @@
 import { Loader2, Eye, EyeOff } from "lucide-react";
 import { useState } from "react";
-import { cn } from "../../lib/utils";
-import type { RegisterFormData, ApiError } from "../../types/auth";
+import { cn } from "@/lib/utils";
+import type { RegisterFormData, ApiError } from "@/types/auth";
 
 /**
  * Interface décrivant les propriétés attendues par le composant RegisterForm.

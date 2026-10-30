@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from "react";
-import type { LoginCredentials } from "../../services/authApi";
-import type { ApiError } from "../../types/auth";
+import type { LoginCredentials } from "@/services/authApi";
+import type { ApiError } from "@/types/auth";
 import { Loader2, Eye, EyeOff } from "lucide-react";
 
 interface LoginFormProps {

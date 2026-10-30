@@ -1,5 +1,5 @@
 import { apiFetch } from "./apiClient";
-import type { Overview, MonthlyEntry } from "../types/stats";
+import type { Overview, MonthlyEntry } from "@/types/stats";
 
 const BASE = `${import.meta.env.VITE_API_BASE_URL}/stats`;
 

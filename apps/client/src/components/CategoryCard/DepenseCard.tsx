@@ -1,7 +1,7 @@
 import { useState } from "react";
 import CategorySelect from "./CategorySelect";
-import { useCategories } from "../../hooks/useCategories";
-import { createTransaction } from "../../services/transactionApi.js";
+import { useCategories } from "@/hooks/useCategories";
+import { createTransaction } from "@/services/transactionApi.js";
 
 export default function DepenseCard({ onSuccess }: { onSuccess?: () => void }) {
   const categories = useCategories("EXPENSE");

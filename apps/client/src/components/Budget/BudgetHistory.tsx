@@ -1,4 +1,4 @@
-import type { Budget } from "../../types/budget";
+import type { Budget } from "@/types/budget";
 
 /**
  * Composant BudgetHistory

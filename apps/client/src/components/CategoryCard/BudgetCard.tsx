@@ -1,7 +1,7 @@
 import { useState } from "react";
 import CategorySelect from "./CategorySelect";
-import { useCategories } from "../../hooks/useCategories";
-import { createBudget } from "../../services/budgetApi.js";
+import { useCategories } from "@/hooks/useCategories";
+import { createBudget } from "@/services/budgetApi.js";
 
 interface BudgetCardProps {
   onSuccess?: () => void;

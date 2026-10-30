@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import type { Budget } from "../../types/budget";
+import type { Budget } from "@/types/budget";
 
 interface BudgetEditModalProps {
   budget: Budget;

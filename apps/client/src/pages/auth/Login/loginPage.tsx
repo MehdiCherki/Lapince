@@ -3,13 +3,13 @@ import {
   loginUser,
   fetchCurrentUser,
   type LoginCredentials,
-} from "../../../services/authApi";
-import type { ApiError } from "../../../types/auth";
-import LoginForm from "../../../components/auth/LoginForm";
-import Footer from "../../../components/Footer/footer";
+} from "@/services/authApi";
+import type { ApiError } from "@/types/auth";
+import LoginForm from "@/components/auth/LoginForm";
+import Footer from "@/components/Footer/footer";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../../../context/AuthContext";
-import { AnimatedOrbBackground } from "../../../components/AnimatedOrbBackground/AnimatedOrbBackground";
+import { useAuth } from "@/context/AuthContext";
+import { AnimatedOrbBackground } from "@/components/AnimatedOrbBackground/AnimatedOrbBackground";
 
 export default function LoginPage() {
   const { login } = useAuth();

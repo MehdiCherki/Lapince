@@ -3,9 +3,9 @@
 
 import { createContext, useContext, useState, useEffect } from "react";
 import type { ReactNode } from "react";
-import { fetchCurrentUser, fetchLogout } from "../services/authApi";
-import type { AuthUser } from "../types/auth";
-import { refreshOnce } from "../services/apiClient";
+import { fetchCurrentUser, fetchLogout } from "@/services/authApi";
+import type { AuthUser } from "@/types/auth";
+import { refreshOnce } from "@/services/apiClient";
 
 interface AuthContextType {
   user: AuthUser | null;

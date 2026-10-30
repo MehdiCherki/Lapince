@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import * as Icons from "lucide-react";
-import type { Category } from "../../types/category.js";
+import type { Category } from "@/types/category.js";
 
 function CategoryIcon({ name }: { name: string | null }) {
   if (!name) return null;

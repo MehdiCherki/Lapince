@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
-import type { Transaction } from "../services/transactionApi";
-import type { MonthlyEntry, Overview } from "../types/stats";
+import type { Transaction } from "@/services/transactionApi";
+import type { MonthlyEntry, Overview } from "@/types/stats";
 
 export function useDashboardFilters(
   transactions: Transaction[],

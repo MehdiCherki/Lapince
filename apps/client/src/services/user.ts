@@ -1,5 +1,5 @@
 import { apiFetch } from "./apiClient";
-import type { AuthUser, ApiError } from "../types/auth";
+import type { AuthUser, ApiError } from "@/types/auth";
 
 export async function fetchUserProfile(): Promise<AuthUser> {
   const response = await apiFetch(

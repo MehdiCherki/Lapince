@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
-import Footer from "../../components/Footer/footer";
-import { AnimatedOrbBackground } from "../../components/AnimatedOrbBackground/AnimatedOrbBackground";
+import Footer from "@/components/Footer/footer";
+import { AnimatedOrbBackground } from "@/components/AnimatedOrbBackground/AnimatedOrbBackground";
 
 export default function NotFoundPage() {
   const navigate = useNavigate();

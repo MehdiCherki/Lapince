@@ -1,5 +1,5 @@
 import { apiFetch } from "./apiClient";
-import type { Alert } from "../types/alert.js";
+import type { Alert } from "@/types/alert.js";
 
 export async function fetchAlerts(): Promise<Alert[]> {
   const response = await apiFetch(

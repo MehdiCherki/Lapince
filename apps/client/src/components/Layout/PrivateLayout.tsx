@@ -1,6 +1,6 @@
 import { Outlet } from "react-router-dom";
 import LogoutButton from "../Logout/LogoutButton";
-import { useAuth } from "../../context/AuthContext";
+import { useAuth } from "@/context/AuthContext";
 
 export default function PrivateLayout() {
   const { user } = useAuth();

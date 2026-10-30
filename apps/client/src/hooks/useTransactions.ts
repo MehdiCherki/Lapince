@@ -3,8 +3,8 @@ import {
   fetchTransactions,
   deleteTransactionApi,
   updateTransactionApi,
-} from "../services/transactionApi";
-import type { Transaction } from "../types/transaction";
+} from "@/services/transactionApi";
+import type { Transaction } from "@/types/transaction";
 
 export function useTransactions() {
   const [loading, setLoading] = useState(false);

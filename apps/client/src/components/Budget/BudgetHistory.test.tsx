@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 import BudgetHistory from "./BudgetHistory";
-import type { Budget } from "../../types/budget";
+import type { Budget } from "@/types/budget";
 
 const courses: Budget = {
   id: 1,

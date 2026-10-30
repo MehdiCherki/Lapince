@@ -1,5 +1,5 @@
 import { apiFetch } from "./apiClient";
-import type { Transaction } from "../types/transaction";
+import type { Transaction } from "@/types/transaction";
 
 const API_URL = `${import.meta.env.VITE_API_BASE_URL}/transactions`;
 
