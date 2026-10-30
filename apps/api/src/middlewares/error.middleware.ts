@@ -1,6 +1,6 @@
 import type { Request, Response, NextFunction } from "express";
-import { HttpClientError } from "../lib/error.js";
-import { logger } from "../lib/logger.js";
+import { HttpClientError } from "../lib/error.ts";
+import { logger } from "../lib/logger.ts";
 
 export function errorMiddleware(
   err: unknown,

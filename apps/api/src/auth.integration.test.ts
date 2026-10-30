@@ -1,11 +1,11 @@
 import { describe, it, expect, afterAll, vi } from "vitest";
 import request from "supertest";
 import app from "./app.ts";
-import { prisma } from "./lib/prisma.js";
-import { transporter } from "./lib/mailer.js";
+import { prisma } from "./lib/prisma.ts";
+import { transporter } from "./lib/mailer.ts";
 
 // Remplace le vrai transporter Brevo : sendMail ne fait rien et répond OK.
-vi.mock("./lib/mailer.js", () => ({
+vi.mock("./lib/mailer.ts", () => ({
   transporter: { sendMail: vi.fn().mockResolvedValue({}) },
 }));
 

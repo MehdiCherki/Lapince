@@ -5,9 +5,9 @@ import {
   markAlertAsRead,
   markAllAlertsAsRead,
   deleteAlert,
-} from "../controllers/alert.controller.js";
+} from "../controllers/alert.controller.ts";
 
-import { authMiddleware } from "../middlewares/auth.middleware.js";
+import { authMiddleware } from "../middlewares/auth.middleware.ts";
 
 const router = Router();
 

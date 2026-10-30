@@ -8,7 +8,7 @@ import {
 import {
   createBudgetSchema,
   updateBudgetSchema,
-} from "../validators/budget.validator.js";
+} from "../validators/budget.validator.ts";
 
 // --- 1. GET /budgets ---
 export const getBudgets = async (req: Request, res: Response) => {

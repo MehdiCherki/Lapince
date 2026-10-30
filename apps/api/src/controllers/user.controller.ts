@@ -1,7 +1,7 @@
 import type { Request, Response } from "express";
 import argon2 from "argon2";
-import { prisma } from "../lib/prisma.js";
-import { updateUserSchema } from "../validators/user.validator.js";
+import { prisma } from "../lib/prisma.ts";
+import { updateUserSchema } from "../validators/user.validator.ts";
 
 // GET /users/me
 export async function getMe(req: Request, res: Response) {

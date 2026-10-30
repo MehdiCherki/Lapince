@@ -3,7 +3,7 @@
 // Par exemple, la fonction createTransaction pourrait recevoir les données d'une nouvelle transaction, vérifier que l'utilisateur a suffisamment de fonds, créer la transaction en base, mettre à jour le solde de l'utilisateur, etc.
 // En séparant la logique métier dans un service, on garde les contrôleurs propres et centrés sur la gestion des requêtes/réponses, ce qui facilite la maintenance et les tests.
 
-import { prisma } from "../lib/prisma.js";
+import { prisma } from "../lib/prisma.ts";
 
 // --- 1. Récupérer toutes les transactions avec les filtres ---
 export const getAllTransactions = async (

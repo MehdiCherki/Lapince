@@ -1,4 +1,4 @@
-import { prisma } from "../lib/prisma.js";
+import { prisma } from "../lib/prisma.ts";
 
 export const generateBudgetAlert = async (budgetId: number, userId: number) => {
   // 1. Récupérer le budget avec ses transactions et sa catégorie
