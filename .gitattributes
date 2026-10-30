@@ -1,0 +1,3 @@
+# Migrations Prisma : fins de ligne LF partout (Windows compris).
+# Prisma calcule une empreinte de chaque migration ; une conversion CRLF la ferait passer pour modifiée.
+apps/api/prisma/migrations/** text eol=lf
