@@ -114,7 +114,7 @@ export default function LandingPage() {
             <br />
             sans prise de tête.
           </h1>
-          <p className="text-[15px] translate-y-30 md:translate-y-0 md:text-[17px] lg:text-[21px] font-normal text-[#002b49] opacity-90 mt-6 max-w-[450px] leading-snug">
+          <p className="text-[15px] translate-y-30 md:translate-y-0 md:text-[17px] lg:text-[21px] font-normal text-[#002b49] opacity-90 mt-6 max-w-[450px] mx-auto md:mx-0 leading-snug">
             <span className="font-bold">La Pince,</span> l'app qui vous aide à
             garder
             <br />
