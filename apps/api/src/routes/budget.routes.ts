@@ -8,9 +8,9 @@ import {
   getBudgetById,
   updateBudget,
   deleteBudget,
-} from "../controllers/budget.controller.js";
+} from "../controllers/budget.controller.ts";
 
-import { authMiddleware } from "../middlewares/access.controller.middleware.ts";
+import { authMiddleware } from "../middlewares/auth.middleware.ts";
 
 const router = Router();
 

@@ -3,12 +3,12 @@ import * as budgetService from "../services/budget.service.ts";
 import {
   generateBudgetAlert,
   removeCategoryAlert,
-} from "../services/alert.generator.ts";
+} from "../services/alert.service.ts";
 
 import {
   createBudgetSchema,
   updateBudgetSchema,
-} from "../validators/budget.validator.js";
+} from "../validators/budget.validator.ts";
 
 // --- 1. GET /budgets ---
 export const getBudgets = async (req: Request, res: Response) => {

@@ -4,14 +4,14 @@ import {
   login,
   refresh,
   logoutUser,
-} from "../controllers/auth.controller.js";
-import { verifyEmail } from "../controllers/email.controller.js";
-import { authMiddleware } from "../middlewares/access.controller.middleware.ts";
+} from "../controllers/auth.controller.ts";
+import { verifyEmail } from "../controllers/email.controller.ts";
+import { authMiddleware } from "../middlewares/auth.middleware.ts";
 import {
   loginRateLimit,
   registerRateLimit,
   refreshRateLimit,
-} from "../middlewares/rate-limit.middleware.js";
+} from "../middlewares/rate-limit.middleware.ts";
 
 const router = Router();
 

@@ -1,8 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { getOverview } from "./stats.service.js";
-import { prisma } from "../lib/prisma.js";
+import { getOverview } from "./stats.service.ts";
+import { prisma } from "../lib/prisma.ts";
 
-vi.mock("../lib/prisma.js", () => ({
+vi.mock("../lib/prisma.ts", () => ({
   prisma: {
     transaction: { findMany: vi.fn() },
   },

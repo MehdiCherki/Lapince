@@ -6,8 +6,8 @@
 // de la gestion des requêtes HTTP, rendant le code plus propre
 // et plus facile à maintenir.
 
-import { prisma } from "../lib/prisma.js";
-import { ConflictError, NotFoundError } from "../lib/error.js";
+import { prisma } from "../lib/prisma.ts";
+import { ConflictError, NotFoundError } from "../lib/error.ts";
 
 // -------------------------------------------------------------
 // 1. Récupérer tous les budgets d'un utilisateur

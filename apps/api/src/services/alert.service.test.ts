@@ -1,8 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { generateBudgetAlert } from "./alert.generator.js";
-import { prisma } from "../lib/prisma.js";
+import { generateBudgetAlert } from "./alert.service.ts";
+import { prisma } from "../lib/prisma.ts";
 
-vi.mock("../lib/prisma.js", () => ({
+vi.mock("../lib/prisma.ts", () => ({
   prisma: {
     budget: { findFirst: vi.fn() },
     transaction: { findMany: vi.fn() },

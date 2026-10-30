@@ -1,5 +1,5 @@
 import type { Request, Response } from "express";
-import { prisma } from "../lib/prisma.js";
+import { prisma } from "../lib/prisma.ts";
 
 export async function getAllCategory(req: Request, res: Response) {
   if (!req.user)

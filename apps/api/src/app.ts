@@ -3,16 +3,15 @@ import cors from "cors";
 import helmet from "helmet";
 import cookieParser from "cookie-parser";
 
-import authRouter from "../routes/auth.routes.js";
-import userRouter from "../routes/user.routes.js";
-import categoryRouter from "../routes/category.routes.js";
-import transactionRouter from "../routes/transaction.routes.js";
-import budgetRoutes from "../routes/budget.routes.js";
-import alertRoutes from "../routes/alert.routes.js";
-import statsRoutes from "../routes/stats.routes.js";
-import { errorMiddleware } from "../middlewares/error.middleware.js";
-import { logger } from "../lib/logger.js";
-import { config } from "../config.js";
+import authRouter from "./routes/auth.routes.ts";
+import userRouter from "./routes/user.routes.ts";
+import categoryRouter from "./routes/category.routes.ts";
+import transactionRouter from "./routes/transaction.routes.ts";
+import budgetRoutes from "./routes/budget.routes.ts";
+import alertRoutes from "./routes/alert.routes.ts";
+import statsRoutes from "./routes/stats.routes.ts";
+import { errorMiddleware } from "./middlewares/error.middleware.ts";
+import { config } from "./config.ts";
 
 // Créer une app Express
 const app = express();
@@ -21,7 +20,6 @@ const app = express();
 // X-Forwarded-For, c'est-à-dire le vrai visiteur (indispensable au rate limit par IP).
 // Pas de nombre fixe de proxys : s'il en restait un seul, "2" ferait confiance à une adresse inventée.
 app.set("trust proxy", "loopback, uniquelocal");
-const PORT = Number(process.env.PORT) || 3007;
 
 // Sécuriser les headers HTTP
 app.use(helmet());
@@ -53,9 +51,3 @@ app.use("/stats", statsRoutes);
 app.use(errorMiddleware);
 
 export default app;
-
-if (process.env.NODE_ENV !== "test") {
-  app.listen(PORT, () => {
-    logger.info(`🚀 Server started at http://localhost:${PORT}`);
-  });
-}

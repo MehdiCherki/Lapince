@@ -45,34 +45,17 @@ services:
         - action: sync
           path: ./apps/api/src
           target: /app/src
-        - action: sync
-          path: ./apps/api/middlewares
-          target: /app/middlewares
-        - action: sync
-          path: ./apps/api/controllers
-          target: /app/controllers
-        - action: sync
-          path: ./apps/api/lib
-          target: /app/lib
-        - action: sync
-          path: ./apps/api/routes
-          target: /app/routes
-        - action: sync
-          path: ./apps/api/services
-          target: /app/services
-        - action: sync
-          path: ./apps/api/validators
-          target: /app/validators
-        - action: sync
-          path: ./apps/api/models
-          target: /app/models
-        # Reconstruit l'image si les dépendances ou le schéma Prisma changent
+        # Reconstruit l'image si les dépendances, le schéma Prisma ou la config TypeScript changent
         - action: rebuild
           path: ./apps/api/package.json
         - action: rebuild
           path: ./apps/api/prisma.config.ts
         - action: rebuild
           path: ./apps/api/prisma/schema.prisma
+        - action: rebuild
+          path: ./apps/api/tsconfig.json
+        - action: rebuild
+          path: ./apps/api/tsconfig.build.json
 
   # --- Client React/Vite (frontend) ---
   client:

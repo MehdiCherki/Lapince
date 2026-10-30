@@ -1,13 +1,13 @@
 import type { Request, Response } from "express";
-import { prisma } from "../lib/prisma.js";
+import { prisma } from "../lib/prisma.ts";
 import * as transactionService from "../services/transaction.service.ts";
-import { generateBudgetAlert } from "../services/alert.generator.js";
+import { generateBudgetAlert } from "../services/alert.service.ts";
 
 import {
   createTransactionSchema,
   updateTransactionSchema,
   transactionQuerySchema,
-} from "../validators/transaction.validator.js";
+} from "../validators/transaction.validator.ts";
 
 // Recalcule l'alerte du budget lié à une catégorie (s'il y en a un)
 async function refreshBudgetAlert(userId: number, categoryId: number) {

@@ -1,5 +1,5 @@
 import type { Request, Response } from "express";
-import { prisma } from "../lib/prisma.js";
+import { prisma } from "../lib/prisma.ts";
 
 export async function verifyEmail(req: Request, res: Response) {
   const { token } = req.query;
