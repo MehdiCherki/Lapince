@@ -25,10 +25,3 @@ export async function markAlertAsRead(id: number): Promise<void> {
   });
   // Fire-and-forget : on n'attend pas la réponse pour fermer la popup.
 }
-
-// Marque toutes les alertes comme lues — PATCH /alerts/read-all
-export async function markAllAlertsAsRead(): Promise<void> {
-  await apiFetch(`${import.meta.env.VITE_API_BASE_URL}/alerts/read-all`, {
-    method: "PATCH",
-  });
-}

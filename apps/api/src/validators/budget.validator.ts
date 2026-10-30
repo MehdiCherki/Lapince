@@ -23,3 +23,7 @@ export const updateBudgetSchema = z.object({
     .positive("Catégorie invalide")
     .optional(),
 });
+
+// Types des corps de requête, déduits des schémas (source unique : validation et typage)
+export type CreateBudgetInput = z.infer<typeof createBudgetSchema>;
+export type UpdateBudgetInput = z.infer<typeof updateBudgetSchema>;

@@ -8,6 +8,10 @@
 
 import { prisma } from "../lib/prisma.ts";
 import { ConflictError, NotFoundError } from "../lib/error.ts";
+import type {
+  CreateBudgetInput,
+  UpdateBudgetInput,
+} from "../validators/budget.validator.ts";
 
 // -------------------------------------------------------------
 // 1. Récupérer tous les budgets d'un utilisateur
@@ -24,7 +28,7 @@ export const getAllBudgets = async (userId: number) => {
 // -------------------------------------------------------------
 // 2. Créer un nouveau budget
 // -------------------------------------------------------------
-export const createBudget = async (userId: number, data: any) => {
+export const createBudget = async (userId: number, data: CreateBudgetInput) => {
   const existing = await prisma.budget.findFirst({
     where: { userId, id_category: data.id_category },
   });
@@ -56,7 +60,11 @@ export const getBudgetById = async (id: number, userId: number) => {
 // -------------------------------------------------------------
 // 4. Mettre à jour un budget existant
 // -------------------------------------------------------------
-export const updateBudget = async (id: number, userId: number, data: any) => {
+export const updateBudget = async (
+  id: number,
+  userId: number,
+  data: UpdateBudgetInput,
+) => {
   const budget = await prisma.budget.findFirst({ where: { id, userId } });
   if (!budget) throw new NotFoundError("Budget introuvable");
 
@@ -71,7 +79,19 @@ export const updateBudget = async (id: number, userId: number, data: any) => {
       throw new ConflictError("Un budget existe déjà pour cette catégorie");
   }
 
-  return prisma.budget.update({ where: { id, userId }, data });
+  // Seulement les champs envoyés : Prisma refuse un « undefined » explicite (exactOptionalPropertyTypes)
+  return prisma.budget.update({
+    where: { id, userId },
+    data: {
+      ...(data.limit_amount !== undefined
+        ? { limit_amount: data.limit_amount }
+        : {}),
+      ...(data.period !== undefined ? { period: data.period } : {}),
+      ...(data.id_category !== undefined
+        ? { id_category: data.id_category }
+        : {}),
+    },
+  });
 };
 
 // -------------------------------------------------------------

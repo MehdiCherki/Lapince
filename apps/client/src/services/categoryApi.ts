@@ -19,18 +19,3 @@ export async function fetchCategories(): Promise<Category[]> {
 
   return response.json();
 }
-
-/**
- * Récupère une catégorie spécifique par son ID — GET /categories/:id
- */
-export async function fetchCategoryById(id: number): Promise<Category> {
-  const response = await apiFetch(`${API_URL}/${id}`, {
-    method: "GET",
-  });
-
-  if (!response.ok) {
-    throw new Error(`Erreur ${response.status} : Catégorie ${id} introuvable.`);
-  }
-
-  return response.json();
-}

@@ -1,29 +1,18 @@
 import { apiFetch } from "./apiClient";
-import type { Transaction } from "@/types/transaction";
+import type {
+  Transaction,
+  CreateTransactionPayload,
+  UpdateTransactionPayload,
+} from "@/types/transaction";
+import type { Paginated } from "@/types/api";
 
 const API_URL = `${import.meta.env.VITE_API_BASE_URL}/transactions`;
-
-export type { Transaction };
-
-export interface TransactionPayload {
-  amount: number;
-  date: string;
-  description: string;
-  idcategory: number;
-}
-
-export interface PaginatedTransactions {
-  data: Transaction[];
-  total: number;
-  page: number;
-  totalPages: number;
-}
 
 // GET transactions - toutes les transactions de l'utilisateur connecté
 export async function fetchTransactions(
   page = 1,
   limit = 20,
-): Promise<PaginatedTransactions> {
+): Promise<Paginated<Transaction>> {
   const response = await apiFetch(`${API_URL}?page=${page}&limit=${limit}`, {
     method: "GET",
     cache: "no-store",
@@ -51,7 +40,7 @@ export async function fetchAllTransactions(): Promise<Transaction[]> {
 // POST transactions - créer une transactions
 
 export async function createTransaction(
-  data: TransactionPayload,
+  data: CreateTransactionPayload,
 ): Promise<Transaction> {
   const response = await apiFetch(API_URL, {
     method: "POST",
@@ -78,7 +67,7 @@ export async function deleteTransactionApi(id: number) {
 }
 
 export async function updateTransactionApi(t: Transaction) {
-  const payload = {
+  const payload: UpdateTransactionPayload = {
     // Prisma renvoie les Decimal en texte ("150") → l'API attend un nombre
     amount: Number(t.amount),
     // null refusé par l'API ; undefined fait disparaître la clé du JSON → champ inchangé

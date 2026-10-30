@@ -9,6 +9,6 @@ export interface Category {
   color: string | null;
   icon: string | null;
   type: CategoryType;
-  created_at: string;
-  updated_at: string;
+  createdAt: string;
+  updatedAt: string;
 }

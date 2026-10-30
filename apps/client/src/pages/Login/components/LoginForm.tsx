@@ -1,10 +1,10 @@
 import { useState, type FormEvent } from "react";
-import type { LoginCredentials } from "@/services/authApi";
-import type { ApiError } from "@/types/auth";
+import type { LoginPayload } from "@/types/auth";
+import type { ApiError } from "@/types/api";
 import { Loader2, Eye, EyeOff } from "lucide-react";
 
 interface LoginFormProps {
-  onSubmit: (credentials: LoginCredentials) => void;
+  onSubmit: (credentials: LoginPayload) => void;
   isLoading: boolean;
   error: ApiError | null;
 }

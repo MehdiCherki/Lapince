@@ -2,6 +2,7 @@ import type { Request, Response, NextFunction } from "express";
 import jwt, { type JwtPayload } from "jsonwebtoken";
 import { ForbiddenError, UnauthorizedError } from "../lib/error.ts";
 import { config } from "../config.ts";
+import type { AccessTokenPayload } from "../types/auth.ts";
 
 export function authMiddleware(
   req: Request,
@@ -40,11 +41,13 @@ function extractAccessToken(req: Request) {
   );
 }
 
-function verifyAndDecodeJWT(accessToken: string): JwtPayload {
+function verifyAndDecodeJWT(
+  accessToken: string,
+): JwtPayload & AccessTokenPayload {
   try {
     const payload = jwt.verify(accessToken, config.jwtSecret, {
       audience: "access",
-    }) as JwtPayload;
+    }) as JwtPayload & AccessTokenPayload;
     return payload;
   } catch (error) {
     throw new UnauthorizedError(

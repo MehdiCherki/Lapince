@@ -1,7 +1,8 @@
 import type { Request, Response } from "express";
 import argon2 from "argon2";
 import { config } from "../config.ts";
-import type { Token, User } from "../types/auth.ts";
+import type { User } from "@prisma/client";
+import type { Token } from "../types/auth.ts";
 import { prisma } from "../lib/prisma.ts";
 import { BadRequestError, UnauthorizedError } from "../lib/error.ts";
 import { generateAuthTokens } from "../lib/tokens.ts";

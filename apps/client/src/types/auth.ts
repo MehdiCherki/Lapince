@@ -1,7 +1,7 @@
 // Types liés à l'authentification
 // correpond aux champs de la route POST /auth/register
-//C'est la forme des données dans le formulaire React, côté front. Quand l'utilisateur tape son prénom, son nom, son email et son mot de passe, ces 4 champs forment un objet de type RegisterFormData.
-export interface RegisterFormData {
+//C'est la forme des données dans le formulaire React, côté front. Quand l'utilisateur tape son prénom, son nom, son email et son mot de passe, ces 4 champs forment un objet de type RegisterPayload.
+export interface RegisterPayload {
   first_name: string;
   last_name: string;
   email: string;
@@ -21,8 +21,8 @@ export interface AuthUser {
   updatedAt: string;
 }
 
-// C'est la forme de l'erreur que le serveur peut renvoyer en cas de problème, par exemple si l'email est déjà utilisé ou si le mot de passe est trop court.
-export interface ApiError {
-  error: string;
-  field?: string;
+// Corps de POST /auth/login
+export interface LoginPayload {
+  email: string;
+  password: string;
 }

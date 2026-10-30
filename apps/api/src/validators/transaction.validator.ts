@@ -11,6 +11,10 @@ export const createTransactionSchema = z.object({
 
 export const updateTransactionSchema = createTransactionSchema.partial();
 
+// Types déduits des schémas (source unique : validation et typage)
+export type CreateTransactionInput = z.infer<typeof createTransactionSchema>;
+export type UpdateTransactionInput = z.infer<typeof updateTransactionSchema>;
+
 export const transactionQuerySchema = z.object({
   idcategory: z.coerce.number().int().positive().optional(),
   startDate: z.iso.datetime().optional(),

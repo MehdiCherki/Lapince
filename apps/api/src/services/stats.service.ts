@@ -22,13 +22,10 @@ export const getOverview = async (userId: number) => {
    * include: { category: true } permet d'avoir aussi la catégorie associée
    * (INCOME ou EXPENSE).
    */
-  const transactions = (await prisma.transaction.findMany({
+  const transactions = await prisma.transaction.findMany({
     where: { userId },
     include: { category: true },
-  })) as Array<{
-    amount: any;
-    category: { type: string };
-  }>;
+  });
 
   /**
    * .filter(...) → garde uniquement les transactions dont la catégorie est INCOME
@@ -74,14 +71,10 @@ export const getMonthlyStats = async (userId: number) => {
   /**
    * On récupère toutes les transactions avec leur catégorie.
    */
-  const transactions = (await prisma.transaction.findMany({
+  const transactions = await prisma.transaction.findMany({
     where: { userId },
     include: { category: true },
-  })) as Array<{
-    amount: any;
-    date: Date;
-    category: { type: string };
-  }>;
+  });
 
   /**
    * Map = structure clé → valeur
@@ -164,13 +157,10 @@ export const getCategoryStats = async (userId: number) => {
   /**
    * On récupère toutes les transactions avec leur catégorie.
    */
-  const transactions = (await prisma.transaction.findMany({
+  const transactions = await prisma.transaction.findMany({
     where: { userId },
     include: { category: true },
-  })) as Array<{
-    amount: any;
-    category: { type: string; name: string };
-  }>;
+  });
 
   /**
    * Map : clé = nom de catégorie, valeur = total des dépenses
@@ -231,25 +221,17 @@ export const getBudgetStats = async (userId: number) => {
   /**
    * On récupère tous les budgets de l'utilisateur
    */
-  const budgets = (await prisma.budget.findMany({
+  const budgets = await prisma.budget.findMany({
     where: { userId },
     include: { category: true },
-  })) as Array<{
-    id: number;
-    id_category: number;
-    limit_amount: any;
-    category: { name: string };
-  }>;
+  });
 
   /**
    * On récupère toutes les transactions de l'utilisateur
    */
-  const transactions = (await prisma.transaction.findMany({
+  const transactions = await prisma.transaction.findMany({
     where: { userId },
-  })) as Array<{
-    amount: any;
-    categoryId: number;
-  }>;
+  });
 
   /**
    * Pour chaque budget, on calcule les informations nécessaires

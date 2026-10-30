@@ -1,7 +1,8 @@
 import RegisterForm from "./components/RegisterForm";
 import { useState } from "react";
 import { registerUser } from "@/services/authApi";
-import type { RegisterFormData, ApiError } from "@/types/auth";
+import type { RegisterPayload } from "@/types/auth";
+import type { ApiError } from "@/types/api";
 import Footer from "@/components/layout/Footer";
 import { Link } from "react-router-dom";
 import { AnimatedOrbBackground } from "@/components/ui/AnimatedOrbBackground";
@@ -16,7 +17,7 @@ export default function RegisterPage() {
     Array.from({ length: 8 }, () => Math.random().toString(36).slice(2, 10)),
   );
 
-  const handleSubmit = async (data: RegisterFormData) => {
+  const handleSubmit = async (data: RegisterPayload) => {
     setIsLoading(true);
     setError(null);
     try {

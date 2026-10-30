@@ -1,9 +1,12 @@
 import jwt from "jsonwebtoken";
 import { config } from "../config.ts";
 import type { User } from "@prisma/client";
+import type { AccessTokenPayload, AuthTokens } from "../types/auth.ts";
 
-export function generateAuthTokens(user: User) {
-  const payload = {
+export function generateAuthTokens(
+  user: Pick<User, "id" | "email">,
+): AuthTokens {
+  const payload: AccessTokenPayload = {
     userId: user.id,
     email: user.email,
   };

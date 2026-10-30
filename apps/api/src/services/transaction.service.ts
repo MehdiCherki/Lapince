@@ -4,6 +4,10 @@
 // En séparant la logique métier dans un service, on garde les contrôleurs propres et centrés sur la gestion des requêtes/réponses, ce qui facilite la maintenance et les tests.
 
 import { prisma } from "../lib/prisma.ts";
+import type {
+  CreateTransactionInput,
+  UpdateTransactionInput,
+} from "../validators/transaction.validator.ts";
 
 // --- 1. Récupérer toutes les transactions avec les filtres ---
 export const getAllTransactions = async (
@@ -44,7 +48,10 @@ export const getAllTransactions = async (
 };
 
 // --- 2. Créer une transaction ---
-export const createTransaction = async (userId: number, data: any) => {
+export const createTransaction = async (
+  userId: number,
+  data: CreateTransactionInput,
+) => {
   // A. Vérification de la catégorie
   const category = await prisma.category.findUnique({
     where: { id: data.idcategory },
@@ -61,7 +68,9 @@ export const createTransaction = async (userId: number, data: any) => {
       amount: data.amount,
       date: new Date(data.date),
       categoryId: data.idcategory,
-      description: data.description,
+      ...(data.description !== undefined
+        ? { description: data.description }
+        : {}),
     },
     include: { category: true }, // On inclut la catégorie pour avoir le type (income/expense) côté front
   });
@@ -82,17 +91,20 @@ export const getTransactionById = async (id: number, userId: number) => {
 export const updateTransaction = async (
   id: number,
   userId: number,
-  data: any,
+  data: UpdateTransactionInput,
 ) => {
-  // On passe la date en objet Date si elle a été modifiée
-  const updateData: any = { ...data };
-  if (data.date) updateData.date = new Date(data.date);
-
-  // Mappage des champs idcategory -> categoryId si présent
-  if (data.idcategory) {
-    updateData.categoryId = data.idcategory;
-    delete updateData.idcategory;
-  }
+  // Seulement les champs envoyés (Prisma refuse un « undefined » explicite : exactOptionalPropertyTypes).
+  // budgetId (accepté par le schéma) n'existe pas sur une transaction : il est ignoré.
+  const updateData = {
+    ...(data.amount !== undefined ? { amount: data.amount } : {}),
+    ...(data.description !== undefined
+      ? { description: data.description }
+      : {}),
+    // On passe la date en objet Date si elle a été modifiée
+    ...(data.date ? { date: new Date(data.date) } : {}),
+    // Mappage des champs idcategory -> categoryId si présent
+    ...(data.idcategory ? { categoryId: data.idcategory } : {}),
+  };
 
   return prisma.transaction.update({
     where: { id }, // On identifie la transaction à mettre à jour par son ID
