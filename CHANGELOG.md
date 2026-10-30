@@ -52,9 +52,13 @@ Copie ce bloc en haut de la section `## [Non publié]` et remplis-le :
 
 ## [Non publié]
 
+---
+
+## [0.8.0] — 2026-10-30
 
 ### Ajouté
 - **Mot de passe oublié** : lien sur la page de connexion → `/forgot-password` (réponse identique que le compte existe ou non, pour ne pas révéler les emails inscrits) → email avec un lien `/reset-password` valable **30 minutes** et à **usage unique** → nouveau mot de passe (règles habituelles, œil, gestionnaires de mots de passe) → **toutes les sessions fermées**. Seul le **hash SHA-256** du jeton est stocké en base (`passwordResetTokenHash`, `passwordResetExpiresAt`) ; envois limités à 5 par heure. 5 tests d'intégration (email inconnu, hash en base, réinitialisation + sessions fermées + usage unique, lien expiré, mot de passe faible) (branche `feature/forgot-password`)
+
 ### Modifié
 - Code formaté avec Prettier (réglages par défaut, fins de ligne `auto`), aucun changement de comportement ; le commit de formatage est ignoré par `git blame` via `.git-blame-ignore-revs` (branche `chore/prettier`)
 - Arborescence : `src/` renommé en `apps/` (`apps/api`, `apps/client`), `Documents/` en `docs/` ; README avec la structure du projet, les bonnes commandes de lancement et les branches `dev` / `feature/` ; `docs/deploiement-serveur.md` réécrit pour le vrai serveur (`/opt/lapince`, deploy key en lecture seule, certificats en mode webroot, procédure de mise en prod et de retour arrière) ; `COMPOSE_PROJECT_NAME` ajouté à `.env.example`, car il fixe le nom du volume de la base (branche `chore/monorepo-layout`)
