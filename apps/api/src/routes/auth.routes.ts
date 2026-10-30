@@ -6,7 +6,7 @@ import {
   logoutUser,
 } from "../controllers/auth.controller.js";
 import { verifyEmail } from "../controllers/email.controller.js";
-import { authMiddleware } from "../middlewares/access.controller.middleware.ts";
+import { authMiddleware } from "../middlewares/auth.middleware.ts";
 import {
   loginRateLimit,
   registerRateLimit,

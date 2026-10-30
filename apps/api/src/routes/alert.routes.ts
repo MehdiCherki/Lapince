@@ -7,7 +7,7 @@ import {
   deleteAlert,
 } from "../controllers/alert.controller.js";
 
-import { authMiddleware } from "../middlewares/access.controller.middleware.js";
+import { authMiddleware } from "../middlewares/auth.middleware.js";
 
 const router = Router();
 

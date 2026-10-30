@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { generateBudgetAlert } from "./alert.generator.js";
+import { generateBudgetAlert } from "./alert.service.js";
 import { prisma } from "../lib/prisma.js";
 
 vi.mock("../lib/prisma.js", () => ({

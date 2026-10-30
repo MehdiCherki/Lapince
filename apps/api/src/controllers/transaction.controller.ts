@@ -1,7 +1,7 @@
 import type { Request, Response } from "express";
 import { prisma } from "../lib/prisma.js";
 import * as transactionService from "../services/transaction.service.ts";
-import { generateBudgetAlert } from "../services/alert.generator.js";
+import { generateBudgetAlert } from "../services/alert.service.js";
 
 import {
   createTransactionSchema,

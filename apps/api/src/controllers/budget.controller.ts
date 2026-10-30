@@ -3,7 +3,7 @@ import * as budgetService from "../services/budget.service.ts";
 import {
   generateBudgetAlert,
   removeCategoryAlert,
-} from "../services/alert.generator.ts";
+} from "../services/alert.service.ts";
 
 import {
   createBudgetSchema,

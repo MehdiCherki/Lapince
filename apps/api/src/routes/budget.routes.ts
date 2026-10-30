@@ -10,7 +10,7 @@ import {
   deleteBudget,
 } from "../controllers/budget.controller.js";
 
-import { authMiddleware } from "../middlewares/access.controller.middleware.ts";
+import { authMiddleware } from "../middlewares/auth.middleware.ts";
 
 const router = Router();
 
