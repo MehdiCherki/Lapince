@@ -1,6 +1,7 @@
 import * as Icons from "lucide-react";
 
 import type { Transaction } from "@/types/transaction";
+import type { CategoryType } from "@/types/category";
 
 function CategoryIcon({ name }: { name: string | null }) {
   if (!name) return null;
@@ -18,12 +19,12 @@ function formatDate(iso: string): string {
   return `${day}/${month}`;
 }
 
-function formatAmount(amount: number, type: "EXPENSE" | "INCOME"): string {
+function formatAmount(amount: number, type: CategoryType): string {
   const formatted = Math.abs(amount).toFixed(2).replace(".", ",");
   return type === "INCOME" ? `+${formatted}€` : `-${formatted}€`;
 }
 
-type Props = {
+type TransactionLineProps = {
   transaction: Transaction;
   onUpdateRequest: (t: Transaction) => void;
   onDeleteRequest: (id: number) => void;
@@ -33,7 +34,7 @@ export default function TransactionLine({
   transaction,
   onUpdateRequest,
   onDeleteRequest,
-}: Props) {
+}: TransactionLineProps) {
   const isRevenu = transaction.category.type === "INCOME";
 
   return (

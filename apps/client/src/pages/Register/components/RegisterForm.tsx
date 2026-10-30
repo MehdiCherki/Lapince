@@ -1,14 +1,15 @@
 import { Loader2, Eye, EyeOff } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
-import type { RegisterFormData, ApiError } from "@/types/auth";
+import type { RegisterPayload } from "@/types/auth";
+import type { ApiError } from "@/types/api";
 
 /**
  * Interface décrivant les propriétés attendues par le composant RegisterForm.
  */
 interface RegisterFormProps {
   /** Fonction appelée lors de la soumission du formulaire */
-  onSubmit: (data: RegisterFormData) => void;
+  onSubmit: (data: RegisterPayload) => void;
 
   /** Indique si une requête API est en cours */
   isLoading: boolean;
@@ -32,7 +33,7 @@ export default function RegisterForm({
 
     const form = event.currentTarget;
 
-    const data: RegisterFormData = {
+    const data: RegisterPayload = {
       first_name: (form.elements.namedItem("first_name") as HTMLInputElement)
         .value,
       last_name: (form.elements.namedItem("last_name") as HTMLInputElement)

@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
-import type { Transaction } from "@/services/transactionApi";
+import type { Transaction } from "@/types/transaction";
 import type { MonthlyEntry, Overview } from "@/types/stats";
+import type { CategoryType } from "@/types/category";
 
 export function useDashboardFilters(
   transactions: Transaction[],
@@ -8,9 +9,7 @@ export function useDashboardFilters(
   overview: Overview | null,
 ) {
   const [search, setSearch] = useState("");
-  const [filterType, setFilterType] = useState<"ALL" | "INCOME" | "EXPENSE">(
-    "ALL",
-  );
+  const [filterType, setFilterType] = useState<"ALL" | CategoryType>("ALL");
   const [selectedMonth, setSelectedMonth] = useState("");
   const [selectedCategories, setSelectedCategories] = useState<number[]>([]);
 

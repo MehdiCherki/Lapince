@@ -1,12 +1,8 @@
 // fichier qui permet de faire les appels à l'API d'authentification
-import type { RegisterFormData, AuthUser, ApiError } from "@/types/auth";
+import type { RegisterPayload, AuthUser, LoginPayload } from "@/types/auth";
+import type { ApiError } from "@/types/api";
 
-export interface LoginCredentials {
-  email: string;
-  password: string;
-}
-
-export async function registerUser(formData: RegisterFormData): Promise<void> {
+export async function registerUser(formData: RegisterPayload): Promise<void> {
   const response = await fetch(
     `${import.meta.env.VITE_API_BASE_URL}/auth/register`,
     {
@@ -28,7 +24,7 @@ export async function registerUser(formData: RegisterFormData): Promise<void> {
   return data.user;
 }
 
-export async function loginUser(credentials: LoginCredentials): Promise<void> {
+export async function loginUser(credentials: LoginPayload): Promise<void> {
   const response = await fetch(
     `${import.meta.env.VITE_API_BASE_URL}/auth/login`,
     {

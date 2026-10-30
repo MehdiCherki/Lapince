@@ -1,5 +1,7 @@
 import { apiFetch } from "./apiClient";
-import type { AuthUser, ApiError } from "@/types/auth";
+import type { AuthUser } from "@/types/auth";
+import type { ApiError } from "@/types/api";
+import type { UpdateProfilePayload } from "@/types/user";
 
 export async function fetchUserProfile(): Promise<AuthUser> {
   const response = await apiFetch(
@@ -13,13 +15,9 @@ export async function fetchUserProfile(): Promise<AuthUser> {
   return data.user;
 }
 
-export async function updateUserProfile(payload: {
-  first_name?: string;
-  last_name?: string;
-  email?: string;
-  password?: string;
-  photo?: string | null;
-}): Promise<AuthUser> {
+export async function updateUserProfile(
+  payload: UpdateProfilePayload,
+): Promise<AuthUser> {
   const response = await apiFetch(
     `${import.meta.env.VITE_API_BASE_URL}/users/me`,
     {

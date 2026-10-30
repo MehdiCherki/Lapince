@@ -1,10 +1,7 @@
 import { useState } from "react";
-import {
-  loginUser,
-  fetchCurrentUser,
-  type LoginCredentials,
-} from "@/services/authApi";
-import type { ApiError } from "@/types/auth";
+import { loginUser, fetchCurrentUser } from "@/services/authApi";
+import type { LoginPayload } from "@/types/auth";
+import type { ApiError } from "@/types/api";
 import LoginForm from "./components/LoginForm";
 import Footer from "@/components/layout/Footer";
 import { useNavigate } from "react-router-dom";
@@ -20,7 +17,7 @@ export default function LoginPage() {
   const [attemptCount, setAttemptCount] = useState(0);
   const MAX_ATTEMPTS = 3;
 
-  const handleLogin = async (credentials: LoginCredentials) => {
+  const handleLogin = async (credentials: LoginPayload) => {
     if (attemptCount >= MAX_ATTEMPTS) return;
     setIsLoading(true);
     setError(null);

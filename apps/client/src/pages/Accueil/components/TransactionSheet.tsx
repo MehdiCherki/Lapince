@@ -7,7 +7,7 @@ import TransactionLine from "./TransactionLine";
 // Si modification, ajuster cette constante
 const HANDLE_HEIGHT = 56;
 
-type Props = {
+type TransactionSheetProps = {
   transactions: Transaction[];
   footerHeight: number;
   onDeleteRequest: (id: number) => void;
@@ -19,7 +19,7 @@ export default function TransactionSheet({
   footerHeight,
   onDeleteRequest,
   onUpdateRequest,
-}: Props) {
+}: TransactionSheetProps) {
   const COLLAPSED_HEIGHT = footerHeight + HANDLE_HEIGHT;
 
   // --- ÉTATS (States) ---

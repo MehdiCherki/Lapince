@@ -1,5 +1,10 @@
 import { apiFetch } from "./apiClient";
-import type { Budget, CreateBudgetPayload, BudgetStatus } from "@/types/budget";
+import type {
+  Budget,
+  CreateBudgetPayload,
+  UpdateBudgetPayload,
+  BudgetStatus,
+} from "@/types/budget";
 
 const API_URL = `${import.meta.env.VITE_API_BASE_URL}/budgets`;
 
@@ -45,7 +50,7 @@ export async function createBudget(
 
 export async function updateBudget(
   id: number,
-  data: Partial<CreateBudgetPayload>,
+  data: UpdateBudgetPayload,
 ): Promise<Budget> {
   const response = await apiFetch(`${API_URL}/${id}`, {
     method: "PATCH",

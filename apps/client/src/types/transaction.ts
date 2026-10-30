@@ -1,3 +1,5 @@
+import type { Category } from "./category";
+
 export type Transaction = {
   id: number;
   amount: number;
@@ -5,10 +7,16 @@ export type Transaction = {
   description: string | null;
   userId: number;
   categoryId: number;
-  category: {
-    id: number;
-    name: string;
-    type: "EXPENSE" | "INCOME";
-    icon: string | null;
-  };
+  category: Pick<Category, "id" | "name" | "type" | "icon">;
 };
+
+// Body du POST /transactions
+export interface CreateTransactionPayload {
+  amount: number;
+  date: string;
+  description: string;
+  idcategory: number;
+}
+
+// Body du PATCH /transactions/:id : seuls les champs envoyés sont modifiés
+export type UpdateTransactionPayload = Partial<CreateTransactionPayload>;

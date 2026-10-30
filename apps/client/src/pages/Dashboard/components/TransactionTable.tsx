@@ -1,5 +1,5 @@
 import { Fragment } from "react";
-import type { Transaction } from "@/services/transactionApi";
+import type { Transaction } from "@/types/transaction";
 
 /**
  * Interface pour la liste des transactions filtrées à afficher.

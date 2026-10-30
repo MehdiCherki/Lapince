@@ -1,8 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import {
-  fetchAllTransactions,
-  type Transaction,
-} from "@/services/transactionApi";
+import { fetchAllTransactions } from "@/services/transactionApi";
+import type { Transaction } from "@/types/transaction";
 import { fetchBudgets, updateBudget, deleteBudget } from "@/services/budgetApi";
 import type { Budget } from "@/types/budget";
 import { useAlerts } from "@/hooks/useAlerts";

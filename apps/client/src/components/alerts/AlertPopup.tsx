@@ -1,6 +1,6 @@
 import type { Alert } from "@/types/alert";
 
-type Props = {
+type AlertPopupProps = {
   alert: Alert;
   onClose: () => void; // le parent decide quoi faire apres la fermeture
 };
@@ -11,7 +11,7 @@ function formatAmount(amount: number | string): string {
   return Number(amount).toFixed(2).replace(".", ",");
 }
 
-export default function AlertPopup({ alert, onClose }: Props) {
+export default function AlertPopup({ alert, onClose }: AlertPopupProps) {
   return (
     //Overlay plein ecran non bloquant
     // pointer-events-none sur l'overlay -> l'user peut cliquer sur le reste de la page .

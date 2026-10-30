@@ -1,11 +1,12 @@
 import { useState, useMemo, useEffect } from "react";
-import { type Transaction } from "@/services/transactionApi";
+import type { Transaction } from "@/types/transaction";
+import type { CategoryType } from "@/types/category";
 
 interface TransactionFiltersProps {
   search: string;
   onSearchChange: (val: string) => void;
-  filterType: "ALL" | "INCOME" | "EXPENSE";
-  onFilterTypeChange: (val: "ALL" | "INCOME" | "EXPENSE") => void;
+  filterType: "ALL" | CategoryType;
+  onFilterTypeChange: (val: "ALL" | CategoryType) => void;
   selectedMonth: string;
   onMonthChange: (val: string) => void;
   selectedCategories: number[];
@@ -30,7 +31,7 @@ export function TransactionFilters({
 
   const availableCategories = useMemo(() => {
     if (!transactions) return [];
-    const cats = new Map<number, any>();
+    const cats = new Map<number, Transaction["category"]>();
     transactions.forEach((t) => cats.set(t.category.id, t.category));
     return Array.from(cats.values()).sort((a, b) =>
       a.name.localeCompare(b.name),
