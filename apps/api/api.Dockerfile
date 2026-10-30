@@ -45,7 +45,7 @@ RUN npm run build
 # On va rajouter un script NPM qui : lance les migrations puis lance l'application
 
 # CMD = commande qui sera lancé lorsqu'on génère le CONTENEUR à partir de l'image
-# Docker:start = lance les migrations (créé les tables) puis  lance l'app (node dist/index.js)
+# Docker:start = lance les migrations (créé les tables) puis  lance l'app (node dist/server.js)
 # Cette commande "npm run docker:start" sera lancée lorsqu'on lance `docker run IMAGE`
 CMD ["npm", "run", "docker:start"]
 
