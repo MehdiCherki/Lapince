@@ -6,7 +6,7 @@ import {
   updateTransactionSchema,
   transactionQuerySchema,
 } from "../validators/transaction.validator.ts";
-import { validationError } from "../lib/validation.ts";
+import { parseId, validationError } from "../lib/validation.ts";
 
 // --- 1. GET /transactions ---
 export const getAll = async (req: Request, res: Response) => {
@@ -46,8 +46,8 @@ export const getOne = async (req: Request, res: Response) => {
   if (!req.user)
     return res.status(401).json({ error: "Utilisateur non authentifié" });
 
-  const id = parseInt(req.params.id as string);
-  if (isNaN(id)) return res.status(400).json({ error: "ID invalide" });
+  const id = parseId(req.params.id);
+  if (id === null) return res.status(400).json({ error: "ID invalide" });
 
   const transaction = await transactionService.getTransactionById(
     id,
@@ -64,8 +64,8 @@ export const update = async (req: Request, res: Response) => {
   if (!req.user)
     return res.status(401).json({ error: "Utilisateur non authentifié" });
 
-  const id = parseInt(req.params.id as string);
-  if (isNaN(id)) return res.status(400).json({ error: "ID invalide" });
+  const id = parseId(req.params.id);
+  if (id === null) return res.status(400).json({ error: "ID invalide" });
 
   const body = updateTransactionSchema.safeParse(req.body);
   if (!body.success) return res.status(400).json(validationError(body.error));
@@ -88,8 +88,8 @@ export const remove = async (req: Request, res: Response) => {
   if (!req.user)
     return res.status(401).json({ error: "Utilisateur non authentifié" });
 
-  const id = parseInt(req.params.id as string);
-  if (isNaN(id)) return res.status(400).json({ error: "ID invalide" });
+  const id = parseId(req.params.id);
+  if (id === null) return res.status(400).json({ error: "ID invalide" });
 
   const deleted = await transactionService.deleteTransaction(id, req.user.id);
   if (!deleted)

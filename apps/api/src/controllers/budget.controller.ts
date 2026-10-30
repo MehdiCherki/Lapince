@@ -6,7 +6,7 @@ import {
   createBudgetSchema,
   updateBudgetSchema,
 } from "../validators/budget.validator.ts";
-import { validationError } from "../lib/validation.ts";
+import { parseId, validationError } from "../lib/validation.ts";
 
 // --- 1. GET /budgets ---
 export const getBudgets = async (req: Request, res: Response) => {
@@ -30,8 +30,8 @@ export const createBudget = async (req: Request, res: Response) => {
 export const getBudgetById = async (req: Request, res: Response) => {
   if (!req.user)
     return res.status(401).json({ error: "Utilisateur non authentifié" });
-  const id = parseInt(req.params.id as string);
-  if (isNaN(id)) return res.status(400).json({ error: "ID invalide" });
+  const id = parseId(req.params.id);
+  if (id === null) return res.status(400).json({ error: "ID invalide" });
   const budget = await budgetService.getBudgetById(id, req.user.id);
   if (!budget) return res.status(404).json({ error: "Budget introuvable" });
   return res.status(200).json(budget);
@@ -42,8 +42,8 @@ export const updateBudget = async (req: Request, res: Response) => {
   if (!req.user)
     return res.status(401).json({ error: "Utilisateur non authentifié" });
 
-  const id = parseInt(req.params.id as string);
-  if (isNaN(id)) return res.status(400).json({ error: "ID invalide" });
+  const id = parseId(req.params.id);
+  if (id === null) return res.status(400).json({ error: "ID invalide" });
 
   const body = updateBudgetSchema.safeParse(req.body);
   if (!body.success) return res.status(400).json(validationError(body.error));
@@ -58,8 +58,8 @@ export const deleteBudget = async (req: Request, res: Response) => {
   if (!req.user)
     return res.status(401).json({ error: "Utilisateur non authentifié" });
 
-  const id = parseInt(req.params.id as string);
-  if (isNaN(id)) return res.status(400).json({ error: "ID invalide" });
+  const id = parseId(req.params.id);
+  if (id === null) return res.status(400).json({ error: "ID invalide" });
 
   await budgetService.deleteBudget(id, req.user.id);
   return res.status(204).send();

@@ -9,6 +9,7 @@
 import { prisma } from "../lib/prisma.ts";
 import { ConflictError, NotFoundError } from "../lib/error.ts";
 import { withAlertRefresh } from "./alert.service.ts";
+import { assertCategoryExists } from "./category.service.ts";
 import type {
   CreateBudgetInput,
   UpdateBudgetInput,
@@ -30,8 +31,9 @@ export const getAllBudgets = async (userId: number) => {
 // 2. Créer un nouveau budget
 // -------------------------------------------------------------
 // Avec l'alerte de sa catégorie (les dépenses déjà saisies peuvent dépasser la limite)
-export const createBudget = async (userId: number, data: CreateBudgetInput) =>
-  withAlertRefresh(userId, [data.id_category], async (tx) => {
+export const createBudget = async (userId: number, data: CreateBudgetInput) => {
+  await assertCategoryExists(data.id_category);
+  return withAlertRefresh(userId, [data.id_category], async (tx) => {
     // Vérifié sous le verrou de la catégorie : deux créations simultanées passent l'une après l'autre
     const existing = await tx.budget.findFirst({
       where: { userId, id_category: data.id_category },
@@ -48,6 +50,7 @@ export const createBudget = async (userId: number, data: CreateBudgetInput) =>
       },
     });
   });
+};
 
 // -------------------------------------------------------------
 // 3. Récupérer un budget spécifique par ID
@@ -71,6 +74,8 @@ export const updateBudget = async (
 ) => {
   const budget = await prisma.budget.findFirst({ where: { id, userId } });
   if (!budget) throw new NotFoundError("Budget introuvable");
+  if (data.id_category !== undefined)
+    await assertCategoryExists(data.id_category);
 
   // Nouvelle limite et/ou nouvelle catégorie → alertes recalculées ; l'ancienne catégorie,
   // qui n'a plus de budget, perd son alerte

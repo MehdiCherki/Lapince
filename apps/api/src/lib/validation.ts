@@ -14,3 +14,12 @@ export function validationError(error: ZodError) {
     details: error.issues,
   };
 }
+
+// Identifiant d'URL (/budgets/12) : entier positif écrit en chiffres seulement, dans les bornes
+// d'un INTEGER PostgreSQL. null sinon (→ 400). parseInt devinait : "12abc" → 12, "1.5" → 1,
+// et un nombre trop grand faisait échouer la requête en base (500).
+export function parseId(value: unknown): number | null {
+  if (typeof value !== "string" || !/^[1-9]\d{0,9}$/.test(value)) return null;
+  const id = Number(value);
+  return id <= 2_147_483_647 ? id : null;
+}
