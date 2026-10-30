@@ -25,6 +25,9 @@ export default function RegisterForm({
 }: RegisterFormProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+  // Erreur détectée avant l'envoi (confirmation différente) ; sinon, celle renvoyée par l'API
+  const [localError, setLocalError] = useState<ApiError | null>(null);
+  const shownError = localError ?? error;
   /**
    * Gère la soumission du formulaire et extrait les valeurs des champs.
    */
@@ -42,6 +45,16 @@ export default function RegisterForm({
       password: (form.elements.namedItem("password") as HTMLInputElement).value,
     };
 
+    const confirm = (form.elements.namedItem("confirm") as HTMLInputElement)
+      .value;
+    if (data.password !== confirm) {
+      setLocalError({
+        error: "Les mots de passe ne correspondent pas.",
+        field: "confirm",
+      });
+      return;
+    }
+    setLocalError(null);
     onSubmit(data);
   }
 
@@ -107,13 +120,13 @@ export default function RegisterForm({
               autoComplete={field.autoComplete}
               placeholder={field.placeholder}
               disabled={isLoading}
-              aria-invalid={error?.field === field.id}
+              aria-invalid={shownError?.field === field.id}
               aria-describedby={
-                error?.field === field.id ? `${field.id}-error` : undefined
+                shownError?.field === field.id ? `${field.id}-error` : undefined
               }
               className={cn(
                 "w-full px-4 py-2.5 rounded-full bg-white/80 border-none text-[13px] shadow-sm outline-none focus-visible:ring-2 focus-visible:ring-blue-500",
-                error?.field === field.id && "ring-2 ring-red-400",
+                shownError?.field === field.id && "ring-2 ring-red-400",
               )}
               required
             />
@@ -145,17 +158,30 @@ export default function RegisterForm({
           </div>
 
           {/* Message d'erreur accessible */}
-          {error?.field === field.id && (
+          {shownError?.field === field.id && (
             <p
               id={`${field.id}-error`}
               className="text-red-600 text-xs ml-4 mt-1"
               role="alert"
             >
-              {error.error}
+              {shownError.error}
             </p>
           )}
         </div>
       ))}
+
+      {/* Erreur sans champ précis (trop de tentatives, serveur injoignable…) : sinon elle passait inaperçue */}
+      {shownError &&
+        !["first_name", "last_name", "email", "password", "confirm"].includes(
+          shownError.field ?? "",
+        ) && (
+          <p
+            role="alert"
+            className="text-red-600 text-[11px] text-center font-bold italic bg-red-100/50 py-1 rounded-full"
+          >
+            {shownError.error}
+          </p>
+        )}
       {/* Bouton de validation */}
       <div className="flex justify-center">
         <button
