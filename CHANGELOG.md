@@ -27,6 +27,8 @@ Copie ce bloc en haut de la section `## [Non publié]` et remplis-le :
 - Bug résolu + contexte court
 
 
+- **Confidentialité** — après une déconnexion, le bouton « Précédent » pouvait réafficher un écran privé figé (budgets, transactions) conservé par le navigateur (cache précédent/suivant). Les pages HTML sont maintenant servies en `Cache-Control: no-store` (nginx, images et assets toujours en cache), et une page malgré tout restaurée est rechargée, ce qui revérifie la session (branche `fix/logout-bfcache`, anomalie R11 de la recette du 30/10)
+
 ### Supprimé
 - Ce qui a été retiré
 ```

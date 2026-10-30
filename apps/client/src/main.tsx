@@ -10,6 +10,12 @@ import "@fontsource/afacad/600.css";
 import "@fontsource/afacad/700.css";
 import "@fontsource/afacad/700-italic.css";
 import "./index.css";
+import { reloadIfRestoredFromCache } from "./lib/bfcache";
+
+// Après une déconnexion, « Précédent » ne doit pas réafficher un écran privé figé (voir lib/bfcache.ts)
+window.addEventListener("pageshow", (event) =>
+  reloadIfRestoredFromCache(event),
+);
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
