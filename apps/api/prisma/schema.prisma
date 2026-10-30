@@ -5,14 +5,23 @@ generator client {
 datasource db {
   provider = "postgresql"
 }
+
+// Convention de nommage en base (PostgreSQL) : tables au pluriel et colonnes en snake_case,
+// clés étrangères <entité>_id, types énumérés en snake_case. Les noms côté code (champs Prisma,
+// donc API) sont conservés : @map / @@map font la correspondance.
+// Argent : DECIMAL(12, 2) (au centime près, sans erreur d'arrondi des nombres à virgule flottante).
 enum PeriodType {
   weekly
   monthly
   custom
+
+  @@map("period_type")
 }
 enum CategoryType {
   EXPENSE
   INCOME
+
+  @@map("category_type")
 }
 
 model User {
@@ -22,11 +31,11 @@ model User {
   email      String  @unique
   password   String
   photo      String?
-  emailVerified   Boolean   @default(false)
-  emailVerificationToken  String?
+  emailVerified   Boolean   @default(false) @map("email_verified")
+  emailVerificationToken  String? @map("email_verification_token")
   // Mot de passe oublié : seul le hash SHA-256 du jeton est stocké (le jeton en clair n'existe que dans l'email)
-  passwordResetTokenHash  String?   @unique
-  passwordResetExpiresAt  DateTime?
+  passwordResetTokenHash  String?   @unique @map("password_reset_token_hash")
+  passwordResetExpiresAt  DateTime? @map("password_reset_expires_at")
   
   // Relations
   budgets       Budget[]
@@ -34,8 +43,8 @@ model User {
   transactions  Transaction[]
   refreshTokens RefreshToken[]
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt()
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt() @map("updated_at")
 
   @@map("users")
 }
@@ -43,11 +52,11 @@ model User {
 model RefreshToken {
   id        Int      @id @default(autoincrement())
   token     String   @unique
-  userId    Int
+  userId    Int      @map("user_id")
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt()
-  expiresAt DateTime
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt() @map("updated_at")
+  expiresAt DateTime @map("expires_at")
 
   @@map("refresh_tokens")
 }
@@ -59,7 +68,7 @@ model Category {
   icon  String?
   type  CategoryType
 
-  createdAt DateTime @default(now()) @map("created_at")  // nom DB préservé via @map
+  createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt      @map("updated_at")
 
   transactions Transaction[]
@@ -67,17 +76,17 @@ model Category {
   alerts       Alert[]
 
   @@unique([name])
-  @@map("category")
+  @@map("categories")
 }
 
 model Transaction {
   id          Int      @id @default(autoincrement())
-  amount      Decimal
+  amount      Decimal  @db.Decimal(12, 2)
   date        DateTime
   description String?
-  userId      Int      @map("iduser")
-  categoryId  Int      @map("idcategory")
-  updatedAt   DateTime @default(now()) @updatedAt
+  userId      Int      @map("user_id")
+  categoryId  Int      @map("category_id")
+  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at")
 
   category Category  @relation(fields: [categoryId], references: [id])
   User     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -89,10 +98,10 @@ model Transaction {
 
 model Budget {
   id           Int    @id @default(autoincrement())
-  limit_amount Float
+  limit_amount Decimal    @db.Decimal(12, 2)
   period       PeriodType
-  id_category  Int
-  userId       Int
+  id_category  Int        @map("category_id")
+  userId       Int        @map("user_id")
 
   // Relation avec l'utilisateur (un budget appartient à un utilisateur)
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -100,8 +109,8 @@ model Budget {
   // Relation avec la catégorie (un budget concerne une catégorie)
   category Category @relation(fields: [id_category], references: [id])
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt()
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt() @map("updated_at")
 
   @@unique([userId, id_category])
   @@index([userId])
@@ -110,13 +119,13 @@ model Budget {
 
 model Alert {
   id             Int      @id @default(autoincrement())
-  exceededAmount Decimal
-  isRead         Boolean  @default(false)
-  userId         Int
-  categoryId     Int
+  exceededAmount Decimal  @db.Decimal(12, 2) @map("exceeded_amount")
+  isRead         Boolean  @default(false) @map("is_read")
+  userId         Int      @map("user_id")
+  categoryId     Int      @map("category_id")
   user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   category       Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
-  createdAt      DateTime @default(now())
+  createdAt      DateTime @default(now()) @map("created_at")
 
   @@index([userId])
   @@map("alerts")

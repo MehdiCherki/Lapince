@@ -41,6 +41,41 @@ describe("generateBudgetAlert", () => {
     expect(prisma.alert.update).not.toHaveBeenCalled();
   });
 
+  // Argent : calcul en centimes entiers. En nombres à virgule flottante, 0,10 + 0,20 = 0,30000000000000004
+  it("ne crée pas d'alerte quand les dépenses atteignent exactement le budget (0,10 + 0,20 = 0,30)", async () => {
+    vi.mocked(prisma.budget.findFirst).mockResolvedValue({
+      limit_amount: "0.30", // Decimal renvoyé par Prisma
+      category: { id: 3 },
+    } as any);
+    vi.mocked(prisma.transaction.findMany).mockResolvedValue([
+      { amount: "0.10" },
+      { amount: "0.20" },
+    ] as any);
+
+    await generateBudgetAlert(1, 7);
+
+    expect(prisma.alert.create).not.toHaveBeenCalled();
+    expect(prisma.alert.deleteMany).toHaveBeenCalledTimes(1);
+  });
+
+  it("calcule le dépassement au centime près (0,10 + 0,20 - 0,10 = 0,20)", async () => {
+    vi.mocked(prisma.budget.findFirst).mockResolvedValue({
+      limit_amount: "0.10",
+      category: { id: 3 },
+    } as any);
+    vi.mocked(prisma.transaction.findMany).mockResolvedValue([
+      { amount: "0.10" },
+      { amount: "0.20" },
+    ] as any);
+    vi.mocked(prisma.alert.findFirst).mockResolvedValue(null);
+
+    await generateBudgetAlert(1, 7);
+
+    expect(prisma.alert.create).toHaveBeenCalledWith({
+      data: { userId: 7, categoryId: 3, exceededAmount: 0.2 },
+    });
+  });
+
   it("ne crée pas de doublon si une alerte non lue existe déjà", async () => {
     // Arrange : budget dépassé (150 > 100) + une alerte déjà là, pas encore lue
     vi.mocked(prisma.budget.findFirst).mockResolvedValue({

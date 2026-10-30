@@ -1,5 +1,10 @@
 import { prisma } from "../lib/prisma.ts";
 
+// Argent : calcul en centimes entiers. En nombres à virgule flottante, 0,10 + 0,20 = 0,30000000000000004,
+// ce qui ferait croire à un dépassement quand les dépenses égalent exactement le budget.
+// Les montants sont des DECIMAL(12, 2) en base (Prisma les renvoie en Decimal) : 2 décimales au plus.
+const toCents = (amount: unknown): number => Math.round(Number(amount) * 100);
+
 export const generateBudgetAlert = async (budgetId: number, userId: number) => {
   // 1. Récupérer le budget avec ses transactions et sa catégorie
   const budget = await prisma.budget.findFirst({
@@ -17,19 +22,20 @@ export const generateBudgetAlert = async (budgetId: number, userId: number) => {
     where: { userId, categoryId: budget.category.id },
   });
   // Les dépenses sont stockées en positif → on somme directement
-  const spent = transactionsForCategory.reduce(
-    (sum, t) => sum + Number(t.amount),
+  const spentCents = transactionsForCategory.reduce(
+    (sum, t) => sum + toCents(t.amount),
     0,
   );
+  const limitCents = toCents(budget.limit_amount);
 
   // 3. Budget pas (ou plus) dépassé → on retire l'alerte éventuelle de cette catégorie
-  if (spent <= budget.limit_amount) {
+  if (spentCents <= limitCents) {
     await removeCategoryAlert(userId, budget.category.id);
     return null;
   }
 
-  // 4. Calcul du montant dépassé
-  const exceededAmount = spent - budget.limit_amount;
+  // 4. Calcul du montant dépassé (repassé en euros, exact au centime)
+  const exceededAmount = (spentCents - limitCents) / 100;
 
   // 5. Vérifier si une alerte existe déjà pour cette catégorie
   const existingAlert = await prisma.alert.findFirst({
@@ -49,7 +55,7 @@ export const generateBudgetAlert = async (budgetId: number, userId: number) => {
       });
     }
     // Alerte non lue mais montant périmé → on met juste le montant à jour
-    if (Number(existingAlert.exceededAmount) !== exceededAmount) {
+    if (toCents(existingAlert.exceededAmount) !== spentCents - limitCents) {
       return await prisma.alert.update({
         where: { id: existingAlert.id },
         data: { exceededAmount },

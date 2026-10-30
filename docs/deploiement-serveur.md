@@ -53,15 +53,30 @@ Les ports locaux (`*_LOCAL_PORT`) ne servent pas en prod : seul `nginx-proxy` es
 
 ## 2. Mettre en production une nouvelle version
 
-> **Une seule fois, au premier déploiement avec migrations (0.9.0)** : la base de prod existait avant les migrations versionnées. Avant de lancer la nouvelle version, il faut l'inscrire comme déjà conforme à la migration initiale, sinon `migrate deploy` refuse de démarrer (base non vide). Après `git pull`, et avant `dc up -d --build` :
+> **Une seule fois, au premier déploiement avec migrations (0.9.0)** : la base de prod existait avant les migrations versionnées. Avant de lancer la nouvelle version, il faut l'inscrire comme déjà conforme à la migration initiale `0_init`, sinon `migrate deploy` refuse de démarrer (base non vide). La 0.9.0 apporte aussi une deuxième migration (nommage des tables et colonnes, montants en `DECIMAL(12, 2)`) : l'API l'applique elle-même au démarrage, à l'étape B.
+>
+> Après l'étape A et `git pull`, avant `dc up -d --build` :
 > ```bash
 > dc build api
-> dc run --rm --entrypoint npx api prisma migrate diff --from-config-datasource --to-schema prisma/schema.prisma --exit-code; echo $?   # doit afficher 0 (aucun écart)
+> # 1. La base doit être identique à 0_init, c'est-à-dire au schéma du commit 673dcd2.
+> #    Pas au schéma actuel : il contient déjà la migration suivante (le contrôle afficherait 2).
+> git show 673dcd2:apps/api/prisma/schema.prisma | dc run --rm -T --entrypoint sh api -c 'cat > /tmp/0_init.prisma && npx prisma migrate diff --from-config-datasource --to-schema /tmp/0_init.prisma --exit-code'; echo $?   # doit afficher 0
+> # 2. Aucun montant à plus de 2 décimales (DECIMAL(12, 2) l'arrondirait au centime)
+> echo 'SELECT count(*) FROM transactions WHERE amount <> round(amount, 2) UNION ALL SELECT count(*) FROM budgets WHERE limit_amount::numeric <> round(limit_amount::numeric, 2) UNION ALL SELECT count(*) FROM alerts WHERE "exceededAmount" <> round("exceededAmount", 2);' | dc exec -T db sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -At'   # doit afficher 0 sur les 3 lignes
+> # 3. Inscription
 > dc run --rm --entrypoint npx api prisma migrate resolve --applied 0_init
 > ```
-> **Si le premier contrôle n'affiche pas `0` : STOP.** La base diffère du schéma ; l'inscrire ferait croire à un historique faux. Afficher les différences (même commande sans `--exit-code`) et les comprendre avant d'aller plus loin.
+> **Si le contrôle 1 n'affiche pas `0` : STOP.** La base diffère de `0_init` ; l'inscrire ferait croire à un historique faux. Afficher les différences (même commande sans `--exit-code`) et les comprendre avant d'aller plus loin.
+> **Si le contrôle 2 n'affiche pas `0` partout : STOP.** Regarder les montants concernés avant de continuer : l'arrondi au centime doit être constaté, pas subi.
+>
+> Puis étape B. En C, ajouter le contrôle final (doit afficher `0`) :
+> ```bash
+> dc exec api npx prisma migrate diff --from-config-datasource --to-schema prisma/schema.prisma --exit-code; echo $?
+> ```
+> **Retour arrière** : la 0.8.0 ne connaît pas les nouveaux noms de colonnes ; revenir au code précédent impose de restaurer aussi la sauvegarde de l'étape A (section 5).
 >
 > Procédure **répétée le 30/10/2026** sur une copie restaurée de la sauvegarde de prod (section 5) : sans inscription, `migrate deploy` refuse (erreur P3005, base non vide) ; avec la copie dans l'état de la prod actuelle, contrôle d'écart à `0`, inscription, `migrate deploy` (« No pending migrations »), seed, écart final à `0`, données intactes.
+> Contrôle 1 vérifié le 30/10/2026 sur une base créée à l'état `0_init` : `0` avec le schéma de 673dcd2, `2` avec le schéma actuel ; puis inscription, migration de nommage appliquée par `migrate deploy`, écart final à `0`.
 
 Procédure utilisée pour la 0.7.0 (28/10/2026). Prérequis : la version est mergée dans `main`.
 
