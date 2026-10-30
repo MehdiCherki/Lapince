@@ -1,8 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import {
-  fetchTransactions,
-  type Transaction,
-} from "@/services/transactionApi";
+import { fetchTransactions, type Transaction } from "@/services/transactionApi";
 
 import Footer from "@/components/layout/Footer";
 import { AnimatedOrbBackground } from "@/components/ui/AnimatedOrbBackground";

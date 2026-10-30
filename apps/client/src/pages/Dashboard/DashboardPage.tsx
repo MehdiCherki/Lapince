@@ -3,11 +3,7 @@ import {
   fetchAllTransactions,
   type Transaction,
 } from "@/services/transactionApi";
-import {
-  fetchBudgets,
-  updateBudget,
-  deleteBudget,
-} from "@/services/budgetApi";
+import { fetchBudgets, updateBudget, deleteBudget } from "@/services/budgetApi";
 import type { Budget } from "@/types/budget";
 import { useAlerts } from "@/hooks/useAlerts";
 import { useStats } from "@/hooks/useStats";
