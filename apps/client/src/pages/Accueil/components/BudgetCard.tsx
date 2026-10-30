@@ -84,6 +84,7 @@ export default function BudgetCard({ onSuccess }: BudgetCardProps) {
               <div className="w-full flex items-center h-6 md:h-8 rounded-full bg-white/70 px-3 gap-1">
                 <input
                   type="number"
+                  step="0.01"
                   placeholder="Montant"
                   value={montant}
                   onChange={(e) => setMontant(e.target.value)}

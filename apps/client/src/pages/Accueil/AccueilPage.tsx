@@ -279,6 +279,7 @@ export default function AccueilPage() {
 
               <input
                 type="number"
+                step="0.01"
                 defaultValue={editingTransaction.amount}
                 onChange={(e) =>
                   setEditingTransaction((prev) =>
