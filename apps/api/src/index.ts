@@ -3,16 +3,16 @@ import cors from "cors";
 import helmet from "helmet";
 import cookieParser from "cookie-parser";
 
-import authRouter from "../routes/auth.routes.js";
-import userRouter from "../routes/user.routes.js";
-import categoryRouter from "../routes/category.routes.js";
-import transactionRouter from "../routes/transaction.routes.js";
-import budgetRoutes from "../routes/budget.routes.js";
-import alertRoutes from "../routes/alert.routes.js";
-import statsRoutes from "../routes/stats.routes.js";
-import { errorMiddleware } from "../middlewares/error.middleware.js";
-import { logger } from "../lib/logger.js";
-import { config } from "../config.js";
+import authRouter from "./routes/auth.routes.js";
+import userRouter from "./routes/user.routes.js";
+import categoryRouter from "./routes/category.routes.js";
+import transactionRouter from "./routes/transaction.routes.js";
+import budgetRoutes from "./routes/budget.routes.js";
+import alertRoutes from "./routes/alert.routes.js";
+import statsRoutes from "./routes/stats.routes.js";
+import { errorMiddleware } from "./middlewares/error.middleware.js";
+import { logger } from "./lib/logger.js";
+import { config } from "./config.js";
 
 // Créer une app Express
 const app = express();

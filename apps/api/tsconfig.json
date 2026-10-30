@@ -5,8 +5,8 @@
 
     "rootDir": ".",
     "outDir": "./dist",
-
-    "typeRoots": ["./src/types", "./node_modules/@types"],
+    // Vérification seule (éditeur, tsc --noEmit) ; la compilation de prod passe par tsconfig.build.json
+    "noEmit": true,
 
     // Environment Settings
     // See also https://aka.ms/tsconfig/module
@@ -20,8 +20,6 @@
 
     // Other Outputs
     "sourceMap": true,
-    "declaration": true,
-    "declarationMap": true,
 
     // Stricter Typechecking Options
     "noUncheckedIndexedAccess": true,
@@ -47,5 +45,6 @@
     "skipLibCheck": true
   },
 
+  "include": ["src", "tests"],
   "exclude": ["node_modules", "generated", "prisma", "prisma.config.ts"]
 }

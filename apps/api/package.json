@@ -5,13 +5,13 @@
   "main": "index.js",
   "scripts": {
     "dev": "tsx --watch src/index.ts",
-    "build": "tsc",
-    "start": "node dist/src/index.js",
+    "build": "tsc -p tsconfig.build.json",
+    "start": "node dist/index.js",
     "test": "vitest",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio",
-    "docker:start": "prisma db push && prisma db seed && node dist/src/index.js"
+    "docker:start": "prisma db push && prisma db seed && node dist/index.js"
   },
   "keywords": [],
   "author": "",

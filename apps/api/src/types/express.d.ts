@@ -1,4 +1,4 @@
-import { User } from "../models/index.ts";
+import { User } from "./auth.ts";
 
 export interface UserPayload {
   id: number;
