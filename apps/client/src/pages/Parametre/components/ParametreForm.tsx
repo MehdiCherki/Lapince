@@ -80,9 +80,11 @@ export default function ParametreForm({
       // Nouveau mot de passe : l'API a fermé toutes les sessions → reconnexion
       if (form.password) {
         setSuccessMessage("Mot de passe modifié : reconnectez-vous.");
+        // Navigation AVANT la déconnexion : sinon PrivateRoute réagit à la perte de session
+        // et renvoie vers "/" avant que ce composant (déjà démonté) puisse aller sur /login
         setTimeout(async () => {
+          navigate("/login", { replace: true });
           await logout();
-          navigate("/login");
         }, 2000);
         return;
       }
