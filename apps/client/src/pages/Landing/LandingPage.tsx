@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import Footer from "@/components/layout/Footer";
 import { AnimatedOrbBackground } from "@/components/ui/AnimatedOrbBackground";
+import Logo from "@/components/layout/Logo";
 
 const features = [
   {
@@ -57,10 +58,9 @@ export default function LandingPage() {
             alt="Illustration La Pince"
           />
         </div>
-        <img
-          src="/WEBP/Desktop/Lapince-Logo-Desktop.webp"
+        <Logo
+          variant="desktop"
           className="absolute top-3 left-10 w-16 lg:w-24 z-50 transition-all"
-          alt="Logo"
         />
         <div className="absolute top-6 right-6 z-50 pointer-events-auto">
           <a
@@ -87,11 +87,7 @@ export default function LandingPage() {
             alt="Illustration Mobile"
           />
         </div>
-        <img
-          src="/WEBP/Mobile/Lapince-Logo-Mobile.webp"
-          className="absolute top-3 left-4 w-20 z-50"
-          alt="Logo Round"
-        />
+        <Logo variant="mobile" className="absolute top-3 left-4 w-20 z-50" />
         <div className="absolute top-6 right-6 z-50">
           <a
             href="/login"

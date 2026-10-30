@@ -14,6 +14,7 @@ import { fetchOverview } from "@/services/statsApi";
 import type { Overview } from "@/types/stats";
 import { useTransactions } from "@/hooks/useTransactions";
 import { newestFirst } from "@/lib/sort";
+import Logo from "@/components/layout/Logo";
 
 export default function AccueilPage() {
   const { currentAlert, handleCloseAlert, loadAlerts } = useAlerts();
@@ -87,15 +88,13 @@ export default function AccueilPage() {
         className="absolute bottom-0 left-0 w-screen opacity-70 z-0 pointer-events-none block md:hidden"
         alt=""
       />
-      <img
-        src="/WEBP/Mobile/Lapince-Logo-Mobile.webp"
+      <Logo
+        variant="mobile"
         className="absolute top-3 left-4 w-20 z-50 md:hidden"
-        alt="Logo Mobile"
       />
-      <img
-        src="/WEBP/Desktop/Lapince-Logo-Desktop.webp"
+      <Logo
+        variant="desktop"
         className="absolute top-3 left-10 w-16 lg:w-24 z-50 transition-all hidden md:block"
-        alt="Logo"
       />
 
       <div

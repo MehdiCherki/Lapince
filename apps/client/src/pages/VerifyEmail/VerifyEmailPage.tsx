@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useSearchParams, Link } from "react-router-dom";
 import Footer from "@/components/layout/Footer";
 import { AnimatedOrbBackground } from "@/components/ui/AnimatedOrbBackground";
+import Logo from "@/components/layout/Logo";
 
 export default function VerifyEmailPage() {
   const [searchParams] = useSearchParams();
@@ -45,10 +46,9 @@ export default function VerifyEmailPage() {
           className="absolute bottom-0 left-0 w-[55vw] opacity-60 object-contain z-0 pointer-events-none"
           alt=""
         />
-        <img
-          src="/WEBP/Desktop/Lapince-Logo-Desktop.webp"
+        <Logo
+          variant="desktop"
           className="absolute top-3 left-10 w-16 lg:w-24 z-50 transition-all"
-          alt="Logo"
         />
       </div>
 
@@ -60,11 +60,7 @@ export default function VerifyEmailPage() {
           className="absolute bottom-0 left-0 w-full opacity-70 z-0 pointer-events-none"
           alt=""
         />
-        <img
-          src="/WEBP/Mobile/Lapince-Logo-Mobile.webp"
-          className="absolute top-3 left-4 w-20 z-50"
-          alt="Logo Mobile"
-        />
+        <Logo variant="mobile" className="absolute top-3 left-4 w-20 z-50" />
       </div>
 
       <div className="absolute inset-0 bg-white/40 z-20 pointer-events-none" />
@@ -107,7 +103,9 @@ export default function VerifyEmailPage() {
                 Ce lien est invalide ou a déjà été utilisé.
               </p>
               <p className="text-center text-sm opacity-70">
-                Inscrivez-vous à nouveau pour recevoir un nouvel email.
+                Si votre compte est déjà activé, connectez-vous simplement.
+                Sinon, utilisez « Mot de passe oublié » : le lien reçu par email
+                activera aussi votre compte.
               </p>
               <Link
                 to="/login"

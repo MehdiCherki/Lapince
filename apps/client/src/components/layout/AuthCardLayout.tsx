@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import Footer from "@/components/layout/Footer";
 import { AnimatedOrbBackground } from "@/components/ui/AnimatedOrbBackground";
+import Logo from "@/components/layout/Logo";
 
 interface AuthCardLayoutProps {
   title: string;
@@ -26,10 +27,9 @@ export default function AuthCardLayout({
           className="absolute bottom-0 left-0 w-[55vw] opacity-60 object-contain z-0 pointer-events-none"
           alt=""
         />
-        <img
-          src="/WEBP/Desktop/Lapince-Logo-Desktop.webp"
+        <Logo
+          variant="desktop"
           className="absolute top-3 left-10 w-16 lg:w-24 z-50 transition-all"
-          alt="Logo"
         />
       </div>
 
@@ -40,11 +40,7 @@ export default function AuthCardLayout({
           className="absolute bottom-0 left-0 w-full opacity-70 z-0 pointer-events-none"
           alt=""
         />
-        <img
-          src="/WEBP/Mobile/Lapince-Logo-Mobile.webp"
-          className="absolute top-3 left-4 w-20 z-50"
-          alt="Logo Mobile"
-        />
+        <Logo variant="mobile" className="absolute top-3 left-4 w-20 z-50" />
       </div>
 
       <div className="absolute inset-0 bg-white/40 z-20 pointer-events-none" />
