@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import Footer from "@/components/layout/Footer";
 import { AnimatedOrbBackground } from "@/components/ui/AnimatedOrbBackground";
+import Logo from "@/components/layout/Logo";
 
 interface TeamMember {
   name: string;
@@ -91,15 +92,13 @@ export default function MentionsLegalesPage() {
       />
 
       {/* Logos */}
-      <img
-        src="/WEBP/Mobile/Lapince-Logo-Mobile.webp"
+      <Logo
+        variant="mobile"
         className="absolute top-3 left-4 w-20 z-50 md:hidden"
-        alt="Logo La Pince"
       />
-      <img
-        src="/WEBP/Desktop/Lapince-Logo-Desktop.webp"
+      <Logo
+        variant="desktop"
         className="absolute top-3 left-10 w-16 lg:w-24 z-50 transition-all hidden md:block"
-        alt="Logo La Pince"
       />
 
       {/* Bouton retour */}

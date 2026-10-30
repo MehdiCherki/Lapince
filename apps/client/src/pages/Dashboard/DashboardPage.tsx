@@ -17,6 +17,7 @@ import { TransactionTable } from "./components/TransactionTable";
 import BudgetHistory from "./components/BudgetHistory";
 import BudgetEditModal from "./components/BudgetEditModal";
 import ConfirmModal from "@/components/ui/ConfirmModal";
+import Logo from "@/components/layout/Logo";
 
 export default function DashboardPage() {
   const { currentAlert, handleCloseAlert, loadAlerts } = useAlerts();
@@ -112,15 +113,13 @@ export default function DashboardPage() {
         aria-hidden="true"
       />
 
-      <img
-        src="/WEBP/Mobile/Lapince-Logo-Mobile.webp"
+      <Logo
+        variant="mobile"
         className="absolute top-3 left-4 w-20 z-50 md:hidden"
-        alt="Logo"
       />
-      <img
-        src="/WEBP/Desktop/Lapince-Logo-Desktop.webp"
+      <Logo
+        variant="desktop"
         className="absolute top-3 left-10 w-16 lg:w-24 z-50 transition-all hidden md:block"
-        alt="Logo"
       />
       {/* Header fixe mobile — hors du masque */}
       <div className="md:hidden absolute top-0 left-0 right-0 z-[45] flex flex-col items-center pt-28 pb-4 pointer-events-none">

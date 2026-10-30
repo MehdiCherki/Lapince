@@ -5,6 +5,7 @@ import { deleteUserAccount } from "@/services/userApi";
 import ParametreForm from "./components/ParametreForm";
 import Footer from "@/components/layout/Footer";
 import { AnimatedOrbBackground } from "@/components/ui/AnimatedOrbBackground";
+import Logo from "@/components/layout/Logo";
 
 export default function ParametrePage() {
   const { user, logout } = useAuth();
@@ -61,15 +62,13 @@ export default function ParametrePage() {
       />
 
       {/* Logos */}
-      <img
-        src="/WEBP/Mobile/Lapince-Logo-Mobile.webp"
+      <Logo
+        variant="mobile"
         className="absolute top-3 left-4 w-20 z-50 md:hidden"
-        alt="Logo"
       />
-      <img
-        src="/WEBP/Desktop/Lapince-Logo-Desktop.webp"
+      <Logo
+        variant="desktop"
         className="absolute top-3 left-10 w-16 lg:w-24 z-50 transition-all hidden md:block"
-        alt="Logo"
       />
 
       {/* Overlay */}

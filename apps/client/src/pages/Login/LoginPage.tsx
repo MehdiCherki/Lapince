@@ -7,6 +7,7 @@ import Footer from "@/components/layout/Footer";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { AnimatedOrbBackground } from "@/components/ui/AnimatedOrbBackground";
+import Logo from "@/components/layout/Logo";
 
 export default function LoginPage() {
   const { login } = useAuth();
@@ -67,14 +68,14 @@ export default function LoginPage() {
             alt=""
           />
         </div>
-        <img
-          src="/WEBP/Desktop/Lapince-Logo-Desktop.webp"
+        <Logo
+          variant="desktop"
           className="absolute top-3 left-10 w-16 lg:w-24 z-50 transition-all"
-          alt="Logo"
         />
 
         {/* Texte contextuel — même style que la landing page */}
-        <div className="absolute z-50 left-0 w-full md:pl-14 lg:pl-16 pointer-events-none pt-20">
+        {/* Accroche à partir de 1280 px seulement : en dessous, elle passait sous la carte (comme sur l'inscription) */}
+        <div className="absolute z-50 left-0 w-full md:pl-14 lg:pl-16 pointer-events-none pt-20 hidden xl:block">
           <header className="max-w-[700px] md:mt-56 shrink-0 text-left md:pl-28">
             <h2 className="text-[50px] lg:text-[65px] font-medium leading-[0.9] tracking-tighter text-[#002b49]">
               Content de
@@ -101,11 +102,7 @@ export default function LoginPage() {
           className="absolute bottom-0 left-0 w-full opacity-70 z-0 pointer-events-none"
           alt=""
         />
-        <img
-          src="/WEBP/Mobile/Lapince-Logo-Mobile.webp"
-          className="absolute top-3 left-4 w-20 z-50"
-          alt="Logo Mobile"
-        />
+        <Logo variant="mobile" className="absolute top-3 left-4 w-20 z-50" />
       </div>
 
       {/* ------------------------------------------------------------ */}
