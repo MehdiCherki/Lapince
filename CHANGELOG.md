@@ -55,6 +55,7 @@ Copie ce bloc en haut de la section `## [Non publié]` et remplis-le :
 ### Modifié
 - Code formaté avec Prettier (réglages par défaut, fins de ligne `auto`), aucun changement de comportement ; le commit de formatage est ignoré par `git blame` via `.git-blame-ignore-revs` (branche `chore/prettier`)
 - Arborescence : `src/` renommé en `apps/` (`apps/api`, `apps/client`), `Documents/` en `docs/` ; README avec la structure du projet, les bonnes commandes de lancement et les branches `dev` / `feature/` ; `docs/deploiement-serveur.md` réécrit pour le vrai serveur (`/opt/lapince`, deploy key en lecture seule, certificats en mode webroot, procédure de mise en prod et de retour arrière) ; `COMPOSE_PROJECT_NAME` ajouté à `.env.example`, car il fixe le nom du volume de la base (branche `chore/monorepo-layout`)
+- API : tout le code dans `apps/api/src/` (fin du `src/…/src`), requêtes manuelles `.http` dans `apps/api/http/` ; `index.ts` découpé en `app.ts` (l'application, importée par les tests sans ouvrir de port) et `server.ts` (le démarrage) ; compilation de prod via `tsconfig.build.json`, sans les fichiers de test, point d'entrée `dist/server.js` ; `access.controller.middleware.ts` → `auth.middleware.ts`, `alert.generator.ts` → `alert.service.ts` ; imports relatifs en `.ts` partout (branche `chore/api-structure`)
 
 ### Supprimé
 - `package.json` et `package-lock.json` à la racine (jamais installés) et `Caddyfile` (remplacé par nginx-proxy + certbot)
