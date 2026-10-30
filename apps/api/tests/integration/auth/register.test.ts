@@ -1,20 +1,13 @@
-import { describe, it, expect, afterAll, vi } from "vitest";
+import { describe, it, expect } from "vitest";
 import request from "supertest";
-import app from "./app.ts";
-import { prisma } from "./lib/prisma.ts";
-import { transporter } from "./lib/mailer.ts";
+import app from "../../../src/app.ts";
+import { prisma } from "../../../src/lib/prisma.ts";
+import { transporter } from "../../../src/lib/mailer.ts";
+import { uniqueEmail } from "../../helpers/auth.ts";
 
-// Remplace le vrai transporter Brevo : sendMail ne fait rien et répond OK.
-vi.mock("./lib/mailer.ts", () => ({
-  transporter: { sendMail: vi.fn().mockResolvedValue({}) },
-}));
-
-const testEmail = `test_${Date.now()}@lapince.fr`;
-
-afterAll(async () => {
-  await prisma.user.deleteMany({ where: { email: testEmail } });
-  await prisma.$disconnect();
-});
+// Ce fichier sert aussi de témoin du mock du mailer (tests/setup/integration.ts) :
+// si sendMail n'est pas un vi.fn() appelé, le mock n'est pas appliqué et de vrais emails partiraient.
+const testEmail = uniqueEmail("test");
 
 describe("POST /auth/register", () => {
   it("crée un compte non vérifié, envoie l'email de vérification et retourne 201", async () => {

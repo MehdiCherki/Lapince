@@ -1,10 +1,6 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect } from "vitest";
 import request from "supertest";
-import app from "./app.ts";
-
-vi.mock("./lib/mailer.ts", () => ({
-  transporter: { sendMail: vi.fn().mockResolvedValue({}) },
-}));
+import app from "../../../src/app.ts";
 
 // Reproduit la prod : navigateur → nginx-proxy → nginx du client → API.
 // Chaque proxy ajoute à X-Forwarded-For l'adresse de celui qui lui a parlé :

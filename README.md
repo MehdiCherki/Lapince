@@ -128,8 +128,16 @@ Les ports locaux se règlent dans `.env` (`CLIENT_LOCAL_PORT`, `API_LOCAL_PORT`,
 
 ### Tests
 ```bash
-docker compose exec api npm test -- run
-docker compose exec client npm test
+docker compose exec api npm run test:unit          # API : tests unitaires (sans base)
+docker compose exec api npm run test:integration   # API : tests d'intégration, sur la base lapince_test
+docker compose exec api npm test -- run            # API : les deux
+docker compose exec client npm test                # client
+```
+
+Les tests d'intégration n'utilisent jamais la base de dev : ils tournent sur `lapince_test` (`DATABASE_URL_TEST` dans `.env`) et refusent de démarrer sur une autre base. Mise en place, une seule fois :
+```bash
+echo "CREATE DATABASE lapince_test;" | docker compose exec -T db sh -c 'psql -U $POSTGRES_USER -d $POSTGRES_DB'
+docker compose exec api npm run test:db:push   # schéma + catégories ; à relancer après chaque modification de schema.prisma
 ```
 
 
