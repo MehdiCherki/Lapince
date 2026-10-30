@@ -1,0 +1,50 @@
+{
+  // Visit https://aka.ms/tsconfig to read more about this file
+  "compilerOptions": {
+    // File Layout
+
+    "rootDir": ".",
+    "outDir": "./dist",
+    // Vérification seule (éditeur, tsc --noEmit) ; la compilation de prod passe par tsconfig.build.json
+    "noEmit": true,
+
+    // Environment Settings
+    // See also https://aka.ms/tsconfig/module
+    "module": "nodenext",
+    "target": "ES2022", //Plus compatible et moins expérimentale que ESnext
+    "types": ["node"],
+    // For nodejs:
+    // "lib": ["esnext"],
+    // "types": ["node"],
+    // and npm install -D @types/node
+
+    // Other Outputs
+    "sourceMap": true,
+
+    // Stricter Typechecking Options
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+    "forceConsistentCasingInFileNames": true, // Éviter les problèmes de casing dans les noms de fichier
+    "rewriteRelativeImportExtensions": true, // Autoriser les imports avec l'extension .ts
+
+    // Style Options
+    // "noImplicitReturns": true,
+    // "noImplicitOverride": true,
+    // "noUnusedLocals": true,
+    // "noUnusedParameters": true,
+    // "noFallthroughCasesInSwitch": true,
+    // "noPropertyAccessFromIndexSignature": true,
+
+    // Recommended Options
+    "strict": true,
+    "verbatimModuleSyntax": true,
+    "isolatedModules": true,
+    "erasableSyntaxOnly": true, // Utiliser uniquement la syntaxe supportées par Node.js (pas d'enum, décorateurs...)
+    "noUncheckedSideEffectImports": true,
+    "moduleDetection": "force",
+    "skipLibCheck": true
+  },
+
+  "include": ["src", "tests", "vitest.config.ts"],
+  "exclude": ["node_modules", "generated", "prisma", "prisma.config.ts"]
+}
