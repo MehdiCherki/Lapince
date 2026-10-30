@@ -27,8 +27,6 @@ Copie ce bloc en haut de la section `## [Non publié]` et remplis-le :
 - Bug résolu + contexte court
 
 
-- **Confidentialité** — après une déconnexion, le bouton « Précédent » pouvait réafficher un écran privé figé (budgets, transactions) conservé par le navigateur (cache précédent/suivant). Les pages HTML sont maintenant servies en `Cache-Control: no-store` (nginx, images et assets toujours en cache), et une page malgré tout restaurée est rechargée, ce qui revérifie la session (branche `fix/logout-bfcache`, anomalie R11 de la recette du 30/10)
-
 ### Supprimé
 - Ce qui a été retiré
 ```
@@ -65,6 +63,7 @@ Copie ce bloc en haut de la section `## [Non publié]` et remplis-le :
 ### Corrigé
 - Montants reçus en texte : les montants des transactions et les dépassements des alertes (`Decimal` en base) arrivaient dans le navigateur sous forme de texte (`"150"`) alors que le client les typait en nombres ; un calcul sans conversion pouvait donner `"100" + "50" = "10050"`. Conversion unique à l'entrée des services (`toTransaction`, `toAlert`), types `TransactionResponse` / `AlertResponse` pour la forme brute, conversions manuelles dispersées supprimées ; 4 tests (rouges avant la correction). Affichage inchangé (branche `fix/decimal-amounts`)
 - Catégories affichées dans le désordre (revenus : « Prestations, Remboursements, Autres revenus, Salaire… ») : l'API ne précisait pas d'ordre, et PostgreSQL renvoyait l'ordre physique des lignes, modifié par les mises à jour. Liste triée par id, donc dans l'ordre du seed, et test d'intégration ajouté (branche `fix/category-order`)
+- **Confidentialité** — après une déconnexion, le bouton « Précédent » pouvait réafficher un écran privé figé (budgets, transactions) conservé par le navigateur (cache précédent/suivant). Les pages HTML sont maintenant servies en `Cache-Control: no-store` (nginx, images et assets toujours en cache), et une page malgré tout restaurée est rechargée, ce qui revérifie la session (branche `fix/logout-bfcache`, anomalie R11 de la recette du 30/10)
 
 ### Supprimé
 - `package.json` et `package-lock.json` à la racine (jamais installés) et `Caddyfile` (remplacé par nginx-proxy + certbot)
