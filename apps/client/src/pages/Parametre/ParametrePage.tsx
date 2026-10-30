@@ -2,9 +2,9 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { deleteUserAccount } from "@/services/user";
-import ParametreForm from "@/components/auth/ParametreForm";
-import Footer from "@/components/Footer/footer";
-import { AnimatedOrbBackground } from "@/components/AnimatedOrbBackground/AnimatedOrbBackground";
+import ParametreForm from "./components/ParametreForm";
+import Footer from "@/components/layout/Footer";
+import { AnimatedOrbBackground } from "@/components/ui/AnimatedOrbBackground";
 
 export default function ParametrePage() {
   const { user, logout } = useAuth();

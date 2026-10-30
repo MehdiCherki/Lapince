@@ -5,11 +5,11 @@ import {
   type LoginCredentials,
 } from "@/services/authApi";
 import type { ApiError } from "@/types/auth";
-import LoginForm from "@/components/auth/LoginForm";
-import Footer from "@/components/Footer/footer";
+import LoginForm from "./components/LoginForm";
+import Footer from "@/components/layout/Footer";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
-import { AnimatedOrbBackground } from "@/components/AnimatedOrbBackground/AnimatedOrbBackground";
+import { AnimatedOrbBackground } from "@/components/ui/AnimatedOrbBackground";
 
 export default function LoginPage() {
   const { login } = useAuth();

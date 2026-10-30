@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useSearchParams, Link } from "react-router-dom";
-import Footer from "@/components/Footer/footer";
-import { AnimatedOrbBackground } from "@/components/AnimatedOrbBackground/AnimatedOrbBackground";
+import Footer from "@/components/layout/Footer";
+import { AnimatedOrbBackground } from "@/components/ui/AnimatedOrbBackground";
 
 export default function VerifyEmailPage() {
   const [searchParams] = useSearchParams();

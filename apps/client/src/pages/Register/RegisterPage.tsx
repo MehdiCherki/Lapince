@@ -1,10 +1,10 @@
-import RegisterForm from "@/components/auth/RegisterForm";
+import RegisterForm from "./components/RegisterForm";
 import { useState } from "react";
 import { registerUser } from "@/services/authApi";
 import type { RegisterFormData, ApiError } from "@/types/auth";
-import Footer from "@/components/Footer/footer";
+import Footer from "@/components/layout/Footer";
 import { Link } from "react-router-dom";
-import { AnimatedOrbBackground } from "@/components/AnimatedOrbBackground/AnimatedOrbBackground";
+import { AnimatedOrbBackground } from "@/components/ui/AnimatedOrbBackground";
 
 export default function RegisterPage() {
   const [isLoading, setIsLoading] = useState(false);

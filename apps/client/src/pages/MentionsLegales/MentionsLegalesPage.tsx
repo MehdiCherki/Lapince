@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
-import Footer from "@/components/Footer/footer";
-import { AnimatedOrbBackground } from "@/components/AnimatedOrbBackground/AnimatedOrbBackground";
+import Footer from "@/components/layout/Footer";
+import { AnimatedOrbBackground } from "@/components/ui/AnimatedOrbBackground";
 
 interface TeamMember {
   name: string;
