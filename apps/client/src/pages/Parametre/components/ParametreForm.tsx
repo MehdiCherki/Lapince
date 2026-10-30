@@ -139,6 +139,7 @@ export default function ParametreForm({
         <input
           name="email"
           type="email"
+          autoComplete="username"
           value={form.email}
           onChange={handleChange}
           className={inputStyle}
@@ -155,6 +156,7 @@ export default function ParametreForm({
           <input
             name="password"
             type={visible.password ? "text" : "password"}
+            autoComplete="new-password"
             value={form.password}
             onChange={handleChange}
             className={inputStyle}
@@ -183,6 +185,7 @@ export default function ParametreForm({
           <input
             name="confirm"
             type={visible.confirm ? "text" : "password"}
+            autoComplete="new-password"
             value={form.confirm}
             onChange={handleChange}
             className={inputStyle}
