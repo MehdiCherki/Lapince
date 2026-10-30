@@ -87,3 +87,43 @@ export async function refreshSession(): Promise<void> {
     throw new Error("Refresh token invalide ou expiré");
   }
 }
+
+// Réponse d'erreur de l'API → ApiError (message lisible), même quand le corps n'est pas du JSON
+async function toApiError(response: Response): Promise<ApiError> {
+  const body = await response.json().catch(() => null);
+  return {
+    error: body?.error ?? "Une erreur est survenue, réessayez.",
+    ...(body?.field ? { field: body.field } : {}),
+  };
+}
+
+// POST /auth/forgot-password — renvoie le message de l'API (identique que le compte existe ou non)
+export async function requestPasswordReset(email: string): Promise<string> {
+  const response = await fetch(
+    `${import.meta.env.VITE_API_BASE_URL}/auth/forgot-password`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email }),
+    },
+  );
+  if (!response.ok) throw await toApiError(response);
+  const data = await response.json();
+  return data.message;
+}
+
+// POST /auth/reset-password — jeton reçu par email + nouveau mot de passe
+export async function resetPassword(
+  token: string,
+  password: string,
+): Promise<void> {
+  const response = await fetch(
+    `${import.meta.env.VITE_API_BASE_URL}/auth/reset-password`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ token, password }),
+    },
+  );
+  if (!response.ok) throw await toApiError(response);
+}

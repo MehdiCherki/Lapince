@@ -10,6 +10,8 @@ import MentionsLegalesPage from "@/pages/MentionsLegales/MentionsLegalesPage";
 import DashboardPage from "@/pages/Dashboard/DashboardPage";
 import NotFoundPage from "@/pages/NotFound/NotFoundPage";
 import VerifyEmailPage from "@/pages/VerifyEmail/VerifyEmailPage";
+import ForgotPasswordPage from "@/pages/ForgotPassword/ForgotPasswordPage";
+import ResetPasswordPage from "@/pages/ResetPassword/ResetPasswordPage";
 
 export const router = createBrowserRouter([
   {
@@ -23,6 +25,14 @@ export const router = createBrowserRouter([
   {
     path: "/verify-email",
     element: <VerifyEmailPage />,
+  },
+  {
+    path: "/forgot-password",
+    element: <ForgotPasswordPage />,
+  },
+  {
+    path: "/reset-password",
+    element: <ResetPasswordPage />,
   },
   {
     path: "/register",
