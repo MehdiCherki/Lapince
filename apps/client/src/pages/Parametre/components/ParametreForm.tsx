@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Loader2 } from "lucide-react";
 import { updateUserProfile } from "@/services/user";
-import { useAuth } from "@/context/AuthContext";
+import { useAuth } from "@/hooks/useAuth";
 import type { AuthUser, ApiError } from "@/types/auth";
 
 export default function ParametreForm({

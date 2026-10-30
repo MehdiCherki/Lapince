@@ -8,7 +8,7 @@ import type { ApiError } from "@/types/auth";
 import LoginForm from "./components/LoginForm";
 import Footer from "@/components/layout/Footer";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "@/context/AuthContext";
+import { useAuth } from "@/hooks/useAuth";
 import { AnimatedOrbBackground } from "@/components/ui/AnimatedOrbBackground";
 
 export default function LoginPage() {
