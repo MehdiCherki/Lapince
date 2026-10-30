@@ -14,6 +14,8 @@ export default defineConfig({
   },
   server: {
     host: true, // Écoute sur 0.0.0.0 — indispensable pour être accessible depuis l'hôte via Docker
+    // Comme nginx en prod : aucune copie figée gardée par le navigateur (« Précédent » après déconnexion)
+    headers: { "Cache-Control": "no-store" },
     watch: {
       usePolling: true, // Nécessaire sur Windows : Docker ne propage pas les événements inotify natifs
     },
