@@ -2,6 +2,7 @@ import { useState, type FormEvent } from "react";
 import type { LoginPayload } from "@/types/auth";
 import type { ApiError } from "@/types/api";
 import { Loader2, Eye, EyeOff } from "lucide-react";
+import { Link } from "react-router-dom";
 
 interface LoginFormProps {
   onSubmit: (credentials: LoginPayload) => void;
@@ -100,6 +101,15 @@ export default function LoginForm({
       </div>
 
       <p className="text-center text-[11px] font-bold mt-4 text-[#002b49]">
+        <Link
+          to="/forgot-password"
+          className="underline hover:text-blue-700 transition-colors"
+        >
+          Mot de passe oublié ?
+        </Link>
+      </p>
+
+      <p className="text-center text-[11px] font-bold mt-2 text-[#002b49]">
         Pas encore de compte ?
         <a
           href="/register"
