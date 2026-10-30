@@ -61,6 +61,7 @@ Copie ce bloc en haut de la section `## [Non publié]` et remplis-le :
 
 ### Corrigé
 - Saisie des centimes impossible sur l'accueil (dépense, revenu, budget) : sans `step`, un champ numérique n'accepte que des entiers et le navigateur bloquait l'envoi ; champs montant en `step="0.01"` (branche `feature/db-naming-decimal`)
+- **Dépenses, budgets et alertes toujours cohérents** : chaque écriture (dépense ou budget : création, modification, suppression) et le recalcul des alertes des catégories touchées se font dans **une seule transaction** (`prisma.$transaction`) : tout est enregistré, ou rien. Avant, une alerte en échec laissait la dépense enregistrée alors que l'utilisateur recevait une erreur. **Requêtes simultanées** : un verrou par utilisateur et par catégorie (`pg_advisory_xact_lock`, libéré à la fin de la transaction) les fait passer l'une après l'autre ; avant, 8 dépenses envoyées en même temps créaient 2 à 4 alertes pour une même catégorie, au lieu d'une. Catégories verrouillées par ordre croissant (pas d'interblocage). Vérification « un budget par catégorie » faite sous ce verrou. Modification d'une transaction filtrée aussi par utilisateur (`where: { id, userId }`). Recalcul des alertes déplacé des contrôleurs vers les services. 2 tests d'intégration rouges puis verts (atomicité sur un vrai débordement de montant, concurrence) (branche `feature/expense-alert-transaction`)
 
 ---
 
