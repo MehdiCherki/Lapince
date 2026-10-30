@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { createPortal } from "react-dom";
-import { Loader2 } from "lucide-react";
+import { Loader2, Eye, EyeOff } from "lucide-react";
 import { updateUserProfile } from "@/services/userApi";
 import { useAuth } from "@/hooks/useAuth";
 import type { AuthUser } from "@/types/auth";
@@ -30,6 +30,12 @@ export default function ParametreForm({
   const [apiError, setApiError] = useState<ApiError | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
+  // Champs mot de passe affichés en clair (icône œil), un état par champ
+  const [visible, setVisible] = useState({
+    password: false,
+    confirm: false,
+    currentPassword: false,
+  });
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -143,14 +149,27 @@ export default function ParametreForm({
 
       <div>
         <label className={labelStyle}>Nouveau mot de passe</label>
-        <input
-          name="password"
-          type="password"
-          value={form.password}
-          onChange={handleChange}
-          className={inputStyle}
-          placeholder="mot de passe"
-        />
+        <div className="flex items-center gap-2">
+          <input
+            name="password"
+            type={visible.password ? "text" : "password"}
+            value={form.password}
+            onChange={handleChange}
+            className={inputStyle}
+            placeholder="mot de passe"
+          />
+          <button
+            type="button"
+            aria-label={
+              visible.password
+                ? "Masquer le mot de passe"
+                : "Afficher le mot de passe"
+            }
+            onClick={() => setVisible((v) => ({ ...v, password: !v.password }))}
+          >
+            {visible.password ? <EyeOff size={16} /> : <Eye size={16} />}
+          </button>
+        </div>
         {apiError?.field === "password" && (
           <p className="text-red-500 text-xs ml-4">{apiError.error}</p>
         )}
@@ -158,14 +177,27 @@ export default function ParametreForm({
 
       <div>
         <label className={labelStyle}>Confirmer le mot de passe</label>
-        <input
-          name="confirm"
-          type="password"
-          value={form.confirm}
-          onChange={handleChange}
-          className={inputStyle}
-          placeholder="mot de passe"
-        />
+        <div className="flex items-center gap-2">
+          <input
+            name="confirm"
+            type={visible.confirm ? "text" : "password"}
+            value={form.confirm}
+            onChange={handleChange}
+            className={inputStyle}
+            placeholder="mot de passe"
+          />
+          <button
+            type="button"
+            aria-label={
+              visible.confirm
+                ? "Masquer le mot de passe"
+                : "Afficher le mot de passe"
+            }
+            onClick={() => setVisible((v) => ({ ...v, confirm: !v.confirm }))}
+          >
+            {visible.confirm ? <EyeOff size={16} /> : <Eye size={16} />}
+          </button>
+        </div>
         {apiError?.field === "confirm" && (
           <p className="text-red-500 text-xs ml-4">{apiError.error}</p>
         )}
@@ -173,15 +205,30 @@ export default function ParametreForm({
 
       <div>
         <label className={labelStyle}>Mot de passe actuel</label>
-        <input
-          name="currentPassword"
-          type="password"
-          autoComplete="current-password"
-          value={form.currentPassword}
-          onChange={handleChange}
-          className={inputStyle}
-          placeholder="requis pour changer l'e-mail ou le mot de passe"
-        />
+        <div className="flex items-center gap-2">
+          <input
+            name="currentPassword"
+            type={visible.currentPassword ? "text" : "password"}
+            autoComplete="current-password"
+            value={form.currentPassword}
+            onChange={handleChange}
+            className={inputStyle}
+            placeholder="requis pour changer l'e-mail ou le mot de passe"
+          />
+          <button
+            type="button"
+            aria-label={
+              visible.currentPassword
+                ? "Masquer le mot de passe"
+                : "Afficher le mot de passe"
+            }
+            onClick={() =>
+              setVisible((v) => ({ ...v, currentPassword: !v.currentPassword }))
+            }
+          >
+            {visible.currentPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+          </button>
+        </div>
         {apiError?.field === "currentPassword" && (
           <p className="text-red-500 text-xs ml-4">{apiError.error}</p>
         )}
