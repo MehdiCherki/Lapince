@@ -57,6 +57,7 @@ Fonctionnalités prévues dans le MVP :
 ### DevOps
 - Docker
 - Docker Compose
+- GitHub Actions (intégration continue)
 
 ### Qualité et collaboration
 - Git
@@ -140,6 +141,18 @@ echo "CREATE DATABASE lapince_test;" | docker compose exec -T db sh -c 'psql -U 
 docker compose exec api npm run test:db:setup  # migrations + catégories ; à relancer après chaque nouvelle migration
 ```
 
+### Intégration continue
+Chaque pull request est vérifiée par GitHub Actions ([.github/workflows/ci.yml](.github/workflows/ci.yml)), sur une machine neuve, à partir du dépôt seul :
+
+| Job | Contrôles |
+|---|---|
+| Formatage | Prettier sur tout le dépôt (version figée) |
+| API | `npm ci`, client Prisma, types, tests unitaires, migrations + seed sur une base PostgreSQL jetable, tests d'intégration, build |
+| Client | `npm ci`, lint, tests, types et build |
+| Images de production | construction des Dockerfiles de prod de l'API et du client |
+
+Résultat d'une PR : onglet *Checks* sur GitHub, ou `gh pr checks <numéro>`.
+
 
 ## Conventions Git
 
@@ -179,7 +192,7 @@ Chaque Pull Request doit contenir :
 ### Avant merge
 - Code relu.
 - 1 approve minimum.
-- Tests passés.
+- Tests passés et CI verte.
 - Aucun conflit non résolu.
 
 ---
