@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Loader2 } from "lucide-react";
-import { updateUserProfile } from "@/services/user";
+import { updateUserProfile } from "@/services/userApi";
 import { useAuth } from "@/hooks/useAuth";
 import type { AuthUser, ApiError } from "@/types/auth";
 

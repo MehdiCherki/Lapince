@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { deleteUserAccount } from "@/services/user";
+import { deleteUserAccount } from "@/services/userApi";
 import ParametreForm from "./components/ParametreForm";
 import Footer from "@/components/layout/Footer";
 import { AnimatedOrbBackground } from "@/components/ui/AnimatedOrbBackground";
