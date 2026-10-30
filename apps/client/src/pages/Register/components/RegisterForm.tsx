@@ -58,30 +58,35 @@ export default function RegisterForm({
           label: "Prénom",
           type: "text",
           placeholder: "Prénom",
+          autoComplete: "given-name",
         },
         {
           id: "last_name",
           label: "Nom",
           type: "text",
           placeholder: "Nom de famille",
+          autoComplete: "family-name",
         },
         {
           id: "email",
           label: "E-mail",
           type: "email",
           placeholder: "e-mail",
+          autoComplete: "username",
         },
         {
           id: "password",
           label: "Mot de passe",
           type: showPassword ? "text" : "password",
           placeholder: "mot de passe",
+          autoComplete: "new-password",
         },
         {
           id: "confirm",
           label: "Saisir de nouveau...",
           type: showConfirm ? "text" : "password",
           placeholder: "mot de passe",
+          autoComplete: "new-password",
         },
       ].map((field) => (
         <div key={field.id}>
@@ -99,6 +104,7 @@ export default function RegisterForm({
               id={field.id}
               name={field.id}
               type={field.type}
+              autoComplete={field.autoComplete}
               placeholder={field.placeholder}
               disabled={isLoading}
               aria-invalid={error?.field === field.id}

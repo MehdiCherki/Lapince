@@ -36,7 +36,33 @@ export async function updateMe(req: Request, res: Response) {
       .status(400)
       .json({ error: "Données invalides", details: result.error.issues });
 
-  const { first_name, last_name, email, password, photo } = result.data;
+  const { first_name, last_name, email, password, photo, currentPassword } =
+    result.data;
+
+  const current = await prisma.user.findUnique({ where: { id: req.user.id } });
+  if (!current)
+    return res.status(404).json({ error: "Utilisateur introuvable" });
+
+  // Changer le mot de passe ou l'email permet de prendre le contrôle du compte :
+  // une session ouverte ne suffit pas (ordinateur laissé allumé, jeton volé), on exige le mot de passe actuel.
+  // Le formulaire renvoie toujours l'email : seul un email différent compte comme un changement.
+  const emailChanges = email !== undefined && email !== current.email;
+  if (password || emailChanges) {
+    if (!currentPassword)
+      return res.status(400).json({
+        error:
+          "Saisissez votre mot de passe actuel pour modifier l'email ou le mot de passe",
+        field: "currentPassword",
+      });
+    // 403 et non 401 : le client traite tout 401 comme une session expirée (refresh puis nouvel essai)
+    if (!(await argon2.verify(current.password, currentPassword)))
+      return res
+        .status(403)
+        .json({
+          error: "Mot de passe actuel incorrect",
+          field: "currentPassword",
+        });
+  }
 
   if (email) {
     const existing = await prisma.user.findUnique({ where: { email } });
@@ -67,6 +93,11 @@ export async function updateMe(req: Request, res: Response) {
       updatedAt: true,
     },
   });
+
+  // Nouveau mot de passe : toutes les sessions (y compris celle d'un éventuel intrus) sont fermées
+  if (hashedPassword) {
+    await prisma.refreshToken.deleteMany({ where: { userId: req.user.id } });
+  }
 
   return res.status(200).json({ message: "Profil mis à jour", user });
 }
