@@ -6,7 +6,13 @@ export const updateUserSchema = z.object({
   first_name: z.string().min(1, "Le prénom est requis").optional(),
   last_name: z.string().min(1, "Le nom est requis").optional(),
   photo: z.string().optional(),
-  email: z.email({ pattern: z.regexes.rfc5322Email }).optional(),
+  // Normalisé comme à l'inscription (sans espaces, en minuscules) avant la vérification du format
+  email: z
+    .string()
+    .trim()
+    .toLowerCase()
+    .pipe(z.email({ pattern: z.regexes.rfc5322Email }))
+    .optional(),
   password: z
     .string()
     .min(8, "Le mot de passe doit contenir au moins 8 caractères")

@@ -8,8 +8,9 @@ export const TEST_PASSWORD = "Motdepasse1@";
 // Emails créés pendant un fichier de test : supprimés à la fin du fichier (tests/setup/integration.ts)
 export const trackedEmails: string[] = [];
 
+// En minuscules, comme l'API les enregistre (sinon le nettoyage ne retrouverait pas le compte)
 export function uniqueEmail(label: string): string {
-  const email = `${label}_${Date.now()}@lapince.fr`;
+  const email = `${label}_${Date.now()}@lapince.fr`.toLowerCase();
   trackedEmails.push(email);
   return email;
 }
