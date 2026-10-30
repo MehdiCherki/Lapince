@@ -1,10 +1,12 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { createPortal } from "react-dom";
 import { Loader2 } from "lucide-react";
 import { updateUserProfile } from "@/services/userApi";
 import { useAuth } from "@/hooks/useAuth";
 import type { AuthUser } from "@/types/auth";
 import type { ApiError } from "@/types/api";
+import ConfirmModal from "@/components/ui/ConfirmModal";
 
 export default function ParametreForm({
   selectedAvatar,
@@ -27,31 +29,38 @@ export default function ParametreForm({
 
   const [apiError, setApiError] = useState<ApiError | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
     setApiError(null);
+    setSuccessMessage(null);
   };
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  // Envoi du formulaire : vérifications locales, puis demande de confirmation (modale de l'app)
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-
-    if (!confirm("Êtes-vous sûr de vouloir modifier vos informations ?"))
-      return;
-
-    setIsLoading(true);
     setApiError(null);
+    setSuccessMessage(null);
+
+    if (form.password && form.password !== form.confirm) {
+      setApiError({
+        error: "Les mots de passe ne correspondent pas.",
+        field: "confirm",
+      });
+      return;
+    }
+
+    setConfirmOpen(true);
+  };
+
+  // Confirmé : enregistrement. Les erreurs de l'API s'affichent sous les champs, pas dans la modale.
+  const save = async () => {
+    setConfirmOpen(false);
+    setIsLoading(true);
 
     try {
-      if (form.password && form.password !== form.confirm) {
-        setApiError({
-          error: "Les mots de passe ne correspondent pas.",
-          field: "confirm",
-        });
-        setIsLoading(false);
-        return;
-      }
-
       const updatedUser = await updateUserProfile({
         first_name: form.first_name,
         last_name: form.last_name,
@@ -64,20 +73,22 @@ export default function ParametreForm({
 
       // Nouveau mot de passe : l'API a fermé toutes les sessions → reconnexion
       if (form.password) {
-        alert("Mot de passe modifié : reconnectez-vous avec le nouveau.");
-        await logout();
-        navigate("/login");
+        setSuccessMessage("Mot de passe modifié : reconnectez-vous.");
+        setTimeout(async () => {
+          await logout();
+          navigate("/login");
+        }, 2000);
         return;
       }
 
       login(updatedUser as AuthUser);
       setForm({ ...form, currentPassword: "" });
-      alert("Vos informations ont été mises à jour avec succès !");
+      setSuccessMessage("Vos informations ont été mises à jour.");
     } catch (err) {
       setApiError(err as ApiError);
+    } finally {
+      setIsLoading(false);
     }
-
-    setIsLoading(false);
   };
 
   const inputStyle =
@@ -180,6 +191,15 @@ export default function ParametreForm({
         <p className="text-red-500 text-xs text-center">{apiError.error}</p>
       )}
 
+      {successMessage && (
+        <p
+          role="status"
+          className="text-green-700 text-[11px] text-center font-bold italic bg-green-100/60 py-1 rounded-full"
+        >
+          ✓ {successMessage}
+        </p>
+      )}
+
       <div className="flex justify-center pt-2">
         <button
           type="submit"
@@ -203,6 +223,18 @@ export default function ParametreForm({
           Se désinscrire
         </button>
       </div>
+      {/* Portail vers <body> : le backdrop-blur de la carte piégerait sinon la modale (position fixed) */}
+      {confirmOpen &&
+        createPortal(
+          <ConfirmModal
+            title="Modifier vos informations ?"
+            message="Les modifications seront enregistrées sur votre compte."
+            confirmLabel="Enregistrer"
+            onConfirm={save}
+            onCancel={() => setConfirmOpen(false)}
+          />,
+          document.body,
+        )}
     </form>
   );
 }
