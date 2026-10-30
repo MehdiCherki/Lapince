@@ -1,9 +1,9 @@
 import { describe, it, expect, afterAll, vi } from "vitest";
 import request from "supertest";
-import app from "./app.ts";
-import { prisma } from "./lib/prisma.ts";
+import app from "../../../src/app.ts";
+import { prisma } from "../../../src/lib/prisma.ts";
 
-vi.mock("./lib/mailer.ts", () => ({
+vi.mock("../../../src/lib/mailer.ts", () => ({
   transporter: { sendMail: vi.fn().mockResolvedValue({}) },
 }));
 

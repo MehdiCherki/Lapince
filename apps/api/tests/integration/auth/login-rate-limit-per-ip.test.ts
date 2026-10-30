@@ -1,8 +1,8 @@
 import { describe, it, expect, vi } from "vitest";
 import request from "supertest";
-import app from "./app.ts";
+import app from "../../../src/app.ts";
 
-vi.mock("./lib/mailer.ts", () => ({
+vi.mock("../../../src/lib/mailer.ts", () => ({
   transporter: { sendMail: vi.fn().mockResolvedValue({}) },
 }));
 

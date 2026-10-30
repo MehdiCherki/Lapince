@@ -45,6 +45,9 @@ services:
         - action: sync
           path: ./apps/api/src
           target: /app/src
+        - action: sync
+          path: ./apps/api/tests
+          target: /app/tests
         # Reconstruit l'image si les dépendances, le schéma Prisma ou la config TypeScript changent
         - action: rebuild
           path: ./apps/api/package.json

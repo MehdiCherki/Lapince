@@ -1,9 +1,9 @@
 import { describe, it, expect, afterAll, vi } from "vitest";
 import request from "supertest";
-import app from "./app.ts";
-import { prisma } from "./lib/prisma.ts";
+import app from "../../../src/app.ts";
+import { prisma } from "../../../src/lib/prisma.ts";
 
-vi.mock("./lib/mailer.ts", () => ({
+vi.mock("../../../src/lib/mailer.ts", () => ({
   transporter: { sendMail: vi.fn().mockResolvedValue({}) },
 }));
 
@@ -48,20 +48,31 @@ async function loginUser(
     email,
     password,
   });
+  if (res.status !== 204) {
+    console.log("Error body: ", res.body || res.text);
+  }
   expect(res.status).toBe(204);
   return extractCookieHeader(res);
 }
 
-describe("Catégories — ordre de la liste", () => {
-  // Sans ORDER BY, PostgreSQL renvoie l'ordre physique des lignes, qui change dès qu'une ligne est modifiée
-  it("renvoie les catégories triées par id, dans l'ordre du seed", async () => {
-    const cookie = await loginUser(await createVerifiedUser("categories"));
+describe("Limite de sessions par utilisateur", () => {
+  it("garde au plus 5 sessions et ferme la plus ancienne", async () => {
+    const email = await createVerifiedUser("max");
+    const cookies: string[] = [];
+    for (let i = 0; i < 7; i++) cookies.push(await loginUser(email));
 
-    const res = await request(app).get("/categories").set("Cookie", cookie);
+    const user = await prisma.user.findUniqueOrThrow({ where: { email } });
+    expect(
+      await prisma.refreshToken.count({ where: { userId: user.id } }),
+    ).toBe(5);
 
-    expect(res.status).toBe(200);
-    const ids = (res.body as { id: number }[]).map((c) => c.id);
-    expect(ids.length).toBeGreaterThan(0);
-    expect(ids).toEqual([...ids].sort((a, b) => a - b));
+    expect(
+      (await request(app).post("/auth/refresh").set("Cookie", cookies[0]!))
+        .status,
+    ).toBe(401);
+    expect(
+      (await request(app).post("/auth/refresh").set("Cookie", cookies[6]!))
+        .status,
+    ).toBe(204);
   });
 });
