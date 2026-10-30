@@ -1,5 +1,6 @@
 import { Fragment } from "react";
 import type { Transaction } from "@/types/transaction";
+import { transactionLabel } from "@/lib/transaction";
 
 /**
  * Interface pour la liste des transactions filtrées à afficher.
@@ -41,7 +42,7 @@ export function TransactionTable({ transactions }: TransactionTableProps) {
                   </td>
 
                   <td className="px-2 md:px-8 py-2 md:py-4 text-xs md:text-base font-black italic uppercase max-w-[80px] md:max-w-none truncate">
-                    {t.description || "Transaction"}
+                    {transactionLabel(t)}
                   </td>
 
                   <td className="px-2 md:px-8 py-2 md:py-4">

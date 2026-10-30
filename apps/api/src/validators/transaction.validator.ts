@@ -4,7 +4,14 @@ export const createTransactionSchema = z.object({
   amount: z.number().positive("Le montant doit être strictement positif"),
   // Utilisation de la nouvelle syntaxe z.iso.datetime()
   date: z.iso.datetime({ message: "La date doit être au format ISO 8601" }),
-  description: z.string().max(255, "La description est trop longue").optional(),
+  // Facultatif : vide ou fait d'espaces → null (l'affichage montre alors le nom de la catégorie)
+  description: z
+    .string()
+    .trim()
+    .max(255, "La description est trop longue")
+    .transform((v) => v || null)
+    .nullable()
+    .optional(),
   idcategory: z.number().int().positive("L'ID de la catégorie est invalide"),
   budgetId: z.number().int().positive().nullable().optional(),
 });

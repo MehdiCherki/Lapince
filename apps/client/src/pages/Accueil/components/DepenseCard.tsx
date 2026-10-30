@@ -38,7 +38,8 @@ export default function DepenseCard({ onSuccess }: { onSuccess?: () => void }) {
             <form
               onSubmit={async (e) => {
                 e.preventDefault();
-                if (!transaction || !montant || !date || !categorie) {
+                // Intitulé facultatif : sans lui, la transaction s'affiche sous le nom de sa catégorie
+                if (!montant || !date || !categorie) {
                   setMessageError("Champs manquants !");
                   setTimeout(() => setMessageError(null), 3000);
                   return;
@@ -47,7 +48,9 @@ export default function DepenseCard({ onSuccess }: { onSuccess?: () => void }) {
                   await createTransaction({
                     amount: Math.abs(Number(montant)),
                     date: new Date(date).toISOString(),
-                    description: transaction,
+                    ...(transaction.trim()
+                      ? { description: transaction.trim() }
+                      : {}),
                     idcategory: Number(categorie),
                   });
                   setTransaction("");
@@ -66,7 +69,7 @@ export default function DepenseCard({ onSuccess }: { onSuccess?: () => void }) {
             >
               <input
                 type="text"
-                placeholder="Intitulé"
+                placeholder="Intitulé (facultatif)"
                 value={transaction}
                 onChange={(e) => setTransaction(e.target.value)}
                 className="w-full h-6 md:h-8 rounded-full bg-white/70 text-xs md:text-sm px-3 outline-none placeholder:text-gray-500"

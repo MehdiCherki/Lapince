@@ -20,7 +20,7 @@ export type TransactionResponse = Omit<Transaction, "amount"> & {
 export interface CreateTransactionPayload {
   amount: number;
   date: string;
-  description: string;
+  description?: string; // facultatif
   idcategory: number;
 }
 
