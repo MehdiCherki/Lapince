@@ -7,17 +7,13 @@ import {
   resetPasswordSchema,
 } from "../validators/auth.validator.ts";
 import { sendPasswordResetEmail } from "../services/mail.service.ts";
+import { hashToken } from "../lib/tokens.ts";
 
 const RESET_TOKEN_TTL_MS = 30 * 60 * 1000; // lien valable 30 minutes
 
 // Même réponse que le compte existe ou non : la page ne doit pas révéler quels emails sont inscrits
 const FORGOT_PASSWORD_MESSAGE =
   "Si un compte existe pour cette adresse, un email de réinitialisation vous a été envoyé.";
-
-// Seul le hash du jeton est stocké : une fuite de la base ne donne aucun lien utilisable
-function hashToken(token: string): string {
-  return crypto.createHash("sha256").update(token).digest("hex");
-}
 
 // POST /auth/forgot-password
 export async function forgotPassword(req: Request, res: Response) {
@@ -79,7 +75,7 @@ export async function resetPassword(req: Request, res: Response) {
       passwordResetExpiresAt: null,
       // Le lien reçu prouve que l'utilisateur contrôle cette adresse
       emailVerified: true,
-      emailVerificationToken: null,
+      emailVerificationTokenHash: null,
     },
   });
   // Toutes les sessions sont fermées (y compris celle d'un éventuel intrus)
