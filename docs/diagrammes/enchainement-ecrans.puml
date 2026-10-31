@@ -1,0 +1,53 @@
+@startuml enchainement-ecrans
+' Schéma d'enchaînement des écrans de La Pince (0.9.1), avec les chemins réels (apps/client/src/router).
+' L'arborescence du sprint 0 (avril 2026) est dans le dossier de juillet ; celui-ci reflète l'application livrée.
+
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 14
+skinparam shadowing false
+skinparam ranksep 35
+skinparam nodesep 25
+skinparam packageStyle rectangle
+skinparam rectangle {
+  BackgroundColor #FFFFFF
+  BorderColor #002B49
+}
+skinparam ArrowColor #002B49
+
+title Enchaînement des écrans (version 0.9.1)
+
+package "Zone publique" {
+  rectangle "Accueil public\n<size:12>/</size>" as landing
+  rectangle "Inscription\n<size:12>/register</size>" as register
+  rectangle "Connexion\n<size:12>/login</size>" as login
+  rectangle "Confirmation\nde l'email\n<size:12>/verify-email</size>" as verify
+  rectangle "Mot de passe\noublié\n<size:12>/forgot-password</size>" as forgot
+  rectangle "Nouveau\nmot de passe\n<size:12>/reset-password</size>" as reset
+}
+
+package "Zone privée (utilisateur connecté)" {
+  rectangle "Accueil\n<size:12>/accueil</size>\n<size:12>cartes dépense, revenu,</size>\n<size:12>budget ; transactions ;</size>\n<size:12>alertes</size>" as accueil #EEF3F7
+  rectangle "Tableau de bord\n<size:12>/dashboard</size>" as dashboard
+  rectangle "Paramètres\n<size:12>/parametres</size>" as parametres
+}
+
+landing --> register : S'inscrire
+landing --> login : Connexion
+register ..> verify : lien reçu\npar email
+verify --> login
+login --> forgot
+forgot ..> reset : lien reçu\npar email
+reset --> login
+login --> accueil : connecté
+accueil <--> dashboard
+accueil <--> parametres
+dashboard <--> parametres
+
+legend bottom
+  Flèches pleines : navigation ; pointillés : lien reçu par email.
+  Depuis tous les écrans : mentions légales (/mentions-legales) et logo
+  (retour à l'accueil, public ou privé). Adresse inconnue : page 404.
+  Déconnexion ou suppression du compte : retour à l'accueil public.
+endlegend
+
+@enduml
