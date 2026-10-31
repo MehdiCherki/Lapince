@@ -52,6 +52,14 @@ Copie ce bloc en haut de la section `## [Non publié]` et remplis-le :
 
 ## [Non publié]
 
+### Corrigé
+- **Sessions durcies** (trois défauts relevés en relisant la sécurité de chaque couche, tous reproduits par un test rouge d'abord) :
+  - **jetons hachés en base** : les jetons de session et de confirmation d'email étaient stockés en clair, une fuite de la base aurait donné 7 jours d'accès aux comptes. Seule leur empreinte SHA-256 est stockée, comme le jeton de réinitialisation (`lib/tokens.ts`, `hashToken`). Migration écrite à la main (`20261031120000_hash_session_tokens`) : colonnes renommées (`token_hash`, `email_verification_token_hash`), jetons existants hachés sur place par PostgreSQL ; **sessions ouvertes conservées**, vérifié en dev (session d'avant la migration retrouvée et renouvelée par le nouveau code) ; base conforme au schéma (`migrate diff` : aucun écart) ;
+  - **rotation atomique du jeton de rafraîchissement** : 10 rafraîchissements simultanés avec le même jeton en réussissaient 3, chacun créant une session. La consommation du jeton tranche désormais (suppression comptée, dans une transaction) : 1 seul réussit, les autres reçoivent 401. Le client ne lançait déjà qu'un rafraîchissement à la fois par onglet (`refreshOnce`) ;
+  - **cookies `SameSite=Lax`** en production au lieu de `None` : client et API sont sur le même site, les cookies ne partent plus avec les requêtes lancées par un autre site (CSRF). Test sur la configuration de production (`Secure`, `SameSite=Lax`, `HttpOnly`) ;
+  - en passant : `GET /auth/verify-email?token=a&token=b` répondait 500, maintenant 400.
+  6 tests d'intégration ajoutés (75), contre-épreuve sur la rotation (jeton non consommé → 2 tests rouges). `docs/base-de-donnees.md` (dictionnaire, migration, sécurité) et `docs/tests.md` (matrice, menaces) à jour (branche `fix/session-tokens`)
+
 ---
 
 ## [0.9.2] — 2026-10-31

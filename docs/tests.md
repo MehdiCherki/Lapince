@@ -2,7 +2,7 @@
 
 Ce document décrit comment l'application est testée : la stratégie, la façon de lancer les tests, ce que chaque test couvre (matrice), les tests de sécurité et le cahier de recette.
 
-**État au 31/10/2026** : 123 tests automatisés de l'application et 21 scénarios du script de déploiement, tous verts, lancés sur chaque pull request par la CI.
+**État au 31/10/2026** : 131 tests automatisés de l'application et 21 scénarios du script de déploiement, tous verts, lancés sur chaque pull request par la CI.
 
 | Ensemble | Outil | Tests |
 |---|---|---|
@@ -81,8 +81,8 @@ Chemins relatifs à `apps/api/tests/integration/` (API, intégration), `apps/api
 | Fonctionnalité | API — unitaires | API — intégration | Client | Recette |
 |---|---|---|---|---|
 | **Inscription** | — | `auth/register` (compte non vérifié, email envoyé, doublon 409, mot de passe faible 400) ; `auth/register-rate-limit` ; `validation-messages` (message sous le bon champ) ; `auth/email-case` (minuscules, doublon de casse refusé) | `RegisterForm` (confirmation différente refusée sans appel, erreur générale) | P1 |
-| **Vérification de l'email** | — | `auth/register` (jeton émis) | `VerifyEmailPage` (sans jeton, jeton accepté, jeton refusé) | P1 |
-| **Connexion, déconnexion, sessions** | — | `auth/login-rate-limit-per-ip` (un compteur par visiteur derrière les proxys) ; `auth/multi-device-sessions` ; `auth/session-limit` (5 sessions max) ; `auth/email-case` (connexion en majuscules) | `apiClient` (401 → rafraîchissement → requête rejouée, un seul rafraîchissement pour deux 401) ; `lib/bfcache` (page privée non réaffichée après déconnexion) | P2 |
+| **Vérification de l'email** | — | `auth/register` (jeton émis) ; `auth/session-tokens` (seule l'empreinte du jeton en base, lien à usage unique, jeton en double dans l'adresse → 400) | `VerifyEmailPage` (sans jeton, jeton accepté, jeton refusé) | P1 |
+| **Connexion, déconnexion, sessions** | — | `auth/login-rate-limit-per-ip` (un compteur par visiteur derrière les proxys) ; `auth/multi-device-sessions` ; `auth/session-limit` (5 sessions max) ; `auth/session-tokens` (seule l'empreinte du jeton en base, jeton déjà utilisé refusé, 10 rafraîchissements simultanés → une seule session) ; `auth/cookies-production` (`Secure`, `SameSite=Lax`, `HttpOnly`) ; `auth/email-case` (connexion en majuscules) | `apiClient` (401 → rafraîchissement → requête rejouée, un seul rafraîchissement pour deux 401) ; `lib/bfcache` (page privée non réaffichée après déconnexion) | P2 |
 | **Mot de passe oublié** | — | `auth/password-reset` (réponse identique compte connu ou non, lien 30 min, seul le hash du jeton en base, usage unique, sessions fermées, lien expiré, mot de passe faible) | — | P3 |
 | **Profil (paramètres)** | — | `users/profile-reauth` (mot de passe actuel exigé pour changer mot de passe ou email, sessions fermées) ; `auth/email-case` ; `validation-messages` | — | P4 |
 | **Dépenses et revenus** | — | `transactions/security` ; `transactions/description` (intitulé facultatif) ; `transactions/order` (ordre stable, même jour) ; `amounts` (au centime, < 10 milliards) ; `validation-messages` | `transactionApi` (montants convertis, pagination) ; `lib/transaction` (libellé) ; `lib/sort` ; `AmountInputs` (saisie au centime) | P5 |
@@ -106,11 +106,15 @@ Chemins relatifs à `apps/api/tests/integration/` (API, intégration), `apps/api
 | Force brute | `auth/login-rate-limit-per-ip`, `auth/register-rate-limit` | 429 au-delà de la limite, par visiteur |
 | Prise de contrôle du compte | `users/profile-reauth` | mot de passe actuel exigé ; sessions fermées après changement |
 | Énumération des comptes | `auth/password-reset` | même réponse que l'email existe ou non |
-| Vol du jeton de réinitialisation en base | `auth/password-reset` | seul le hash SHA-256 est stocké ; lien à usage unique, 30 min |
+| Vol des jetons en base | `auth/password-reset`, `auth/session-tokens` | seule l'empreinte SHA-256 des jetons est stockée (réinitialisation, session, confirmation d'email) ; liens à usage unique |
+| Requête lancée depuis un autre site (CSRF) | `auth/cookies-production` | cookies `SameSite=Lax` et `Secure` ; jetons en `HttpOnly`, inaccessibles au JavaScript |
+| Rejeu d'un jeton de session | `auth/session-tokens` | jeton déjà utilisé → 401 ; présenté 10 fois en même temps → une seule session |
 | Écran privé réaffiché après déconnexion | `lib/bfcache` (client) | page restaurée depuis le cache rechargée |
 | Requêtes simultanées | `budgets/alert-consistency` | une seule alerte, au montant exact (verrou par utilisateur et catégorie) |
 
-**Contre-épreuve** (30/10/2026) : dans le conteneur seulement, filtre par utilisateur retiré du service des dépenses et contrôle d'audience retiré du middleware → 4 tests de `transactions/security` rouges ; fichiers restaurés → verts.
+**Contre-épreuves** (dans le conteneur seulement, fichiers restaurés ensuite → verts) :
+- 30/10/2026 : filtre par utilisateur retiré du service des dépenses et contrôle d'audience retiré du middleware → 4 tests de `transactions/security` rouges ;
+- 31/10/2026 : jeton de session présenté non consommé lors de la rotation → « jeton déjà utilisé » et « rafraîchissements simultanés » rouges.
 
 ---
 
