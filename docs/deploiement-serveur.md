@@ -79,7 +79,7 @@ cd /opt/lapince
 | Étape | Ce que fait le script | Arrêt si |
 |---|---|---|
 | 1. Préconditions | dossier, branche `main`, aucune modification locale, base démarrée ; liste les commits à déployer ; regarde si la base est inscrite aux migrations | une condition manque (ou rien à déployer : sortie normale) |
-| 2. Sauvegarde | `pg_dump` vers `~/backup-lapince-AAAA-MM-JJ-HHMM.sql` | fichier incomplet (ligne de fin de `pg_dump` absente) |
+| 2. Sauvegarde | `pg_dump` vers `~/backup-lapince-AAAA-MM-JJ-HHMM.sql` ; une fois vérifiée, seules les 5 sauvegardes les plus récentes sont gardées (`KEEP_BACKUPS=n ./deploy/deploy.sh` pour en garder un autre nombre) | fichier incomplet (ligne de fin de `pg_dump` absente) : rien n'est supprimé |
 | 3. Mise à jour | `git pull --ff-only` ; note le commit précédent, point de retour | historique divergent |
 | 4. Build | `dc build` | erreur de build |
 | 5. Inscription aux migrations | **une seule fois** (0.9.0) : contrôles 1 et 2 de l'encadré ci-dessous, puis inscription de `0_init` | un contrôle différent de 0 |
@@ -98,7 +98,7 @@ bash ~/deploy.sh --check
 bash ~/deploy.sh
 ```
 
-**Testé** : [deploy/deploy.test.sh](../deploy/deploy.test.sh) exécute le script avec des doubles de `git`, `docker` et `curl` : 17 scénarios (déploiement normal, sauvegarde incomplète, site en 502, API en boucle, inscription de la 0.9.0 avec des contrôles verts ou non…), 57 vérifications, lancées par la CI à chaque PR, avec ShellCheck. Contre-épreuve : 4 sabotages du script (sans rechargement de nginx, sauvegarde non vérifiée, décimales non contrôlées, contrôle 1 sur le mauvais schéma), tous détectés. Première exécution réelle : la 0.9.0.
+**Testé** : [deploy/deploy.test.sh](../deploy/deploy.test.sh) exécute le script avec des doubles de `git`, `docker` et `curl` : 21 scénarios (déploiement normal, sauvegarde incomplète, site en 502, API en boucle, inscription de la 0.9.0 avec des contrôles verts ou non, rétention des sauvegardes…), 69 vérifications, lancées par la CI à chaque PR, avec ShellCheck. Contre-épreuve : 6 sabotages du script (sans rechargement de nginx, sauvegarde non vérifiée, décimales non contrôlées, contrôle 1 sur le mauvais schéma, une sauvegarde de trop gardée, rétention avant la vérification), tous détectés. Exécuté en réel pour la 0.9.0 et la 0.9.1.
 
 ### Une seule fois : inscription de la base aux migrations (0.9.0)
 
@@ -178,7 +178,31 @@ Si le schéma de la base a changé entre les deux versions, restaurer aussi la s
 
 ---
 
-## 3. Accès GitHub du serveur
+## 3. Accès au serveur
+
+### Connexion SSH : par clé uniquement
+
+Le serveur n'accepte que les connexions par **clé SSH** : la connexion par mot de passe est désactivée, y compris pour root. Un robot qui essaie des mots de passe (ce qui arrive en permanence sur tout serveur public) est refusé sans même pouvoir en tenter un.
+
+Réglage : `/etc/ssh/sshd_config.d/00-durcissement.conf`
+```
+PasswordAuthentication no
+PermitRootLogin prohibit-password
+KbdInteractiveAuthentication no
+```
+Le préfixe `00-` compte : sshd garde la **première** valeur lue, et Ubuntu fournit souvent un `50-cloud-init.conf` qui remet `PasswordAuthentication yes`.
+
+Vérifier :
+```bash
+sshd -T | grep -Ei '^(permitrootlogin|passwordauthentication) '   # prohibit-password, no
+```
+Depuis un poste, sans clé, la connexion doit être refusée : `ssh -o PubkeyAuthentication=no root@mehdicherki.fr` → `Permission denied (publickey)`.
+
+**Mis en place le 31/10/2026**, avant ce jour le serveur acceptait root par mot de passe. Ordre suivi pour ne pas se bloquer dehors : connexion par clé vérifiée d'abord (`ssh -o PasswordAuthentication=no …`), session de secours gardée ouverte, `sshd -t` (syntaxe) avant le rechargement, puis les deux vérifications ci-dessus depuis un nouveau terminal. Le mot de passe root a été changé dans la foulée et rangé dans un gestionnaire de mots de passe.
+
+> Clé perdue ou nouveau poste : ajouter la clé publique du nouveau poste dans `~/.ssh/authorized_keys` depuis un poste qui a déjà accès ; en dernier recours, console de secours de l'hébergeur (IONOS), dans son interface web.
+
+### Accès du serveur à GitHub
 
 Le serveur lit le dépôt avec une **deploy key** : une clé SSH dédiée, en **lecture seule**, ajoutée dans GitHub → Settings du dépôt → Deploy keys. Elle ne donne accès qu'à ce dépôt et ne permet pas de pousser.
 
@@ -214,11 +238,12 @@ dc logs certbot --tail 30
 
 ### Sauvegarder
 
-Avant chaque mise en production (étape A), et avant toute opération sur les données :
+Avant chaque mise en production (le script de déploiement la fait, étape 2), et avant toute opération sur les données :
 ```bash
-dc exec -T db sh -c 'pg_dump -U "$POSTGRES_USER" "$POSTGRES_DB"' > ~/backup-lapince-$(date +%F).sql
-ls -lh ~/backup-lapince-*.sql      # le fichier du jour ne doit pas être vide
+dc exec -T db sh -c 'pg_dump -U "$POSTGRES_USER" "$POSTGRES_DB"' > ~/backup-lapince-$(date +%F-%H%M).sql
+ls -lh ~/backup-lapince-*.sql      # la nouvelle sauvegarde ne doit pas être vide
 ```
+**Rétention** : le script de déploiement garde les 5 sauvegardes les plus récentes de `~` et supprime les plus anciennes, seulement après avoir vérifié la nouvelle. Une sauvegarde à conserver plus longtemps se copie ailleurs, sous un autre nom.
 Le fichier est un script SQL complet (structure + données), lisible et restaurable avec `psql`. Il contient des données personnelles : il reste sur le serveur ; une copie sortie pour un test est supprimée juste après.
 
 ### Vérifier qu'une sauvegarde se restaure (sans toucher à la base de prod)

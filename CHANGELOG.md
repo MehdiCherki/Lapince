@@ -56,6 +56,10 @@ Copie ce bloc en haut de la section `## [Non publié]` et remplis-le :
 - **Documentation de la base de données** (`docs/base-de-donnees.md`) : pourquoi le relationnel, 9 règles de gestion, **MCD** (Merise, généré par Mocodo depuis un fichier texte versionné, `docs/mcd/`), **MLD**, MPD (migrations) et convention de nommage, écarts assumés MLD/MPD, **dictionnaire de données** (6 tables, types, contraintes, rôle de chaque colonne), intégrité (contraintes, cascade, transactions, verrou), sécurité et confidentialité, jeu d'essai. README : liens et dossier `deploy/` (branche `chore/data-dictionary`)
 - **Diagramme de déploiement UML** (`docs/diagrammes/deploiement.puml`, PlantUML → SVG et PNG) : poste de l'utilisateur, serveur VPS, Docker, les 5 conteneurs et leurs artefacts, volume de la base, Let's Encrypt, Brevo, GitHub (dépôt, Actions) ; protocoles et ports de chaque lien, seul nginx-proxy exposé. Intégré à `docs/deploiement-serveur.md` §1, avec la commande pour le regénérer (vérifiée) (branche `chore/deployment-diagram`)
 
+### Infra
+- **Rétention des sauvegardes** dans `deploy/deploy.sh` : une fois la nouvelle sauvegarde vérifiée, seules les 5 plus récentes sont gardées (`KEEP_BACKUPS`, entier ≥ 1) ; rien n'est supprimé en `--check` ni si la sauvegarde est incomplète. 4 scénarios de test ajoutés (21 scénarios, 69 vérifications), contre-épreuve : une sauvegarde de trop gardée, rétention avant la vérification → détectés (branche `feature/backup-retention`)
+- **Serveur : SSH par clé uniquement** (31/10) : connexion par mot de passe désactivée, root compris (`sshd_config.d/00-durcissement.conf`), après vérification de la connexion par clé et avec une session de secours ouverte ; preuve : sans clé → `Permission denied (publickey)`. Mot de passe root changé. Documenté dans `docs/deploiement-serveur.md` §3 « Accès au serveur »
+
 ---
 
 ## [0.9.1] — 2026-10-31
