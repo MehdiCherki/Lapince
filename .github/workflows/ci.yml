@@ -3,7 +3,7 @@
 name: CI
 
 on:
-  # Sur les PR seulement (vers dev ou main) : le dépôt est privé, les minutes sont comptées,
+  # Sur les PR (vers dev ou main) : c'est là que la CI bloque le merge (branches protégées),
   # et la PR teste déjà le résultat de la fusion avec la branche cible
   pull_request:
   # Lancement manuel depuis l'onglet Actions
