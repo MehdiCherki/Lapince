@@ -128,6 +128,8 @@ Au démarrage, l'API applique les **migrations** de la base qui ne l'ont pas enc
 Les ports locaux se règlent dans `.env` (`CLIENT_LOCAL_PORT`, `API_LOCAL_PORT`, `POSTGRES_LOCAL_PORT`).
 
 ### Tests
+Stratégie, matrice fonctionnalités × tests, tests de sécurité et cahier de recette : [docs/tests.md](docs/tests.md).
+
 ```bash
 docker compose exec api npm run test:unit          # API : tests unitaires (sans base)
 docker compose exec api npm run test:integration   # API : tests d'intégration, sur la base lapince_test
