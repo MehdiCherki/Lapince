@@ -52,6 +52,10 @@ Copie ce bloc en haut de la section `## [Non publié]` et remplis-le :
 
 ## [Non publié]
 
+---
+
+## [0.9.0] — 2026-10-31
+
 ### Ajouté
 - Documentation **sauvegarde et restauration** de la base (`docs/deploiement-serveur.md`, §5) : sauvegarde, vérification d'une sauvegarde par restauration dans une base jetable (comptage des lignes comparé au fichier), restauration sur une autre machine (rôle PostgreSQL différent), restauration de prod en cas d'incident. **Testé le 30/10/2026** avec la sauvegarde de prod du jour : restauration sans erreur, nombres de lignes identiques au fichier pour les 6 tables. Inscription de la prod aux migrations **répétée** sur cette copie : sans inscription, `migrate deploy` refuse (P3005) ; avec la copie dans l'état de la prod actuelle, aucun écart, inscription, aucune migration en attente, données intactes. Règle ajoutée : si le contrôle d'écart n'est pas à 0, STOP (branche `docs/backup-restore`)
 - **Tests de sécurité des dépenses** (`tests/integration/transactions/security.test.ts`) : 401 sur les 5 routes sans session et avec 5 jetons refusés (quelconque, signé avec un autre secret, expiré, non signé `alg: none`, jeton de rafraîchissement utilisé comme jeton d'accès) ; isolation entre utilisateurs (404 en lecture, modification et suppression de la dépense d'un autre, sans rien révéler de son existence ; liste filtrée ; `userId` glissé dans la requête ignoré) ; 400 sur les entrées invalides. **Contre-épreuve** : filtre par utilisateur et contrôle d'audience retirés volontairement → 4 tests rouges (branche `fix/expense-security`)
