@@ -14,10 +14,7 @@ Diagramme de déploiement UML (source : [diagrammes/deploiement.puml](diagrammes
 
 ![Diagramme de déploiement de La Pince](diagrammes/deploiement.svg)
 
-Pour regénérer les images après une modification, depuis la racine du dépôt (PowerShell) :
-```powershell
-foreach ($t in "svg", "png") { docker run --rm -v "${PWD}/docs/diagrammes:/data" plantuml/plantuml "-t$t" /data/deploiement.puml }
-```
+Les sources et la commande pour regénérer tous les schémas sont dans [diagrammes/README.md](diagrammes/README.md).
 
 En résumé :
 

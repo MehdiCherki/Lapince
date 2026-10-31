@@ -1,0 +1,60 @@
+@startuml sequence-ecriture-alerte
+' Fil rouge (2/2) : « Ajouter une dépense » — écriture atomique de la dépense et recalcul de l'alerte (0.9.1).
+' Suite de sequence-ajout-depense.puml (cadre « ref »). Code : services/transaction.service.ts, services/alert.service.ts.
+
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 14
+skinparam shadowing false
+hide footbox
+skinparam maxMessageSize 190
+skinparam database {
+  BackgroundColor #EEF3F7
+  BorderColor #002B49
+}
+skinparam sequence {
+  ParticipantBackgroundColor #FFFFFF
+  ParticipantBorderColor #002B49
+  ActorBackgroundColor #FFFFFF
+  ActorBorderColor #002B49
+  LifeLineBorderColor #6B7C8A
+  ArrowColor #002B49
+  GroupBorderColor #6B7C8A
+}
+skinparam note {
+  BackgroundColor #EEF3F7
+  BorderColor #6B7C8A
+}
+
+title Ajouter une dépense (2/2) — écriture et alerte
+
+participant "Service\ntransaction" as tx
+participant "Service alerte\n(withAlertRefresh)" as alert
+database "PostgreSQL" as db
+
+tx -> alert : écrire la dépense\net recalculer l'alerte
+alert -> db : BEGIN
+alert -> db : verrou (utilisateur, catégorie)
+note right of db
+  Une requête simultanée
+  sur la même catégorie
+  attend ici.
+end note
+alert -> db : INSERT de la dépense
+alert -> db : budget de la catégorie ?
+alt un budget existe
+  alert -> db : dépenses de la période en cours
+  alert -> alert : dépassement =\ndépenses − limite (centimes)
+  alt dépassement > 0
+    alert -> db : crée ou met à jour l'alerte
+  else sinon
+    alert -> db : retire l'alerte éventuelle
+  end
+end
+alert -> db : COMMIT
+note right of db
+  Tout ou rien : si une étape
+  échoue, rien n'est enregistré.
+end note
+alert --> tx : dépense créée
+
+@enduml

@@ -1,0 +1,92 @@
+@startuml architecture
+' Architecture logicielle multicouche de La Pince (0.9.1), avec la défense propre à chaque couche.
+' Format A4 : 4 étages, couches internes listées dans chaque étage (texte lisible une fois réduit à 16 cm).
+
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 14
+skinparam shadowing false
+skinparam ranksep 40
+skinparam rectangle {
+  BackgroundColor #FFFFFF
+  BorderColor #002B49
+}
+skinparam database {
+  BackgroundColor #EEF3F7
+  BorderColor #002B49
+}
+skinparam note {
+  BackgroundColor #EEF3F7
+  BorderColor #6B7C8A
+}
+skinparam ArrowColor #002B49
+
+title Architecture multicouche
+
+rectangle client [
+**Client — navigateur**
+React 19, TypeScript
+----
+Pages
+↓
+Composants et hooks
+↓
+Services d'accès à l'API (apiFetch)
+]
+
+rectangle proxy [
+**Reverse proxy — nginx**
+]
+
+rectangle api [
+**API — Node.js, Express 5**
+----
+Middlewares globaux
+(helmet, cors, json, cookies)
+↓
+Routes (authentification,
+limitation du débit)
+↓
+Contrôleurs (validation Zod)
+↓
+Services (logique métier,
+transactions, verrou)
+↓
+Accès aux données (Prisma)
+]
+
+database "PostgreSQL 17" as db
+
+client -down-> proxy : HTTPS, JSON
+proxy -down-> api : HTTP (réseau Docker)
+api -down-> db : SQL paramétré
+
+note right of client
+  **Guide** : validation à la
+  saisie, messages sous le
+  champ, session rafraîchie.
+  Aucune règle de sécurité
+  ne repose sur lui.
+end note
+
+note right of proxy
+  **Expose** seul le service :
+  HTTPS (HSTS), redirection 301.
+end note
+
+note right of api
+  **Décide** : en-têtes de
+  sécurité, CORS limité, JWT
+  vérifié, débit limité,
+  entrées validées, chaque
+  requête filtrée par
+  utilisateur, erreurs sans
+  détail interne.
+end note
+
+note right of db
+  **Garantit** : clés étrangères,
+  unicité, DECIMAL(12, 2),
+  transactions ; non exposée.
+end note
+
+@enduml

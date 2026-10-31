@@ -1,0 +1,56 @@
+@startuml sequence-ajout-depense
+' Fil rouge (1/2) : « Ajouter une dépense » — parcours de la requête, du clic à l'affichage (0.9.1).
+' La partie « écriture et alerte » est détaillée dans sequence-ecriture-alerte.puml.
+' Format A4 : 5 participants, messages coupés à la main, texte lisible une fois réduit à 16 cm.
+
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 14
+skinparam shadowing false
+hide footbox
+skinparam database {
+  BackgroundColor #EEF3F7
+  BorderColor #002B49
+}
+skinparam sequence {
+  ParticipantBackgroundColor #FFFFFF
+  ParticipantBorderColor #002B49
+  ActorBackgroundColor #FFFFFF
+  ActorBorderColor #002B49
+  LifeLineBorderColor #6B7C8A
+  ArrowColor #002B49
+  GroupBorderColor #6B7C8A
+  ReferenceBackgroundColor #EEF3F7
+}
+
+title Ajouter une dépense (1/2) — parcours de la requête
+
+actor "Utilisateur" as user
+participant "Client\nReact" as client
+participant "API\nExpress" as api
+participant "Services" as services
+database "PostgreSQL" as db
+
+user -> client : montant, date,\ncatégorie
+client -> api : POST /api/transactions\n(cookie de session)
+api -> api : vérifie le\njeton (JWT)
+alt session expirée
+  api --> client : 401
+  client -> api : rafraîchit la session,\nrejoue la requête
+end
+api -> api : valide les\ndonnées (Zod)
+alt donnée invalide
+  api --> client : 400 + message
+end
+api -> services : createTransaction
+services -> db : catégorie ?
+alt catégorie inexistante
+  services --> client : 400
+end
+ref over services, db : écriture + alerte\n(une transaction, 2/2)
+services --> api : dépense créée
+api --> client : 201 Created
+client -> api : GET /api/alerts
+api --> client : alertes à jour
+client --> user : dépense affichée,\nalerte si dépassement
+
+@enduml
