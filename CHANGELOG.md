@@ -52,6 +52,9 @@ Copie ce bloc en haut de la section `## [Non publié]` et remplis-le :
 
 ## [Non publié]
 
+### Ajouté
+- **Documentation de la base de données** (`docs/base-de-donnees.md`) : pourquoi le relationnel, 9 règles de gestion, **MCD** (Merise, généré par Mocodo depuis un fichier texte versionné, `docs/mcd/`), **MLD**, MPD (migrations) et convention de nommage, écarts assumés MLD/MPD, **dictionnaire de données** (6 tables, types, contraintes, rôle de chaque colonne), intégrité (contraintes, cascade, transactions, verrou), sécurité et confidentialité, jeu d'essai. README : liens et dossier `deploy/` (branche `chore/data-dictionary`)
+
 ---
 
 ## [0.9.1] — 2026-10-31

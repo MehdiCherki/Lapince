@@ -52,7 +52,7 @@ Fonctionnalités prévues dans le MVP :
 - Argon2
 
 ### Base de données
-- PostgreSQL
+- PostgreSQL ([conception : MCD, MLD, dictionnaire de données](docs/base-de-donnees.md))
 
 ### DevOps
 - Docker
@@ -205,7 +205,8 @@ Lapince/
 ├── apps/
 │   ├── api/                  # API REST : Express, Prisma, Zod (TypeScript)
 │   └── client/               # Front : React, Vite, Tailwind (TypeScript)
-├── docs/                     # Conventions Git, commandes Docker, déploiement
+├── deploy/                   # Script de mise en production et ses tests
+├── docs/                     # Base de données, tests, déploiement, conventions Git, commandes Docker
 ├── docker-compose.yml        # Dev : db, api, client, studio (Prisma Studio)
 ├── docker-compose.prod.yml   # Prod : db, api, client, nginx-proxy, certbot
 ├── nginx-proxy.conf          # Reverse proxy HTTPS de la prod
@@ -215,7 +216,7 @@ Lapince/
 
 Chaque application a son `package.json` et ses Dockerfiles (`*.dev.Dockerfile` pour le dev, l'autre pour la prod). Les commandes `npm` se lancent dans les conteneurs : `docker compose exec api …`, `docker compose exec client …`.
 
-Déploiement : [docs/deploiement-serveur.md](docs/deploiement-serveur.md).
+Déploiement : [docs/deploiement-serveur.md](docs/deploiement-serveur.md). Base de données (règles de gestion, MCD, MLD, dictionnaire de données) : [docs/base-de-donnees.md](docs/base-de-donnees.md).
 
 ---
 
