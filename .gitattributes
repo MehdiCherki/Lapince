@@ -1,3 +1,6 @@
 # Migrations Prisma : fins de ligne LF partout (Windows compris).
 # Prisma calcule une empreinte de chaque migration ; une conversion CRLF la ferait passer pour modifiée.
 apps/api/prisma/migrations/** text eol=lf
+
+# Scripts shell : fins de ligne LF obligatoires (un retour chariot Windows casse bash sur le serveur)
+*.sh text eol=lf

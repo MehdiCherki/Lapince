@@ -105,6 +105,17 @@ jobs:
       - name: Types et build
         run: npm run build
 
+  deploy-script:
+    name: Script de déploiement (ShellCheck, tests)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: ShellCheck
+        run: shellcheck deploy/*.sh
+      # git, docker et curl remplacés par des doubles : aucun serveur n'est touché
+      - name: Tests du script
+        run: bash deploy/deploy.test.sh
+
   docker:
     name: Images de production
     runs-on: ubuntu-latest

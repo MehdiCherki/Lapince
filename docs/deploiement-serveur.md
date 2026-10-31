@@ -53,6 +53,46 @@ Les ports locaux (`*_LOCAL_PORT`) ne servent pas en prod : seul `nginx-proxy` es
 
 ## 2. Mettre en production une nouvelle version
 
+Prérequis : la version est mergée dans `main` (CI verte).
+
+### Avec le script (méthode normale)
+
+```bash
+cd /opt/lapince
+./deploy/deploy.sh --check   # vérifie seulement : préconditions, commits à déployer ; rien n'est modifié
+./deploy/deploy.sh           # déploie
+```
+
+[deploy/deploy.sh](../deploy/deploy.sh) enchaîne les étapes de la procédure manuelle (plus bas) et **s'arrête à la première erreur** :
+
+| Étape | Ce que fait le script | Arrêt si |
+|---|---|---|
+| 1. Préconditions | dossier, branche `main`, aucune modification locale, base démarrée ; liste les commits à déployer ; regarde si la base est inscrite aux migrations | une condition manque (ou rien à déployer : sortie normale) |
+| 2. Sauvegarde | `pg_dump` vers `~/backup-lapince-AAAA-MM-JJ-HHMM.sql` | fichier incomplet (ligne de fin de `pg_dump` absente) |
+| 3. Mise à jour | `git pull --ff-only` ; note le commit précédent, point de retour | historique divergent |
+| 4. Build | `dc build` | erreur de build |
+| 5. Inscription aux migrations | **une seule fois** (0.9.0) : contrôles 1 et 2 de l'encadré ci-dessous, puis inscription de `0_init` | un contrôle différent de 0 |
+| 6. Redémarrage | `dc up -d` ; l'API applique les migrations puis démarre ; le script attend « Server started » (2 min au plus) | l'API redémarre en boucle ou ne démarre pas |
+| 7. nginx | rechargement de `nginx-proxy` (sans lui : 502, incident de la 0.8.0) | — |
+| 8. Contrôles | tous les services démarrés ; base conforme au schéma ; site 200 ; API 401 | un contrôle échoue |
+
+En cas d'arrêt, le script **n'annule rien tout seul** : restaurer une base est une décision humaine. Il affiche les commandes de retour arrière (étape D), avec le commit et la sauvegarde à utiliser. Journal de chaque exécution : `~/deploy-logs/`. `--redeploy` reconstruit et relance l'API et le client même sans nouveau commit (par exemple après un échec corrigé).
+
+Puis, dans le navigateur : connexion, ajout d'une transaction, tableau de bord.
+
+**Première utilisation (0.9.0)** : le script arrive avec cette version, il n'est donc pas encore sur le serveur. Le lancer depuis `origin/main`, sans toucher au dépôt :
+```bash
+git fetch origin main && git show origin/main:deploy/deploy.sh > ~/deploy.sh
+bash ~/deploy.sh --check
+bash ~/deploy.sh
+```
+
+**Testé** : [deploy/deploy.test.sh](../deploy/deploy.test.sh) exécute le script avec des doubles de `git`, `docker` et `curl` : 17 scénarios (déploiement normal, sauvegarde incomplète, site en 502, API en boucle, inscription de la 0.9.0 avec des contrôles verts ou non…), 57 vérifications, lancées par la CI à chaque PR, avec ShellCheck. Contre-épreuve : 4 sabotages du script (sans rechargement de nginx, sauvegarde non vérifiée, décimales non contrôlées, contrôle 1 sur le mauvais schéma), tous détectés. Première exécution réelle : la 0.9.0.
+
+### Une seule fois : inscription de la base aux migrations (0.9.0)
+
+Le script fait cette étape (5) tout seul. Commandes équivalentes, pour comprendre ou pour le faire à la main :
+
 > **Une seule fois, au premier déploiement avec migrations (0.9.0)** : la base de prod existait avant les migrations versionnées. Avant de lancer la nouvelle version, il faut l'inscrire comme déjà conforme à la migration initiale `0_init`, sinon `migrate deploy` refuse de démarrer (base non vide). La 0.9.0 apporte aussi une deuxième migration (nommage des tables et colonnes, montants en `DECIMAL(12, 2)`) : l'API l'applique elle-même au démarrage, à l'étape B.
 >
 > Après l'étape A et `git pull`, avant `dc up -d --build` :
@@ -79,37 +119,44 @@ Les ports locaux (`*_LOCAL_PORT`) ne servent pas en prod : seul `nginx-proxy` es
 > Contrôle 1 vérifié le 30/10/2026 sur une base créée à l'état `0_init` : `0` avec le schéma de 673dcd2, `2` avec le schéma actuel ; puis inscription, migration de nommage appliquée par `migrate deploy`, écart final à `0`.
 > Procédure 0.9.0 complète **répétée le 30/10/2026** sur une copie de la sauvegarde de prod du jour (6 utilisateurs, 6 transactions, 3 budgets, 1 alerte) : contrôles 1 et 2 à `0`, `deploy` sans inscription refusé (P3005), inscription, migration de nommage appliquée, empreinte (MD5) du contenu de chaque table identique avant et après, sommes des montants identiques, seed, écart final à `0`. Copie et base jetable supprimées ensuite.
 
-Procédure utilisée pour la 0.7.0 (28/10/2026). Prérequis : la version est mergée dans `main`.
+### À la main (référence)
 
-### A — Vérifier et sauvegarder
+Les mêmes étapes, commande par commande (procédure des versions 0.7.0 et 0.8.0, complétée par leurs leçons).
+
+#### A — Vérifier et sauvegarder
 
 ```bash
 git status --short          # doit être vide : rien de modifié à la main sur le serveur
 git log --oneline -1        # NOTER ce commit : c'est le point de retour arrière
-dc exec -T db sh -c 'pg_dump -U "$POSTGRES_USER" "$POSTGRES_DB"' > ~/backup-lapince-$(date +%F).sql
-ls -lh ~/backup-lapince-*.sql   # la sauvegarde du jour ne doit pas être vide
+dc exec -T db sh -c 'pg_dump -U "$POSTGRES_USER" "$POSTGRES_DB"' > ~/backup-lapince-$(date +%F-%H%M).sql
+grep -c "PostgreSQL database dump complete" "$(ls -t ~/backup-lapince-*.sql | head -1)"   # 1 : la sauvegarde est allée au bout
 ```
 
-### B — Déployer
+#### B — Déployer
 
 ```bash
 git pull --ff-only origin main
 dc up -d --build
+dc exec nginx-proxy nginx -s reload   # sinon 502 : nginx-proxy garde l'adresse de l'ancien conteneur (incident de la 0.8.0)
 ```
 
 `--build` est indispensable : sans lui, Docker relance les anciennes images.
 
-### C — Contrôler
+#### C — Contrôler
 
 ```bash
 dc ps                       # tous les services « Up », db « healthy »
 dc logs api --tail 20       # « Server started », aucune erreur
-curl -s -o /dev/null -w "%{http_code}\n" https://mehdicherki.fr/api/categories   # 401 (route protégée : l'API répond)
+dc exec api npx prisma migrate diff --from-config-datasource --to-schema prisma/schema.prisma --exit-code; echo $?   # 0 : base conforme au schéma
+curl -s -o /dev/null -w "%{http_code}
+" https://mehdicherki.fr/api/categories   # 401 (route protégée : l'API répond)
+curl -s -o /dev/null -w "%{http_code}
+" https://mehdicherki.fr/                 # 200
 ```
 
 Puis dans le navigateur : connexion, ajout d'une transaction, tableau de bord.
 
-### D — Retour arrière (si C échoue)
+#### D — Retour arrière (si C échoue)
 
 ```bash
 git checkout <commit noté en A>
