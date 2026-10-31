@@ -10,6 +10,7 @@ Schémas UML écrits en texte ([PlantUML](https://plantuml.com/)), versionnés a
 | Séquence du fil rouge (1/2) | [sequence-ajout-depense.puml](sequence-ajout-depense.puml) | ajouter une dépense : parcours de la requête et contrôles (session, validation, catégorie) |
 | Séquence du fil rouge (2/2) | [sequence-ecriture-alerte.puml](sequence-ecriture-alerte.puml) | écriture de la dépense et recalcul de l'alerte dans une transaction, sous verrou |
 | Déploiement | [deploiement.puml](deploiement.puml) | serveur, conteneurs Docker, flux et ports, services externes |
+| Enchaînement des écrans | [enchainement-ecrans.puml](enchainement-ecrans.puml) | zone publique, zone privée, chemins réels des écrans (0.9.1) |
 
 ## Regénérer les images
 
@@ -31,4 +32,5 @@ Chaque schéma est conçu pour une page A4 (16 cm de large utiles) : texte d'au 
 | `sequence-ajout-depense.png` | 16 cm | 8,8 pt | 20,9 cm |
 | `sequence-ecriture-alerte.png` | 15 cm | 8,8 pt | 17,8 cm |
 | `deploiement.png` | 15,5 cm | 8,7 pt | 21,6 cm |
+| `enchainement-ecrans.png` | 12,5 cm | 8,8 pt | 22,3 cm |
 | `../mcd/la-pince.png` | 12 cm | 9,6 pt | 14,9 cm |
