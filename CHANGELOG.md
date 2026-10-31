@@ -54,6 +54,13 @@ Copie ce bloc en haut de la section `## [Non publié]` et remplis-le :
 
 ---
 
+## [0.9.1] — 2026-10-31
+
+### Corrigé
+- **Budgets calculés sur leur période** : un budget « mensuel » portait en réalité sur toutes les dépenses de la catégorie depuis l'inscription, et finissait dépassé en permanence. Le dépassement porte maintenant sur le **mois civil en cours** (ou la semaine, du lundi au dimanche), le jour courant étant celui de Paris. Au changement de mois, l'alerte du mois précédent disparaît : les alertes sont recalculées à la lecture, sans re-notifier une alerte déjà lue. Période « custom » refusée (400) : aucune date n'est enregistrée pour la calculer. Suivi des budgets (`GET /stats/budgets`) aligné, en centimes. Tests rouges d'abord (7 unitaires sur la période, 1 sur les stats, 4 d'intégration, dont un vrai changement de mois avec une date simulée) ; contre-épreuve sur la re-notification (branche `fix/budget-period`)
+
+---
+
 ## [0.9.0] — 2026-10-31
 
 ### Ajouté
