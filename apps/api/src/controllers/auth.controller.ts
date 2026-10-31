@@ -5,7 +5,7 @@ import type { User } from "@prisma/client";
 import type { Token } from "../types/auth.ts";
 import { prisma } from "../lib/prisma.ts";
 import { BadRequestError, UnauthorizedError } from "../lib/error.ts";
-import { generateAuthTokens } from "../lib/tokens.ts";
+import { generateAuthTokens, hashToken } from "../lib/tokens.ts";
 import { registerSchema, loginSchema } from "../validators/auth.validator.ts";
 import { sendVerificationEmail } from "../services/mail.service.ts";
 import { validationError } from "../lib/validation.ts";
@@ -38,7 +38,7 @@ export async function register(req: Request, res: Response) {
       email,
       password: hashedPassword,
       photo: photo ?? null,
-      emailVerificationToken: token,
+      emailVerificationTokenHash: hashToken(token),
     },
     select: {
       id: true,
@@ -101,12 +101,12 @@ export async function login(req: Request, res: Response) {
 export async function refresh(req: Request, res: Response) {
   const refreshToken = req.cookies?.refreshToken || req.body?.refreshToken;
 
-  if (!refreshToken) {
+  if (typeof refreshToken !== "string" || !refreshToken) {
     throw new BadRequestError("Refresh token manquant");
   }
 
   const storedToken = await prisma.refreshToken.findUnique({
-    where: { token: refreshToken },
+    where: { tokenHash: hashToken(refreshToken) },
     include: { user: true },
   });
 
@@ -129,20 +129,30 @@ export async function refresh(req: Request, res: Response) {
   res.status(204).end();
 }
 
+// Le jeton présenté est consommé : un jeton ne sert qu'une fois.
+// Deux requêtes simultanées avec le même jeton passent toutes deux la lecture ci-dessus ; la
+// suppression tranche : PostgreSQL verrouille la ligne, une seule requête la supprime (count = 1),
+// les autres ne trouvent plus rien et reçoivent 401 au lieu de créer chacune une session.
+// Transaction : si la création échoue, l'ancien jeton n'est pas perdu (pas de déconnexion).
 async function rotateRefreshTokenInDatabase(
   oldToken: string,
   newToken: Token,
   user: User,
 ) {
-  // deleteMany (pas delete) : ne plante pas si le token a déjà disparu entre-temps
-  // (ex. deux refresh presque simultanés depuis deux onglets avec le même vieux token)
-  await prisma.refreshToken.deleteMany({ where: { token: oldToken } });
-  await prisma.refreshToken.create({
-    data: {
-      token: newToken.token,
-      userId: user.id,
-      expiresAt: new Date(Date.now() + newToken.expiresIn),
-    },
+  await prisma.$transaction(async (tx) => {
+    const { count } = await tx.refreshToken.deleteMany({
+      where: { tokenHash: hashToken(oldToken) },
+    });
+    if (count === 0) {
+      throw new UnauthorizedError("Refresh token invalide ou expiré");
+    }
+    await tx.refreshToken.create({
+      data: {
+        tokenHash: hashToken(newToken.token),
+        userId: user.id,
+        expiresAt: new Date(Date.now() + newToken.expiresIn),
+      },
+    });
   });
 }
 
@@ -170,7 +180,7 @@ async function createRefreshTokenInDatabase(refreshToken: Token, user: User) {
 
   await prisma.refreshToken.create({
     data: {
-      token: refreshToken.token,
+      tokenHash: hashToken(refreshToken.token),
       userId: user.id,
       expiresAt: new Date(Date.now() + refreshToken.expiresIn),
     },
@@ -193,11 +203,16 @@ async function createRefreshTokenInDatabase(refreshToken: Token, user: User) {
 // le cookie du refresh token doit donc viser /api/auth/refresh dans les deux cas
 const REFRESH_COOKIE_PATH = "/api/auth/refresh";
 
+// Cookies SameSite=Lax : client et API sont sur le même site, aucune requête légitime ne vient
+// d'un autre site (protection contre le CSRF). Lax suffit : depuis un autre site, il ne laisse
+// passer les cookies que lors d'un clic sur un lien (navigation en GET), et les actions de
+// l'utilisateur (ajouter, modifier, supprimer) passent toutes par POST, PATCH ou DELETE.
+
 function setAccessTokenCookie(res: Response, accessToken: Token) {
   res.cookie("accessToken", accessToken.token, {
     httpOnly: true,
     secure: config.isProd,
-    sameSite: config.isProd ? "none" : "lax",
+    sameSite: "lax",
     maxAge: accessToken.expiresIn,
   });
 }
@@ -206,7 +221,7 @@ function setRefreshTokenCookie(res: Response, refreshToken: Token) {
   res.cookie("refreshToken", refreshToken.token, {
     httpOnly: true,
     secure: config.isProd,
-    sameSite: config.isProd ? "none" : "lax",
+    sameSite: "lax",
     maxAge: refreshToken.expiresIn,
     path: REFRESH_COOKIE_PATH,
   });
@@ -216,7 +231,7 @@ function setSessionIndicatorCookie(res: Response, refreshToken: Token) {
   res.cookie("sessionExists", "1", {
     httpOnly: false, // lu par le front (AuthContext) — ne contient aucun secret, juste "1"
     secure: config.isProd,
-    sameSite: config.isProd ? "none" : "lax",
+    sameSite: "lax",
     maxAge: refreshToken.expiresIn,
   });
 }

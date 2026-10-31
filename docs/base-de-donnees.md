@@ -73,6 +73,7 @@ Le MPD est le SQL exécuté par PostgreSQL : les **migrations** versionnées, ap
 |---|---|
 | [0_init](../apps/api/prisma/migrations/0_init/migration.sql) | création des types énumérés, des 6 tables, des index, des contraintes d'unicité et des 7 clés étrangères |
 | [20261030140000_naming_convention_and_money](../apps/api/prisma/migrations/20261030140000_naming_convention_and_money/migration.sql) | convention de nommage ci-dessous et montants en `DECIMAL(12, 2)`, écrite à la main (renommages seulement, aucune donnée supprimée) |
+| [20261031120000_hash_session_tokens](../apps/api/prisma/migrations/20261031120000_hash_session_tokens/migration.sql) | jetons de session et de confirmation d'email stockés sous forme d'empreinte SHA-256 (`token_hash`, `email_verification_token_hash`), écrite à la main : renommages, puis jetons existants hachés sur place, les sessions ouvertes restent valides |
 
 **Convention de nommage** :
 - tables au pluriel, en minuscules : `users`, `transactions`, `categories` ;
@@ -106,7 +107,7 @@ Types PostgreSQL. `NN` : obligatoire (`NOT NULL`). `PK` : clé primaire, `FK` : 
 | `password` | `TEXT` | NN | **hash Argon2** du mot de passe, jamais le mot de passe (RG2) |
 | `photo` | `TEXT` | | photo de profil (facultative) |
 | `email_verified` | `BOOLEAN` | NN, défaut `false` | email confirmé |
-| `email_verification_token` | `TEXT` | | jeton aléatoire (UUID v4) du lien de confirmation ; effacé une fois l'email vérifié |
+| `email_verification_token_hash` | `TEXT` | | **hash SHA-256** du jeton aléatoire (UUID v4) du lien de confirmation ; effacé une fois l'email vérifié |
 | `password_reset_token_hash` | `TEXT` | UQ | **hash SHA-256** du jeton de réinitialisation ; le jeton en clair n'existe que dans l'email (RG8) |
 | `password_reset_expires_at` | `TIMESTAMP(3)` | | fin de validité du lien de réinitialisation (30 min) |
 | `created_at` | `TIMESTAMP(3)` | NN, défaut maintenant | création du compte |
@@ -117,7 +118,7 @@ Types PostgreSQL. `NN` : obligatoire (`NOT NULL`). `PK` : clé primaire, `FK` : 
 | Colonne | Type | Contraintes | Description |
 |---|---|---|---|
 | `id` | `INTEGER` | PK | identifiant |
-| `token` | `TEXT` | NN, UQ | jeton de rafraîchissement de la session (JWT signé) ; sa présence en base permet de fermer une session (déconnexion, changement de mot de passe) |
+| `token_hash` | `TEXT` | NN, UQ | **hash SHA-256** du jeton de rafraîchissement de la session (JWT signé, qui n'existe en clair que dans le cookie) ; sa présence en base permet de fermer une session (déconnexion, changement de mot de passe) ; supprimé à chaque utilisation (rotation) |
 | `user_id` | `INTEGER` | NN, FK → `users`, suppression en cascade | propriétaire |
 | `expires_at` | `TIMESTAMP(3)` | NN | fin de validité (7 jours, RG7) |
 | `created_at`, `updated_at` | `TIMESTAMP(3)` | NN | dates de création et de modification |
@@ -187,7 +188,7 @@ Index : `(user_id)`.
 **Dans la base** :
 - clés primaires, `NOT NULL` sur toute donnée obligatoire ;
 - **clés étrangères** : suppression **en cascade** depuis `users` (RG9 : supprimer un compte supprime ses données) ; suppression **interdite** (`RESTRICT`) d'une catégorie utilisée par une transaction ou un budget ;
-- contraintes d'**unicité** : email, nom de catégorie, jeton de session, hash du jeton de réinitialisation, budget par utilisateur et catégorie ;
+- contraintes d'**unicité** : email, nom de catégorie, hash du jeton de session, hash du jeton de réinitialisation, budget par utilisateur et catégorie ;
 - montants en `DECIMAL(12, 2)` : exacts au centime.
 
 **Dans l'API**, avant la base :
@@ -200,7 +201,7 @@ Index : `(user_id)`.
 
 ## 8. Sécurité et confidentialité
 
-- **Aucun secret en clair** : mots de passe hachés avec Argon2 ; jeton de réinitialisation stocké sous forme de hash SHA-256.
+- **Aucun secret en clair** : mots de passe hachés avec Argon2 ; jetons (session, confirmation d'email, réinitialisation) stockés sous forme de hash SHA-256. Une fuite de la base ne donne ni mot de passe ni jeton utilisable. SHA-256 suffit pour les jetons, aléatoires et longs, qu'on ne peut pas deviner par essais successifs ; Argon2, volontairement lent, protège les mots de passe, choisis par des humains.
 - **Minimisation** : seules les données utiles au service sont demandées (prénom, nom, email ; la photo est facultative).
 - **Droit à l'effacement** : la suppression du compte efface toutes les données de l'utilisateur, par les clés étrangères en cascade.
 - **Isolation** : la base n'est pas exposée sur Internet en production (seul le reverse proxy l'est) ; l'API filtre chaque requête par utilisateur.
