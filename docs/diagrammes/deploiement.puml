@@ -1,0 +1,83 @@
+@startuml deploiement
+' Diagramme de déploiement UML de La Pince (production).
+' Source versionnée ; régénérer les images : voir docs/deploiement-serveur.md, section 1.
+
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 13
+skinparam shadowing false
+skinparam nodesep 50
+skinparam ranksep 60
+skinparam node {
+  BackgroundColor #FFFFFF
+  BorderColor #002B49
+}
+skinparam artifact {
+  BackgroundColor #EEF3F7
+  BorderColor #002B49
+}
+skinparam database {
+  BackgroundColor #EEF3F7
+  BorderColor #002B49
+}
+skinparam cloud {
+  BackgroundColor #F7F7F7
+  BorderColor #6B7C8A
+}
+skinparam ArrowColor #002B49
+
+title La Pince — diagramme de déploiement (production)
+
+node "Poste de l'utilisateur" <<device>> as poste {
+  node "Navigateur web" <<executionEnvironment>> as navigateur {
+    artifact "Application React\n(fichiers compilés)" as spa
+  }
+}
+
+node "Serveur VPS — Ubuntu\nmehdicherki.fr" <<device>> as vps {
+  node "Docker Engine + Docker Compose\n(docker-compose.prod.yml)" <<executionEnvironment>> as docker {
+    node "nginx-proxy\nnginx:alpine — ports 80 et 443 publiés" <<container>> as proxy {
+      artifact "nginx-proxy.conf\n(HTTPS, HSTS, www → domaine)\ncertificats : /etc/letsencrypt" as proxyconf
+    }
+    node "certbot\ncertbot/certbot" <<container>> as certbot {
+      artifact "renouvellement des certificats\n(/etc/letsencrypt, partagé avec nginx-proxy)" as renew
+    }
+    node "client\nnginx:alpine" <<container>> as client {
+      artifact "dist/ (build Vite)\nnginx.conf : /api/ → api" as dist
+    }
+    node "api\nnode:22-slim" <<container>> as api {
+      artifact "dist/server.js\n(Express, Prisma)" as server
+    }
+    node "db\npostgres:17" <<container>> as db {
+      database "Base Lapince" as base
+    }
+  }
+  folder "Volume postgres_data\n(données de la base)" as volume
+  artifact "deploy/deploy.sh\n(mise en production)" as deploy
+}
+
+cloud "Let's Encrypt\n(autorité de certification)" as letsencrypt
+cloud "Brevo\n(relais SMTP)" as brevo
+cloud "GitHub" as github {
+  artifact "Dépôt MehdiCherki/Lapince" as depot
+  node "GitHub Actions" <<executionEnvironment>> as ci
+}
+
+navigateur -down-> proxy : HTTPS 443
+proxy -down-> client : HTTP 80
+client -down-> api : HTTP 3007 (/api/)
+api -down-> db : TCP 5432
+db -down- volume
+proxy -[hidden]right- certbot
+api -right-> brevo : SMTP 587
+certbot -up-> letsencrypt : HTTPS (ACME)
+deploy -left-> depot : SSH, lecture seule
+ci -down-> depot : CI de chaque PR
+
+legend bottom
+  HTTP 80 : redirection 301 vers HTTPS. Seul nginx-proxy est exposé sur Internet :
+  client, api et db ne sont joignables que sur le réseau interne de Docker.
+  Emails (Brevo) : vérification de l'adresse, mot de passe oublié.
+  Certificats : tentative de renouvellement toutes les 12 h ; nginx-proxy les relit toutes les 6 h.
+endlegend
+
+@enduml
