@@ -4,6 +4,8 @@
 // En séparant la logique métier dans un service, on garde les contrôleurs propres et centrés sur la gestion des requêtes/réponses, ce qui facilite la maintenance et les tests.
 
 import { prisma } from "../lib/prisma.ts";
+import { withAlertRefresh } from "./alert.service.ts";
+import { assertCategoryExists } from "./category.service.ts";
 import type {
   CreateTransactionInput,
   UpdateTransactionInput,
@@ -56,29 +58,23 @@ export const createTransaction = async (
   data: CreateTransactionInput,
 ) => {
   // A. Vérification de la catégorie
-  const category = await prisma.category.findUnique({
-    where: { id: data.idcategory },
-  });
+  await assertCategoryExists(data.idcategory);
 
-  if (!category) {
-    throw new Error("Catégorie introuvable");
-  }
-
-  // B. Création de la transaction
-  const transaction = await prisma.transaction.create({
-    data: {
-      userId,
-      amount: data.amount,
-      date: new Date(data.date),
-      categoryId: data.idcategory,
-      ...(data.description !== undefined
-        ? { description: data.description }
-        : {}),
-    },
-    include: { category: true }, // On inclut la catégorie pour avoir le type (income/expense) côté front
-  });
-
-  return transaction;
+  // B. Création de la transaction, avec l'alerte du budget de sa catégorie
+  return withAlertRefresh(userId, [data.idcategory], (tx) =>
+    tx.transaction.create({
+      data: {
+        userId,
+        amount: data.amount,
+        date: new Date(data.date),
+        categoryId: data.idcategory,
+        ...(data.description !== undefined
+          ? { description: data.description }
+          : {}),
+      },
+      include: { category: true }, // On inclut la catégorie pour avoir le type (income/expense) côté front
+    }),
+  );
 };
 
 // --- 3. Récupérer une transaction par son ID ---
@@ -90,7 +86,7 @@ export const getTransactionById = async (id: number, userId: number) => {
   return transaction;
 };
 
-// --- 4. Mettre à jour une transaction ---
+// --- 4. Mettre à jour une transaction (null si elle n'existe pas ou appartient à un autre utilisateur) ---
 export const updateTransaction = async (
   id: number,
   userId: number,
@@ -109,14 +105,34 @@ export const updateTransaction = async (
     ...(data.idcategory ? { categoryId: data.idcategory } : {}),
   };
 
-  return prisma.transaction.update({
-    where: { id }, // On identifie la transaction à mettre à jour par son ID
-    data: updateData,
-    include: { category: true },
-  });
+  const existing = await getTransactionById(id, userId);
+  if (!existing) return null;
+  // Après le contrôle de propriété : la dépense d'un autre reste un 404, quelle que soit la catégorie
+  if (data.idcategory !== undefined)
+    await assertCategoryExists(data.idcategory);
+
+  // Changement de catégorie → l'ancienne a une dépense en moins, la nouvelle une en plus
+  const categoryIds = [
+    existing.categoryId,
+    data.idcategory ?? existing.categoryId,
+  ];
+  return withAlertRefresh(userId, categoryIds, (tx) =>
+    tx.transaction.update({
+      where: { id, userId },
+      data: updateData,
+      include: { category: true },
+    }),
+  );
 };
 
-// --- 5. Supprimer une transaction
+// --- 5. Supprimer une transaction (false si elle n'existe pas ou appartient à un autre utilisateur) ---
 export const deleteTransaction = async (id: number, userId: number) => {
-  await prisma.transaction.deleteMany({ where: { id, userId } });
+  const existing = await getTransactionById(id, userId);
+  if (!existing) return false;
+
+  // La dépense supprimée peut faire repasser le budget sous sa limite
+  await withAlertRefresh(userId, [existing.categoryId], (tx) =>
+    tx.transaction.deleteMany({ where: { id, userId } }),
+  );
+  return true;
 };

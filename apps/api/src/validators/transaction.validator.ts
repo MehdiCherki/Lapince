@@ -1,7 +1,8 @@
 import { z } from "zod";
+import { amountSchema } from "./amount.ts";
 
 export const createTransactionSchema = z.object({
-  amount: z.number().positive("Le montant doit être strictement positif"),
+  amount: amountSchema("Le montant doit être strictement positif"),
   // Utilisation de la nouvelle syntaxe z.iso.datetime()
   date: z.iso.datetime({ message: "La date doit être au format ISO 8601" }),
   // Facultatif : vide ou fait d'espaces → null (l'affichage montre alors le nom de la catégorie)

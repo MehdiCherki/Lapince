@@ -2,3 +2,5 @@ node_modules
 dist
 *.md
 package-lock.json
+# Fichiers compose : commentaires alignés à la main, plus lisibles que le format Prettier
+docker-compose*.yml

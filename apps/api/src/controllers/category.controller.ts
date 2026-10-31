@@ -1,5 +1,6 @@
 import type { Request, Response } from "express";
 import { prisma } from "../lib/prisma.ts";
+import { parseId } from "../lib/validation.ts";
 
 export async function getAllCategory(req: Request, res: Response) {
   if (!req.user)
@@ -13,8 +14,8 @@ export async function getOneCategory(req: Request, res: Response) {
   if (!req.user)
     return res.status(401).json({ error: "Utilisateur non authentifié" });
 
-  const id = parseInt(req.params.id as string);
-  if (isNaN(id)) return res.status(400).json({ error: "ID invalide" });
+  const id = parseId(req.params.id);
+  if (id === null) return res.status(400).json({ error: "ID invalide" });
 
   const category = await prisma.category.findUnique({ where: { id } });
   if (!category)

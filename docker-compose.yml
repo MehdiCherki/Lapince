@@ -93,7 +93,7 @@ services:
       DATABASE_URL: ${DATABASE_URL}  # Connexion à la même base que l'API
     ports:
       - "5555:5555"  # Interface Prisma Studio accessible sur http://localhost:5555
-    command: npx prisma studio --port 5555 --browser none  # Remplace le CMD de l'image (db push + seed + serveur)
+    command: npx prisma studio --port 5555 --browser none  # Remplace le CMD de l'image (migrations + seed + serveur)
     tty: true
     depends_on:
       db:

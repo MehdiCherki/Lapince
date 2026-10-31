@@ -6,30 +6,24 @@ import Logo from "@/components/layout/Logo";
 
 export default function VerifyEmailPage() {
   const [searchParams] = useSearchParams();
+  const token = searchParams.get("token");
+  // Lien sans jeton : erreur connue dès le premier affichage, sans appel à l'API
   const [status, setStatus] = useState<"loading" | "success" | "error">(
-    "loading",
+    token ? "loading" : "error",
   );
+  // Le jeton est à usage unique : un 2ᵉ appel (double effet du StrictMode en dev) échouerait
   const hasRun = useRef(false);
 
   useEffect(() => {
-    if (hasRun.current) return;
+    if (!token || hasRun.current) return;
     hasRun.current = true;
 
-    const token = searchParams.get("token");
-    if (!token) {
-      setStatus("error");
-      return;
-    }
-
     fetch(
-      `${import.meta.env.VITE_API_BASE_URL}/auth/verify-email?token=${token}`,
+      `${import.meta.env.VITE_API_BASE_URL}/auth/verify-email?token=${encodeURIComponent(token)}`,
     )
-      .then((res) => {
-        if (res.ok) setStatus("success");
-        else setStatus("error");
-      })
+      .then((res) => setStatus(res.ok ? "success" : "error"))
       .catch(() => setStatus("error"));
-  }, []);
+  }, [token]);
 
   return (
     <main

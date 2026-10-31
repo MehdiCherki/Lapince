@@ -1,0 +1,128 @@
+# Intégration continue : chaque pull request est vérifiée avant d'être mergée.
+# Les mêmes contrôles qu'en local (dans Docker), sur une machine neuve, à partir du dépôt seul.
+name: CI
+
+on:
+  # Sur les PR (vers dev ou main) : c'est là que la CI bloque le merge (branches protégées),
+  # et la PR teste déjà le résultat de la fusion avec la branche cible
+  pull_request:
+  # Lancement manuel depuis l'onglet Actions
+  workflow_dispatch:
+
+# Un nouveau push sur la même PR annule l'exécution en cours, devenue inutile
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+# Moindre privilège : la CI lit le code, n'écrit rien sur le dépôt
+permissions:
+  contents: read
+
+jobs:
+  format:
+    name: Formatage (Prettier)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      # Version figée : une nouvelle version de Prettier ne doit pas faire échouer la CI sans changement de code
+      - run: npx --yes prettier@3.9.10 --check .
+
+  api:
+    name: API (types, tests unitaires et d'intégration, build)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/api
+    # Base PostgreSQL jetable, créée pour cette exécution puis détruite
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: lapince
+          POSTGRES_PASSWORD: lapince
+          POSTGRES_DB: lapince_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U lapince -d lapince_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    # Valeurs propres à la CI, sans rapport avec la prod (aucun secret réel ici)
+    env:
+      NODE_ENV: development
+      DATABASE_URL: postgresql://lapince:lapince@localhost:5432/lapince_test
+      DATABASE_URL_TEST: postgresql://lapince:lapince@localhost:5432/lapince_test
+      JWT_SECRET: secret-de-ci-uniquement
+      ALLOWED_ORIGINS: http://localhost:8080
+      FRONTEND_URL: http://localhost:8080
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: apps/api/package-lock.json
+      - name: Dépendances
+        run: npm ci
+      - name: Client Prisma
+        run: npx prisma generate
+      - name: Types
+        run: npx tsc --noEmit
+      - name: Tests unitaires
+        run: npm run test:unit
+      - name: Base de test (migrations + seed)
+        run: npm run test:db:setup
+      - name: Tests d'intégration
+        run: npm run test:integration
+      - name: Build
+        run: npm run build
+
+  client:
+    name: Client (lint, tests, types et build)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/client
+    env:
+      VITE_API_BASE_URL: /api
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: apps/client/package-lock.json
+      - name: Dépendances
+        run: npm ci
+      - name: Lint
+        run: npm run lint
+      - name: Tests
+        run: npm test
+      - name: Types et build
+        run: npm run build
+
+  deploy-script:
+    name: Script de déploiement (ShellCheck, tests)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: ShellCheck
+        run: shellcheck deploy/*.sh
+      # git, docker et curl remplacés par des doubles : aucun serveur n'est touché
+      - name: Tests du script
+        run: bash deploy/deploy.test.sh
+
+  docker:
+    name: Images de production
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      # Les Dockerfiles de prod, tels que le serveur les construit (sans les publier)
+      - name: Image de l'API
+        run: docker build -f apps/api/api.Dockerfile apps/api
+      - name: Image du client
+        run: docker build -f apps/client/client.Dockerfile --build-arg VITE_API_BASE_URL=/api apps/client

@@ -13,6 +13,12 @@ export type Budget = {
   updatedAt: string;
   category: Pick<Category, "id" | "name" | "type">;
 };
+// Forme brute reçue de l'API : limit_amount est un DECIMAL(12, 2) en base, que Prisma envoie en texte ("500.00").
+// Convertie en Budget à l'entrée de budgetApi.ts.
+export type BudgetResponse = Omit<Budget, "limit_amount"> & {
+  limit_amount: string;
+};
+
 // Type pour créer un budget (body du POST /budgets)
 export type CreateBudgetPayload = {
   limit_amount: number;
