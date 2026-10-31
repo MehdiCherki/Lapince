@@ -54,6 +54,27 @@ Copie ce bloc en haut de la section `## [Non publié]` et remplis-le :
 
 ---
 
+## [0.9.2] — 2026-10-31
+
+### Ajouté
+- **Documentation de la base de données** (`docs/base-de-donnees.md`) : pourquoi le relationnel, 9 règles de gestion, **MCD** (Merise, généré par Mocodo depuis un fichier texte versionné, `docs/mcd/`), **MLD**, MPD (migrations) et convention de nommage, écarts assumés MLD/MPD, **dictionnaire de données** (6 tables, types, contraintes, rôle de chaque colonne), intégrité (contraintes, cascade, transactions, verrou), sécurité et confidentialité, jeu d'essai. README : liens et dossier `deploy/` (branche `chore/data-dictionary`)
+- **Diagramme de déploiement UML** (`docs/diagrammes/deploiement.puml`, PlantUML → SVG et PNG) : poste de l'utilisateur, serveur VPS, Docker, les 5 conteneurs et leurs artefacts, volume de la base, Let's Encrypt, Brevo, GitHub (dépôt, Actions) ; protocoles et ports de chaque lien, seul nginx-proxy exposé. Intégré à `docs/deploiement-serveur.md` §1, avec la commande pour le regénérer (vérifiée) (branche `chore/deployment-diagram`)
+- **Schémas UML de conception** (`docs/diagrammes/`, PlantUML → SVG et PNG) : cas d'utilisation (utilisateur connecté ; accès au service), architecture multicouche avec la défense propre à chaque couche, séquence du fil rouge « ajouter une dépense » en deux parties (parcours de la requête ; écriture et alerte en une transaction sous verrou). **Tous les schémas (déploiement et MCD compris) redessinés pour une page A4** : texte d'au moins 8,5 pt une fois réduit, 23 cm de haut au plus, mesuré pour chaque rendu ; largeurs d'insertion conseillées dans `docs/diagrammes/README.md`. Déploiement : le défi ACME de Let's Encrypt (HTTP 80 vers nginx-proxy) remplace un lien qui traversait les titres (branche `chore/uml-diagrams`)
+- **Schéma d'enchaînement des écrans** de la 0.9.1 (`docs/diagrammes/enchainement-ecrans.puml`, PlantUML → SVG et PNG) : zone publique (accueil, inscription, confirmation de l'email, connexion, mot de passe oublié, nouveau mot de passe) et zone privée (accueil, tableau de bord, paramètres), avec les chemins réels du routeur ; liens reçus par email en pointillés (branche `chore/screen-flow-diagram`)
+
+### Modifié
+- **Éco-conception du client** : la page publique transfère **142 096 octets** de code (HTML, JS, CSS) au lieu de **1 469 895**, soit 10 fois moins, mesuré sur l'image de production (`/login`, navigateur acceptant gzip). Trois causes traitées : compression gzip dans nginx (textes seulement, les images WebP étant déjà compressées) ; icônes des catégories importées une à une (`components/ui/CategoryIcon.tsx`, 38 icônes) au lieu de toute la bibliothèque lucide-react, qui pesait 600 Ko de JS (avant compression) dans chaque page ; tableau de bord chargé à la demande (`lazy` de React Router), la bibliothèque de graphiques n'étant plus téléchargée que par lui (107 416 octets à la première visite). Les assets restant en cache un an, une visite suivante ne recharge que le HTML (branche `feature/eco-conception`)
+
+### Supprimé
+- Images PNG inutilisées (`public/PNG`, 15 fichiers, 3,1 Mo) : l'application n'utilise que les versions WebP. Fichiers servis par l'image : 5,6 Mo → 1,9 Mo
+- Dépendances jamais utilisées : `@tanstack/react-query`, `shadcn-ui` (branche `feature/eco-conception`)
+
+### Infra
+- **Rétention des sauvegardes** dans `deploy/deploy.sh` : une fois la nouvelle sauvegarde vérifiée, seules les 5 plus récentes sont gardées (`KEEP_BACKUPS`, entier ≥ 1) ; rien n'est supprimé en `--check` ni si la sauvegarde est incomplète. 4 scénarios de test ajoutés (21 scénarios, 69 vérifications), contre-épreuve : une sauvegarde de trop gardée, rétention avant la vérification → détectés (branche `feature/backup-retention`)
+- **Serveur : SSH par clé uniquement** (31/10) : connexion par mot de passe désactivée, root compris (`sshd_config.d/00-durcissement.conf`), après vérification de la connexion par clé et avec une session de secours ouverte ; preuve : sans clé → `Permission denied (publickey)`. Mot de passe root changé. Documenté dans `docs/deploiement-serveur.md` §3 « Accès au serveur »
+
+---
+
 ## [0.9.1] — 2026-10-31
 
 ### Corrigé

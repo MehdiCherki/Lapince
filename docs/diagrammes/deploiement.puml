@@ -1,0 +1,107 @@
+@startuml deploiement
+' Diagramme de déploiement UML de La Pince (production, 0.9.1).
+' Format A4 : nœuds compacts (contenu décrit dans le nœud), services externes en haut et à droite.
+' Régénérer les images : voir docs/deploiement-serveur.md, section 1.
+
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 14
+skinparam shadowing false
+skinparam nodesep 25
+skinparam ranksep 28
+skinparam node {
+  BackgroundColor #FFFFFF
+  BorderColor #002B49
+}
+skinparam database {
+  BackgroundColor #EEF3F7
+  BorderColor #002B49
+}
+skinparam cloud {
+  BackgroundColor #F7F7F7
+  BorderColor #6B7C8A
+}
+skinparam ArrowColor #002B49
+
+title Diagramme de déploiement (production)
+
+cloud letsencrypt [
+**Let's Encrypt**
+certificats
+]
+
+node poste [
+<<device>>
+**Poste de l'utilisateur**
+----
+navigateur web :
+application React
+]
+
+cloud github [
+**GitHub**
+dépôt, CI
+]
+
+node "Serveur VPS — Ubuntu" <<device>> as vps {
+  node deploy [
+  <<artifact>>
+  **deploy.sh**
+  ]
+  node "Docker Compose" <<executionEnvironment>> as docker {
+    node certbot [
+    <<container>>
+    **certbot**
+    ----
+    renouvelle les
+    certificats auprès
+    de Let's Encrypt
+    (HTTPS, 12 h)
+    ]
+    node proxy [
+    <<container>>
+    **nginx-proxy**
+    ----
+    ports 80, 443
+    HTTPS, HSTS
+    ]
+    node client [
+    <<container>>
+    **client** (nginx)
+    ----
+    build Vite
+    /api/ → api
+    ]
+    node api [
+    <<container>>
+    **api** (Node.js 22)
+    ----
+    Express, Prisma
+    ]
+    database db [
+    **db** (PostgreSQL 17)
+    ----
+    volume postgres_data
+    ]
+  }
+}
+
+cloud brevo [
+**Brevo**
+SMTP, port 587
+]
+
+poste -down-> proxy : HTTPS 443
+letsencrypt -down-> proxy : HTTP 80\n(défi ACME)
+deploy -up-> github : SSH\n(lecture seule)
+proxy -[hidden]left- certbot
+proxy -down-> client : HTTP 80
+client -down-> api : HTTP 3007
+api -down-> db : TCP 5432
+api -right-> brevo
+
+legend bottom
+  Seul nginx-proxy est exposé sur Internet (HTTP 80 → 301 vers HTTPS).
+  client, api et db : réseau interne de Docker uniquement.
+endlegend
+
+@enduml

@@ -1,0 +1,63 @@
+@startuml cas-utilisation
+' Cas d'utilisation de La Pince (0.9.1) — utilisateur connecté. Fil rouge : « Ajouter une dépense ».
+' L'accès au service (visiteur) est dans cas-utilisation-acces.puml.
+' Format A4 : libellés sur plusieurs lignes et espacements resserrés, pour tenir dans 16 cm de large (texte ≈ 9 pt).
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 14
+skinparam shadowing false
+skinparam ranksep 20
+skinparam nodesep 15
+skinparam packageStyle rectangle
+skinparam usecase {
+  BackgroundColor #FFFFFF
+  BorderColor #002B49
+}
+skinparam actor {
+  BorderColor #002B49
+}
+skinparam ArrowColor #002B49
+left to right direction
+
+title Cas d'utilisation — utilisateur connecté
+
+package "Transactions" {
+  usecase "Ajouter\nune dépense" as depense #EEF3F7
+  usecase "Ajouter\nun revenu" as revenu
+  usecase "Modifier ou\nsupprimer une\ntransaction" as transaction
+}
+package "Budgets et alertes" {
+  usecase "Définir un\nbudget par\ncatégorie" as budget
+  usecase "Modifier ou\nsupprimer\nun budget" as budgetmaj
+  usecase "Consulter et\nfermer ses\nalertes" as alertes
+}
+usecase "Recalculer\nl'alerte de\nla catégorie" as alerte #EEF3F7
+
+actor "Utilisateur\nconnecté" as utilisateur
+
+package "Suivi" {
+  usecase "Consulter le\ntableau de bord" as tableau
+}
+package "Mon compte" {
+  usecase "Modifier\nson profil" as profil
+  usecase "Supprimer\nson compte" as supprimer
+  usecase "Se\ndéconnecter" as deconnecter
+}
+
+depense -- utilisateur
+revenu -- utilisateur
+transaction -- utilisateur
+budget -- utilisateur
+budgetmaj -- utilisateur
+alertes -- utilisateur
+
+utilisateur -- tableau
+utilisateur -- profil
+utilisateur -- supprimer
+utilisateur -- deconnecter
+
+alerte <.. depense : <<include>>
+alerte <.. transaction : <<include>>
+alerte <.. budget : <<include>>
+alerte <.. budgetmaj : <<include>>
+
+@enduml

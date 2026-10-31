@@ -1,0 +1,15 @@
+SESSION: id session, jeton, date d'expiration
+OUVRIR, 11 SESSION, 0N UTILISATEUR
+:
+
+EFFECTUER, 0N UTILISATEUR, 11 TRANSACTION
+UTILISATEUR: id utilisateur, prénom, nom, email, mot de passe, photo, email vérifié
+RECEVOIR, 0N UTILISATEUR, 11 ALERTE
+
+TRANSACTION: id transaction, montant, date, intitulé
+BUDGÉTER, 0N UTILISATEUR, 0N CATÉGORIE: limite, période
+ALERTE: id alerte, montant dépassé, lue, date de création
+
+CLASSER, 11 TRANSACTION, 0N CATÉGORIE
+CATÉGORIE: id catégorie, nom, type, couleur, icône
+CONCERNER, 11 ALERTE, 0N CATÉGORIE

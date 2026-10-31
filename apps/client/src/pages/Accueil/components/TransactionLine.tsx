@@ -1,17 +1,7 @@
-import * as Icons from "lucide-react";
-
 import type { Transaction } from "@/types/transaction";
 import type { CategoryType } from "@/types/category";
 import { transactionLabel } from "@/lib/transaction";
-
-function CategoryIcon({ name }: { name: string | null }) {
-  if (!name) return null;
-  const Icon = (
-    Icons as unknown as Record<string, React.FC<{ size?: number }>>
-  )[name];
-  if (!Icon) return null;
-  return <Icon size={14} />;
-}
+import CategoryIcon from "@/components/ui/CategoryIcon";
 
 function formatDate(iso: string): string {
   const d = new Date(iso);

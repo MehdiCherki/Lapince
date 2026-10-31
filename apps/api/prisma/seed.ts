@@ -7,6 +7,8 @@ const prisma = new PrismaClient({ adapter });
 async function main() {
   console.log("🌱 Début du seeding catégories...");
 
+  // Chaque `icon` est un nom d'icône lucide-react : toute nouvelle icône doit aussi être ajoutée
+  // à la table de apps/client/src/components/ui/CategoryIcon.tsx, sinon elle ne s'affiche pas.
   const defaultCategories = [
     // INCOME
 

@@ -9,6 +9,7 @@
 #   1. préconditions  2. sauvegarde de la base  3. mise à jour du code  4. build
 #   5. inscription de la base aux migrations (une seule fois)  6. redémarrage
 #   7. rechargement de nginx  8. contrôles
+# Sauvegardes : les KEEP_BACKUPS plus récentes sont gardées (5 par défaut), les autres supprimées.
 # Arrêt à la première erreur, avec les commandes de retour arrière.
 # Journal complet : ~/deploy-logs/
 
@@ -23,6 +24,7 @@ INIT_SCHEMA_COMMIT="673dcd2"
 STAMP="$(date +%F-%H%M)"
 BACKUP_FILE="$HOME/backup-lapince-$STAMP.sql"
 LOG_DIR="$HOME/deploy-logs"
+KEEP_BACKUPS="${KEEP_BACKUPS:-5}"
 
 MODE="deploy"
 case "${1:-}" in
@@ -64,6 +66,8 @@ trap 'stop "commande en erreur, ligne $LINENO"' ERR
 # --- 1. Préconditions --------------------------------------------------------
 step "1. Préconditions ($MODE)"
 [[ -f "$COMPOSE_FILE" ]] || fail "$COMPOSE_FILE introuvable : lancer le script depuis /opt/lapince"
+# Au moins 1 : la sauvegarde qui vient d'être faite n'est jamais supprimée
+[[ "$KEEP_BACKUPS" =~ ^[1-9][0-9]*$ ]] || fail "KEEP_BACKUPS doit être un entier ≥ 1 (reçu : $KEEP_BACKUPS)"
 [[ -z "$(git status --porcelain)" ]] || fail "modifications locales sur le serveur (git status) : rien ne doit être modifié à la main"
 [[ "$(git rev-parse --abbrev-ref HEAD)" == "$BRANCH" ]] || fail "le serveur n'est pas sur la branche $BRANCH"
 [[ "$(dc ps db --format '{{.State}}')" == "running" ]] || fail "la base (service db) ne tourne pas"
@@ -100,6 +104,13 @@ dc exec -T db sh -c 'pg_dump -U "$POSTGRES_USER" "$POSTGRES_DB"' > "$BACKUP_FILE
 # Une sauvegarde interrompue n'a pas la ligne de fin de pg_dump : on ne continue pas sans sauvegarde complète
 grep -q "PostgreSQL database dump complete" "$BACKUP_FILE" || fail "sauvegarde incomplète : $BACKUP_FILE"
 ls -lh "$BACKUP_FILE"
+# Rétention, seulement une fois la nouvelle sauvegarde vérifiée : les plus anciennes au-delà de KEEP_BACKUPS
+find "$HOME" -maxdepth 1 -name 'backup-lapince-*.sql' -printf '%T@ %p\n' | sort -rn |
+  tail -n +"$((KEEP_BACKUPS + 1))" | cut -d' ' -f2- |
+  while read -r old; do
+    rm -f -- "$old"
+    echo "Ancienne sauvegarde supprimée : $old"
+  done
 
 # --- 3. Mise à jour du code ---------------------------------------------------
 step "3. Mise à jour du code"

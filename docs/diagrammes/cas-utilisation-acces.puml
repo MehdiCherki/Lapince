@@ -1,0 +1,50 @@
+@startuml cas-utilisation-acces
+' Cas d'utilisation de La Pince (0.9.1) — accès au service (visiteur non connecté).
+
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 13
+skinparam shadowing false
+skinparam packageStyle rectangle
+skinparam usecase {
+  BackgroundColor #FFFFFF
+  BorderColor #002B49
+}
+skinparam actor {
+  BorderColor #002B49
+}
+skinparam ArrowColor #002B49
+left to right direction
+
+title La Pince — cas d'utilisation de l'accès au service
+
+actor "Visiteur" as visiteur
+actor "Service d'email\n(Brevo)" as email
+
+rectangle "La Pince" {
+  usecase "S'inscrire" as inscrire
+  usecase "Confirmer son\nadresse email" as confirmer
+  usecase "Se connecter" as connecter
+  usecase "Réinitialiser son\nmot de passe" as reinitialiser
+}
+
+visiteur -- inscrire
+visiteur -- confirmer
+visiteur -- connecter
+visiteur -- reinitialiser
+
+inscrire -- email
+reinitialiser -- email
+
+note right of connecter
+  Réservé aux comptes dont l'email
+  est confirmé ; tentatives limitées
+  (rate limiting).
+end note
+
+note right of reinitialiser
+  Lien à usage unique, valable
+  30 minutes ; même réponse que
+  l'email soit inscrit ou non.
+end note
+
+@enduml

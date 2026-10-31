@@ -1,3 +1,5 @@
 .env
 node_modules
 .claude
+# Mocodo : géométrie régénérée à chaque rendu du MCD
+docs/mcd/*_geo.json

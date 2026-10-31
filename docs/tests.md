@@ -2,14 +2,14 @@
 
 Ce document décrit comment l'application est testée : la stratégie, la façon de lancer les tests, ce que chaque test couvre (matrice), les tests de sécurité et le cahier de recette.
 
-**État au 31/10/2026** : 123 tests automatisés de l'application et 17 scénarios du script de déploiement, tous verts, lancés sur chaque pull request par la CI.
+**État au 31/10/2026** : 123 tests automatisés de l'application et 21 scénarios du script de déploiement, tous verts, lancés sur chaque pull request par la CI.
 
 | Ensemble | Outil | Tests |
 |---|---|---|
 | API — unitaires | Vitest | 17 |
 | API — intégration (dont sécurité) | Vitest + Supertest + PostgreSQL | 69 |
 | Client — composants, services, fonctions | Vitest + Testing Library (jsdom) | 37 |
-| Script de déploiement | Bash, doubles de `git`, `docker` et `curl` | 17 scénarios (57 vérifications) |
+| Script de déploiement | Bash, doubles de `git`, `docker` et `curl` | 21 scénarios (69 vérifications) |
 | Recette (tests d'acceptation) | navigateur, cahier ci-dessous | 9 parcours |
 
 ---
