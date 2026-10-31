@@ -5,18 +5,15 @@ import {
   NotFoundError,
   UnauthorizedError,
 } from "../lib/error.ts";
+import { getUserAlerts } from "../services/alert.service.ts";
 
 // GET /alerts
 export async function getAlerts(req: Request, res: Response) {
   if (!req.user)
     return res.status(401).json({ error: "Utilisateur non authentifié" });
 
-  const alerts = await prisma.alert.findMany({
-    where: { userId: req.user.id },
-    orderBy: { createdAt: "desc" },
-    include: { category: true },
-  });
-
+  // Recalculées avant lecture (changement de mois ou de semaine)
+  const alerts = await getUserAlerts(req.user.id);
   return res.json(alerts);
 }
 

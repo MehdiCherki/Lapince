@@ -1,4 +1,6 @@
 import { prisma } from "../lib/prisma.ts";
+import { periodBounds } from "../lib/period.ts";
+import { toCents } from "../lib/money.ts";
 
 /**
  * ---------------------------------------------------------
@@ -214,7 +216,9 @@ export const getCategoryStats = async (userId: number) => {
  *
  * Explication générale :
  *  On récupère tous les budgets, puis toutes les transactions.
- *  Pour chaque budget, on calcule combien a été dépensé dans sa catégorie.
+ *  Pour chaque budget, on calcule combien a été dépensé dans sa catégorie,
+ *  sur la période en cours du budget (mois, semaine), comme pour les alertes.
+ *  Calcul en centimes entiers : 0,10 + 0,20 vaut exactement 0,30.
  * ---------------------------------------------------------
  */
 export const getBudgetStats = async (userId: number) => {
@@ -241,16 +245,21 @@ export const getBudgetStats = async (userId: number) => {
      * On filtre les transactions qui appartiennent à la catégorie du budget
      * puis on additionne les montants
      */
-    const spent = transactions
+    const bounds = periodBounds(b.period);
+    const spentCents = transactions
       .filter((t) => t.categoryId === b.id_category)
-      .reduce((sum: number, t) => sum + Number(t.amount), 0);
+      .filter((t) => !bounds || (t.date >= bounds.start && t.date < bounds.end))
+      .reduce((sum, t) => sum + toCents(t.amount), 0);
 
     /**
      * Calculs simples : limite, restant, pourcentage
      */
-    const limit = Number(b.limit_amount);
-    const remaining = limit - spent;
-    const percent = limit > 0 ? Math.round((spent / limit) * 100) : 0;
+    const limitCents = toCents(b.limit_amount);
+    const spent = spentCents / 100;
+    const limit = limitCents / 100;
+    const remaining = (limitCents - spentCents) / 100;
+    const percent =
+      limitCents > 0 ? Math.round((spentCents / limitCents) * 100) : 0;
 
     /**
      * On retourne un objet exploitable par le frontend

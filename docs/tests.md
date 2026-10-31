@@ -2,12 +2,12 @@
 
 Ce document décrit comment l'application est testée : la stratégie, la façon de lancer les tests, ce que chaque test couvre (matrice), les tests de sécurité et le cahier de recette.
 
-**État au 31/10/2026** : 111 tests automatisés de l'application et 17 scénarios du script de déploiement, tous verts, lancés sur chaque pull request par la CI.
+**État au 31/10/2026** : 123 tests automatisés de l'application et 17 scénarios du script de déploiement, tous verts, lancés sur chaque pull request par la CI.
 
 | Ensemble | Outil | Tests |
 |---|---|---|
-| API — unitaires | Vitest | 9 |
-| API — intégration (dont sécurité) | Vitest + Supertest + PostgreSQL | 65 |
+| API — unitaires | Vitest | 17 |
+| API — intégration (dont sécurité) | Vitest + Supertest + PostgreSQL | 69 |
 | Client — composants, services, fonctions | Vitest + Testing Library (jsdom) | 37 |
 | Script de déploiement | Bash, doubles de `git`, `docker` et `curl` | 17 scénarios (57 vérifications) |
 | Recette (tests d'acceptation) | navigateur, cahier ci-dessous | 9 parcours |
@@ -18,7 +18,7 @@ Ce document décrit comment l'application est testée : la stratégie, la façon
 
 | Niveau | Ce qu'il vérifie | Pourquoi ce niveau |
 |---|---|---|
-| **Unitaire (API)** | une règle de calcul isolée : dépassement de budget, statistiques. Prisma est remplacé par un double (`vi.mock`) | rapide, et chaque cas limite (0,10 + 0,20 = 0,30) se teste sans base |
+| **Unitaire (API)** | une règle de calcul isolée : dépassement de budget, période d'un budget, statistiques. Prisma est remplacé par un double (`vi.mock`) | rapide, et chaque cas limite (0,10 + 0,20 = 0,30) se teste sans base |
 | **Intégration (API)** | une route HTTP de bout en bout : requête → validation → service → **vraie base PostgreSQL** → réponse | c'est là que se jouent les contraintes de la base, les transactions, l'authentification et l'isolation entre utilisateurs |
 | **Client** | un composant ou un service : affichage, conversion des montants, rafraîchissement de session | le comportement visible sans lancer de navigateur |
 | **Recette** | un parcours utilisateur complet, dans le navigateur | ce qu'aucun test automatisé ne voit : mise en page, enchaînement des écrans, messages |
@@ -76,7 +76,7 @@ Les branches `dev` et `main` sont protégées : GitHub refuse le merge tant que 
 
 ## 3. Matrice fonctionnalités × tests
 
-Chemins relatifs à `apps/api/tests/integration/` (API, intégration), `apps/api/src/services/` (API, unitaires) et `apps/client/src/` (client). R1 à R13 : anomalies de la recette du 30/10/2026, chacune couverte par un test au moment de sa correction.
+Chemins relatifs à `apps/api/tests/integration/` (API, intégration), `apps/api/src/` (API, unitaires) et `apps/client/src/` (client). R1 à R13 : anomalies de la recette du 30/10/2026, chacune couverte par un test au moment de sa correction.
 
 | Fonctionnalité | API — unitaires | API — intégration | Client | Recette |
 |---|---|---|---|---|
@@ -86,9 +86,9 @@ Chemins relatifs à `apps/api/tests/integration/` (API, intégration), `apps/api
 | **Mot de passe oublié** | — | `auth/password-reset` (réponse identique compte connu ou non, lien 30 min, seul le hash du jeton en base, usage unique, sessions fermées, lien expiré, mot de passe faible) | — | P3 |
 | **Profil (paramètres)** | — | `users/profile-reauth` (mot de passe actuel exigé pour changer mot de passe ou email, sessions fermées) ; `auth/email-case` ; `validation-messages` | — | P4 |
 | **Dépenses et revenus** | — | `transactions/security` ; `transactions/description` (intitulé facultatif) ; `transactions/order` (ordre stable, même jour) ; `amounts` (au centime, < 10 milliards) ; `validation-messages` | `transactionApi` (montants convertis, pagination) ; `lib/transaction` (libellé) ; `lib/sort` ; `AmountInputs` (saisie au centime) | P5 |
-| **Budgets** | — | `budgets/ownership` (isolation, un budget par catégorie → 409) ; `amounts` (bornes de la limite) ; `invalid-input` (identifiants, catégorie inexistante) | `budgetApi` (limite convertie) ; `BudgetEditModal` ; `BudgetHistory` | P6 |
-| **Alertes de dépassement** | `alert.service` (7 : création, égalité exacte 0,10 + 0,20 = 0,30, centimes, pas de doublon, réactivation, retrait, mise à jour) | `budgets/alert-lifecycle` (retrait après suppression de la dépense, hausse de la limite, suppression du budget) ; `budgets/alert-consistency` (**atomicité** et **requêtes simultanées**) | `alertApi` (montant converti) | P6 |
-| **Tableau de bord, statistiques** | `stats.service` (revenus, dépenses, solde ; zéros sans transaction) | — | `StatsCards` (solde négatif en rouge) | P7 |
+| **Budgets** | `lib/period` (7 : mois civil, semaine du lundi au dimanche, jour courant à l'heure de Paris, changement d'année) | `budgets/ownership` (isolation, un budget par catégorie → 409) ; `budgets/budget-period` (période « custom » refusée) ; `amounts` (bornes de la limite) ; `invalid-input` (identifiants, catégorie inexistante) | `budgetApi` (limite convertie) ; `BudgetEditModal` ; `BudgetHistory` | P6 |
+| **Alertes de dépassement** | `services/alert.service` (7 : création, égalité exacte 0,10 + 0,20 = 0,30, centimes, pas de doublon, réactivation, retrait, mise à jour) | `budgets/alert-lifecycle` (retrait après suppression de la dépense, hausse de la limite, suppression du budget) ; `budgets/alert-consistency` (**atomicité** et **requêtes simultanées**) ; `budgets/budget-period` (dépenses du mois précédent ignorées, **alerte retirée au changement de mois**, alerte lue qui reste lue) | `alertApi` (montant converti) | P6 |
+| **Tableau de bord, statistiques** | `services/stats.service` (revenus, dépenses, solde ; zéros sans transaction ; suivi d'un budget sur sa période, au centime) | — | `StatsCards` (solde négatif en rouge) | P7 |
 | **Catégories** | — | `categories/order` (ordre du seed) ; `invalid-input` (identifiants) | — | P5, P6 |
 | **Navigation** | — | — | `Logo` (retour à l'accueil connecté ou public) | P8 |
 
