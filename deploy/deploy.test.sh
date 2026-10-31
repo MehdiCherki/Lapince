@@ -68,6 +68,12 @@ chmod +x "$STUBS"/*
 run() {
   WORK="$(mktemp -d)"; CALLS="$WORK/calls"; : > "$CALLS"
   touch "$WORK/docker-compose.prod.yml"
+  # Sauvegardes plus anciennes déjà présentes (une par jour, du 1er au PRE_BACKUPS octobre), et un autre .sql
+  for i in $(seq 1 "${PRE_BACKUPS:-0}"); do
+    echo "-- ancienne" > "$WORK/backup-lapince-2026-10-0$i-1200.sql"
+    touch -d "2026-10-0$i 12:00" "$WORK/backup-lapince-2026-10-0$i-1200.sql"
+  done
+  echo "-- autre" > "$WORK/autre.sql"
   OUT="$(cd "$WORK" && env PATH="$STUBS:$PATH" HOME="$WORK" WORK="$WORK" CALLS="$CALLS" bash "$SCRIPT" "$@" 2>&1)"
   CODE=$?
 }
@@ -186,6 +192,31 @@ GIT_NEW="" run --redeploy
 check "code 0" test "$CODE" -eq 0
 check "sauvegarde quand même" called "pg_dump"
 check "force la recréation de l'API et du client" called "up -d --no-deps --force-recreate api client"
+
+scenario "rétention : garde les 5 sauvegardes les plus récentes"
+PRE_BACKUPS=7 run
+backups() { find "$WORK" -maxdepth 1 -name 'backup-lapince-*.sql' | wc -l; }
+check "code 0" test "$CODE" -eq 0
+check "5 sauvegardes restantes (la nouvelle + les 4 plus récentes)" test "$(backups)" -eq 5
+check "les 3 plus anciennes supprimées" test ! -e "$WORK/backup-lapince-2026-10-03-1200.sql"
+check "la 4e plus récente gardée" test -e "$WORK/backup-lapince-2026-10-04-1200.sql"
+check "un autre fichier .sql n'est pas touché" test -e "$WORK/autre.sql"
+check "annonce chaque suppression" says "Ancienne sauvegarde supprimée"
+
+scenario "rétention : rien n'est supprimé en --check"
+PRE_BACKUPS=7 run --check
+check "7 sauvegardes toujours là" test "$(backups)" -eq 7
+
+scenario "rétention : rien n'est supprimé si la nouvelle sauvegarde est incomplète"
+PRE_BACKUPS=7 DUMP_INCOMPLETE=1 run
+check "code 1" test "$CODE" -eq 1
+check "la plus ancienne toujours là" test -e "$WORK/backup-lapince-2026-10-01-1200.sql"
+
+scenario "rétention : KEEP_BACKUPS invalide refusé"
+KEEP_BACKUPS=0 run
+check "code 1" test "$CODE" -eq 1
+check "explique pourquoi" says "KEEP_BACKUPS"
+check "aucune sauvegarde faite" not_called "pg_dump"
 
 scenario "option inconnue"
 run --force
