@@ -10,6 +10,17 @@ Dépôt : `MehdiCherki/Lapince` sur GitHub, branche `main`.
 
 ## 1. Architecture de la prod
 
+Diagramme de déploiement UML (source : [diagrammes/deploiement.puml](diagrammes/deploiement.puml), PlantUML) :
+
+![Diagramme de déploiement de La Pince](diagrammes/deploiement.svg)
+
+Pour regénérer les images après une modification, depuis la racine du dépôt (PowerShell) :
+```powershell
+foreach ($t in "svg", "png") { docker run --rm -v "${PWD}/docs/diagrammes:/data" plantuml/plantuml "-t$t" /data/deploiement.puml }
+```
+
+En résumé :
+
 ```
 Internet ──► nginx-proxy (:80, :443) ──► client (nginx, fichiers du build Vite)
                  │                          └── /api/ ──► api (:3007) ──► db (PostgreSQL)
