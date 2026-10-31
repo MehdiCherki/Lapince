@@ -166,10 +166,9 @@ Résultat d'une PR : onglet *Checks* sur GitHub, ou `gh pr checks <numéro>`.
 > Utiliser `feature/` et non `feat/` : des branches `Feat/…` existent déjà, et sous Windows Git ne distingue pas `Feat` de `feat` (détails dans [docs/Conventions-branch.md](docs/Conventions-branch.md)).
 
 ### Règles
-- Ne jamais travailler directement sur `main`.
+- Ne jamais travailler directement sur `main` ni sur `dev`.
 - Toute modification passe par une Pull Request.
-- Une PR doit être relue et approuvée par au moins 1 membre avant fusion.
-- La branche `main` est protégée.
+- `main` et `dev` sont **protégées** sur GitHub : pas de push direct (PR obligatoire), merge refusé tant que les 4 jobs de la CI ne sont pas verts, règle appliquée aussi aux administrateurs, ni force-push ni suppression de la branche.
 
 ### Exemples
 ```bash
@@ -191,8 +190,7 @@ Chaque Pull Request doit contenir :
 
 ### Avant merge
 - Code relu.
-- 1 approve minimum.
-- Tests passés et CI verte.
+- CI verte (sinon GitHub refuse le merge).
 - Aucun conflit non résolu.
 
 ---

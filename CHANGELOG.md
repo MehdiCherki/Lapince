@@ -69,6 +69,7 @@ Copie ce bloc en haut de la section `## [Non publié]` et remplis-le :
 
 ### Infra
 - **Intégration continue GitHub Actions** (`.github/workflows/ci.yml`) sur chaque pull request : formatage (Prettier, version figée, tout le dépôt) ; API (`npm ci`, client Prisma, types, tests unitaires, migrations + seed sur une base PostgreSQL 17 jetable, tests d'intégration, build) ; client (`npm ci`, lint, tests, types et build) ; construction des images de production. Permissions en lecture seule, exécution précédente annulée à chaque nouveau push. **Répétée en local avant le premier push** (mêmes étapes dans des conteneurs jetables) : les 4 jobs verts. Fichiers `docker-compose*.yml` exclus de Prettier (commentaires alignés à la main) ; `eslint.config.js` et `index.html` formatés (branche `chore/ci`)
+- **Dépôt rendu public, branches `dev` et `main` protégées** : PR obligatoire, merge refusé tant que les 4 jobs de la CI ne sont pas verts (rattachés à GitHub Actions), règle appliquée aussi aux administrateurs, ni force-push ni suppression. Avant la publication : audit des secrets de tout l'historique (gitleaks sur les 68 branches + recherches ciblées) ; aucun secret de production n'a jamais été commité (vérifié par comparaison d'empreintes, sans afficher les valeurs). README corrigé : il annonçait une protection et une approbation obligatoires qui n'existaient pas (branche `chore/branch-protection-docs`)
 
 ---
 
