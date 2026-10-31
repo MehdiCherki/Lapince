@@ -7,7 +7,6 @@ import ParametrePage from "@/pages/Parametre/ParametrePage";
 import PrivateRoute from "./PrivateRoute";
 import PrivateLayout from "@/components/layout/PrivateLayout";
 import MentionsLegalesPage from "@/pages/MentionsLegales/MentionsLegalesPage";
-import DashboardPage from "@/pages/Dashboard/DashboardPage";
 import NotFoundPage from "@/pages/NotFound/NotFoundPage";
 import VerifyEmailPage from "@/pages/VerifyEmail/VerifyEmailPage";
 import ForgotPasswordPage from "@/pages/ForgotPassword/ForgotPasswordPage";
@@ -61,8 +60,14 @@ export const router = createBrowserRouter([
             element: <ParametrePage />,
           },
           {
+            // Chargé à la demande : la bibliothèque de graphiques (Recharts) ne sert qu'ici,
+            // elle n'est donc plus téléchargée sur les autres pages. Le routeur charge ce code
+            // avant d'afficher la page, sans écran intermédiaire.
             path: "/dashboard",
-            element: <DashboardPage />,
+            lazy: async () => ({
+              Component: (await import("@/pages/Dashboard/DashboardPage"))
+                .default,
+            }),
           },
         ],
       },
