@@ -1,18 +1,6 @@
 import { useState, useEffect, useRef } from "react";
-import * as Icons from "lucide-react";
 import type { Category } from "@/types/category";
-
-function CategoryIcon({ name }: { name: string | null }) {
-  if (!name) return null;
-  const Icon = (
-    Icons as unknown as Record<
-      string,
-      React.FC<{ size?: number; className?: string }>
-    >
-  )[name];
-  if (!Icon) return null;
-  return <Icon size={14} className="shrink-0" />;
-}
+import CategoryIcon from "@/components/ui/CategoryIcon";
 
 interface CategorySelectProps {
   categories: Category[];
@@ -64,7 +52,9 @@ export default function CategorySelect({
           <span
             className={`flex-1 flex items-center gap-1.5 text-[#002b49] font-bold truncate ${small ? "text-sm" : "text-base"}`}
           >
-            {selectedCategory && <CategoryIcon name={selectedCategory.icon} />}
+            {selectedCategory && (
+              <CategoryIcon name={selectedCategory.icon} className="shrink-0" />
+            )}
             {selectedCategory ? selectedCategory.name : "Catégorie"}
           </span>
           <span
@@ -95,7 +85,7 @@ export default function CategorySelect({
                   /* 3. On garde le texte sombre sur fond orange, avec un hover plus clair */
                   className="w-full flex items-center gap-2 px-3 py-2 text-[#002b49] text-sm font-medium hover:bg-orange-400 transition-colors border-t border-white/20"
                 >
-                  <CategoryIcon name={cat.icon} />
+                  <CategoryIcon name={cat.icon} className="shrink-0" />
                   {cat.name || "Sans nom"}
                 </button>
               );
