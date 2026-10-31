@@ -2,13 +2,14 @@
 
 Ce document décrit comment l'application est testée : la stratégie, la façon de lancer les tests, ce que chaque test couvre (matrice), les tests de sécurité et le cahier de recette.
 
-**État au 31/10/2026** : 111 tests automatisés, tous verts, lancés sur chaque pull request par la CI.
+**État au 31/10/2026** : 111 tests automatisés de l'application et 17 scénarios du script de déploiement, tous verts, lancés sur chaque pull request par la CI.
 
 | Ensemble | Outil | Tests |
 |---|---|---|
 | API — unitaires | Vitest | 9 |
 | API — intégration (dont sécurité) | Vitest + Supertest + PostgreSQL | 65 |
 | Client — composants, services, fonctions | Vitest + Testing Library (jsdom) | 37 |
+| Script de déploiement | Bash, doubles de `git`, `docker` et `curl` | 17 scénarios (57 vérifications) |
 | Recette (tests d'acceptation) | navigateur, cahier ci-dessous | 9 parcours |
 
 ---
@@ -63,8 +64,9 @@ Le code est copié dans l'image au build : après une modification, `docker comp
 | API | `npm ci` → client Prisma → types → **unitaires** → migrations + seed sur une base PostgreSQL 17 jetable → **intégration** → build |
 | Client | `npm ci` → lint → **tests** → types et build |
 | Images de production | construction des Dockerfiles de prod |
+| Script de déploiement | ShellCheck → tests du script ([deploy/deploy.test.sh](../deploy/deploy.test.sh)) |
 
-Les branches `dev` et `main` sont protégées : GitHub refuse le merge tant que ces 4 jobs ne sont pas verts.
+Les branches `dev` et `main` sont protégées : GitHub refuse le merge tant que tous ces jobs ne sont pas verts.
 
 ### Tests manuels de l'API
 

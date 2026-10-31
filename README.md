@@ -152,6 +152,7 @@ Chaque pull request est vérifiée par GitHub Actions ([.github/workflows/ci.yml
 | API | `npm ci`, client Prisma, types, tests unitaires, migrations + seed sur une base PostgreSQL jetable, tests d'intégration, build |
 | Client | `npm ci`, lint, tests, types et build |
 | Images de production | construction des Dockerfiles de prod de l'API et du client |
+| Script de déploiement | ShellCheck, puis tests du script avec des doubles de `git`, `docker` et `curl` |
 
 Résultat d'une PR : onglet *Checks* sur GitHub, ou `gh pr checks <numéro>`.
 
@@ -170,7 +171,7 @@ Résultat d'une PR : onglet *Checks* sur GitHub, ou `gh pr checks <numéro>`.
 ### Règles
 - Ne jamais travailler directement sur `main` ni sur `dev`.
 - Toute modification passe par une Pull Request.
-- `main` et `dev` sont **protégées** sur GitHub : pas de push direct (PR obligatoire), merge refusé tant que les 4 jobs de la CI ne sont pas verts, règle appliquée aussi aux administrateurs, ni force-push ni suppression de la branche.
+- `main` et `dev` sont **protégées** sur GitHub : pas de push direct (PR obligatoire), merge refusé tant que tous les jobs de la CI ne sont pas verts, règle appliquée aussi aux administrateurs, ni force-push ni suppression de la branche.
 
 ### Exemples
 ```bash
