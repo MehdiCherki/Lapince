@@ -52,6 +52,10 @@ Copie ce bloc en haut de la section `## [Non publié]` et remplis-le :
 
 ## [Non publié]
 
+---
+
+## [0.9.3] — 2026-10-31
+
 ### Corrigé
 - **Sessions durcies** (trois défauts relevés en relisant la sécurité de chaque couche, tous reproduits par un test rouge d'abord) :
   - **jetons hachés en base** : les jetons de session et de confirmation d'email étaient stockés en clair, une fuite de la base aurait donné 7 jours d'accès aux comptes. Seule leur empreinte SHA-256 est stockée, comme le jeton de réinitialisation (`lib/tokens.ts`, `hashToken`). Migration écrite à la main (`20261031120000_hash_session_tokens`) : colonnes renommées (`token_hash`, `email_verification_token_hash`), jetons existants hachés sur place par PostgreSQL ; **sessions ouvertes conservées**, vérifié en dev (session d'avant la migration retrouvée et renouvelée par le nouveau code) ; base conforme au schéma (`migrate diff` : aucun écart) ;
