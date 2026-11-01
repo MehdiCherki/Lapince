@@ -22,11 +22,16 @@ export const getAllTransactions = async (
     limit: number;
   },
 ) => {
+  // Début et fin dans un même objet `date` : deux spreads séparés faisaient écraser le début par la fin
   const where = {
     userId,
     ...(filters.idcategory && { categoryId: filters.idcategory }),
-    ...(filters.startDate && { date: { gte: new Date(filters.startDate) } }),
-    ...(filters.endDate && { date: { lte: new Date(filters.endDate) } }),
+    ...((filters.startDate || filters.endDate) && {
+      date: {
+        ...(filters.startDate && { gte: new Date(filters.startDate) }),
+        ...(filters.endDate && { lte: new Date(filters.endDate) }),
+      },
+    }),
   };
   const skip = (filters.page - 1) * filters.limit;
 
