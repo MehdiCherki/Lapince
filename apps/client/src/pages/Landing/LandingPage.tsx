@@ -4,6 +4,7 @@ import { useAuth } from "@/hooks/useAuth";
 import Footer from "@/components/layout/Footer";
 import { AnimatedOrbBackground } from "@/components/ui/AnimatedOrbBackground";
 import Logo from "@/components/layout/Logo";
+import ScreenImage from "@/components/ui/ScreenImage";
 
 const features = [
   {
@@ -44,7 +45,8 @@ export default function LandingPage() {
       <AnimatedOrbBackground />
 
       <div className="hidden md:block">
-        <img
+        <ScreenImage
+          screen="desktop"
           src="/WEBP/Desktop/Lapince-Hero-Background-Desktop.webp"
           fetchPriority="high"
           className="absolute bottom-0 left-0 w-[60vw] opacity-50 object-contain origin-bottom-left z-0 pointer-events-none select-none"
@@ -52,7 +54,8 @@ export default function LandingPage() {
           alt=""
         />
         <div className="absolute bottom-0 right-40 z-30 pointer-events-none select-none h-[95vh]">
-          <img
+          <ScreenImage
+            screen="desktop"
             src="/WEBP/Desktop/Lapince-Hero-Woman-Desktop.webp"
             className="h-full w-auto object-contain object-bottom"
             alt="Illustration La Pince"
@@ -73,7 +76,8 @@ export default function LandingPage() {
       </div>
 
       <div className="block md:hidden">
-        <img
+        <ScreenImage
+          screen="mobile"
           src="/WEBP/Mobile/Lapince-Hero-Background-Mobile.webp"
           fetchPriority="high"
           className="absolute bottom-0 right-30 w-screen opacity-40 z-0 pointer-events-none select-none"
@@ -81,7 +85,8 @@ export default function LandingPage() {
           alt=""
         />
         <div className="absolute bottom-0 left-1/2 -translate-x-20 z-10 pointer-events-none select-none w-screen h-[45vh]">
-          <img
+          <ScreenImage
+            screen="mobile"
             src="/WEBP/Mobile/Lapince-Hero-Woman-Mobile.webp"
             className="w-full h-full object-contain object-bottom"
             alt="Illustration Mobile"

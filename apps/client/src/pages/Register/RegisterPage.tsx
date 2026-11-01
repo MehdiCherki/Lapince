@@ -7,6 +7,7 @@ import Footer from "@/components/layout/Footer";
 import { Link } from "react-router-dom";
 import { AnimatedOrbBackground } from "@/components/ui/AnimatedOrbBackground";
 import Logo from "@/components/layout/Logo";
+import ScreenImage from "@/components/ui/ScreenImage";
 
 export default function RegisterPage() {
   const [isLoading, setIsLoading] = useState(false);
@@ -42,14 +43,16 @@ export default function RegisterPage() {
       {/* 1. BLOC DESKTOP (MD+)                                        */}
       {/* ------------------------------------------------------------ */}
       <div className="hidden md:block">
-        <img
+        <ScreenImage
+          screen="desktop"
           src="/WEBP/Desktop/Lapince-Hero-Background-Desktop.webp"
           fetchPriority="high"
           className="absolute bottom-0 left-0 w-[55vw] opacity-60 z-0 pointer-events-none select-none"
           alt=""
         />
         <div className="absolute bottom-0 right-[5%] z-10 pointer-events-none hidden lg:block">
-          <img
+          <ScreenImage
+            screen="large"
             src="/WEBP/Desktop/Lapince-Hand-Desktop.webp"
             className="w-[24vw] h-auto object-contain"
             alt=""
@@ -80,13 +83,15 @@ export default function RegisterPage() {
       {/* 2. BLOC MOBILE (< MD)                                       */}
       {/* ------------------------------------------------------------ */}
       <div className="block md:hidden">
-        <img
+        <ScreenImage
+          screen="mobile"
           src="/WEBP/Mobile/Lapince-Hero-Background-Mobile.webp"
           fetchPriority="high"
           className="absolute bottom-0 left-0 w-full opacity-70 z-0 pointer-events-none select-none"
           alt=""
         />
-        <img
+        <ScreenImage
+          screen="mobile"
           src="/WEBP/Mobile/Lapince-Hand-Mobile.webp"
           className="absolute bottom-0 right-0 w-[45%] z-10 opacity-90 pointer-events-none"
           alt=""

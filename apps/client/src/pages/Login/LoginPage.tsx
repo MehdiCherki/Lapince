@@ -8,6 +8,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { AnimatedOrbBackground } from "@/components/ui/AnimatedOrbBackground";
 import Logo from "@/components/layout/Logo";
+import ScreenImage from "@/components/ui/ScreenImage";
 
 export default function LoginPage() {
   const { login } = useAuth();
@@ -55,14 +56,16 @@ export default function LoginPage() {
       {/* 1. SECTION DESKTOP (MD+)                                     */}
       {/* ------------------------------------------------------------ */}
       <div className="hidden md:block">
-        <img
+        <ScreenImage
+          screen="desktop"
           src="/WEBP/Desktop/Lapince-Hero-Background-Desktop.webp"
           fetchPriority="high"
           className="absolute bottom-0 left-0 w-[55vw] opacity-60 object-contain z-0 pointer-events-none"
           alt=""
         />
         <div className="absolute bottom-0 right-[5%] z-10 pointer-events-none hidden lg:block">
-          <img
+          <ScreenImage
+            screen="large"
             src="/WEBP/Desktop/Lapince-Hand-Desktop.webp"
             className="w-[24vw] h-auto"
             alt=""
@@ -96,7 +99,8 @@ export default function LoginPage() {
       {/* 2. SECTION MOBILE (< MD)                                    */}
       {/* ------------------------------------------------------------ */}
       <div className="block md:hidden">
-        <img
+        <ScreenImage
+          screen="mobile"
           src="/WEBP/Mobile/Lapince-Hero-Background-Mobile.webp"
           fetchPriority="high"
           className="absolute bottom-0 left-0 w-full opacity-70 z-0 pointer-events-none"
