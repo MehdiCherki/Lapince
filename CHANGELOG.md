@@ -52,6 +52,9 @@ Copie ce bloc en haut de la section `## [Non publié]` et remplis-le :
 
 ## [Non publié]
 
+### Corrigé
+- **Filtre par dates de `GET /transactions`** : avec `startDate` et `endDate` ensemble, la fin écrasait le début (deux objets `date` successifs), et la réponse contenait aussi les transactions antérieures à la période. Début et fin sont maintenant réunis dans une même condition. Le client n'utilise pas ces paramètres (filtres du tableau de bord faits côté client) : aucun effet visible jusqu'ici. Test rouge d'abord (`transactions/date-filter` : période complète rouge, début seul et fin seul en garde-fous) (branche `fix/transaction-date-filter`)
+
 ---
 
 ## [0.9.3] — 2026-10-31
