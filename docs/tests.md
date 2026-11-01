@@ -7,8 +7,8 @@ Ce document décrit comment l'application est testée : la stratégie, la façon
 | Ensemble | Outil | Tests |
 |---|---|---|
 | API — unitaires | Vitest | 17 |
-| API — intégration (dont sécurité) | Vitest + Supertest + PostgreSQL | 69 |
-| Client — composants, services, fonctions | Vitest + Testing Library (jsdom) | 37 |
+| API — intégration (dont sécurité) | Vitest + Supertest + PostgreSQL | 78 |
+| Client — composants, services, fonctions | Vitest + Testing Library (jsdom) | 41 |
 | Script de déploiement | Bash, doubles de `git`, `docker` et `curl` | 21 scénarios (69 vérifications) |
 | Recette (tests d'acceptation) | navigateur, cahier ci-dessous | 9 parcours |
 

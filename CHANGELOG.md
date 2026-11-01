@@ -52,6 +52,9 @@ Copie ce bloc en haut de la section `## [Non publié]` et remplis-le :
 
 ## [Non publié]
 
+### Modifié
+- **Commentaires du service des transactions** (`apps/api/src/services/transaction.service.ts`) : l'en-tête, hérité du projet d'équipe, décrivait un comportement inexistant (vérification de fonds, mise à jour d'un solde) ; il décrit maintenant le rôle réel du service. Commentaires trop longs coupés, pour un code lisible à l'impression (annexes du dossier). Aucun changement de code. `docs/tests.md` : compteurs du tableau de synthèse à jour (78 tests d'intégration, 41 tests client) (branche `chore/fil-rouge-comments`)
+
 ---
 
 ## [0.9.4] — 2026-11-01
