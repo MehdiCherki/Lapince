@@ -57,6 +57,7 @@ Copie ce bloc en haut de la section `## [Non publié]` et remplis-le :
 
 ### Modifié
 - **Commentaires du service des transactions** (`apps/api/src/services/transaction.service.ts`) : l'en-tête, hérité du projet d'équipe, décrivait un comportement inexistant (vérification de fonds, mise à jour d'un solde) ; il décrit maintenant le rôle réel du service. Commentaires trop longs coupés, pour un code lisible à l'impression (annexes du dossier). Aucun changement de code. `docs/tests.md` : compteurs du tableau de synthèse à jour (78 tests d'intégration, 41 tests client) (branche `chore/fil-rouge-comments`)
+- **Schéma d'enchaînement des écrans** (`docs/diagrammes/enchainement-ecrans`) : titre sans numéro de version (le parcours n'a pas changé depuis la 0.9.1) ; légende corrigée d'après le code : la déconnexion mène à l'accueil public, la suppression du compte à la page de connexion. PNG et SVG régénérés, mêmes dimensions (lisible sur A4) (branche `chore/screen-flow-title`)
 
 ---
 

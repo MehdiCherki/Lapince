@@ -1,5 +1,5 @@
 @startuml enchainement-ecrans
-' Schéma d'enchaînement des écrans de La Pince (0.9.1), avec les chemins réels (apps/client/src/router).
+' Schéma d'enchaînement des écrans de La Pince, avec les chemins réels (apps/client/src/router).
 ' L'arborescence du sprint 0 (avril 2026) est dans le dossier de juillet ; celui-ci reflète l'application livrée.
 
 skinparam defaultFontName "DejaVu Sans"
@@ -14,7 +14,7 @@ skinparam rectangle {
 }
 skinparam ArrowColor #002B49
 
-title Enchaînement des écrans (version 0.9.1)
+title Enchaînement des écrans
 
 package "Zone publique" {
   rectangle "Accueil public\n<size:12>/</size>" as landing
@@ -47,7 +47,7 @@ legend bottom
   Flèches pleines : navigation ; pointillés : lien reçu par email.
   Depuis tous les écrans : mentions légales (/mentions-legales) et logo
   (retour à l'accueil, public ou privé). Adresse inconnue : page 404.
-  Déconnexion ou suppression du compte : retour à l'accueil public.
+  Déconnexion : accueil public ; suppression du compte : connexion.
 endlegend
 
 @enduml
