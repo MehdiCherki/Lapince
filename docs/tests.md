@@ -2,7 +2,7 @@
 
 Ce document décrit comment l'application est testée : la stratégie, la façon de lancer les tests, ce que chaque test couvre (matrice), les tests de sécurité et le cahier de recette.
 
-**État au 01/11/2026** : 134 tests automatisés de l'application et 21 scénarios du script de déploiement, tous verts, lancés sur chaque pull request par la CI.
+**État au 01/11/2026** : 136 tests automatisés de l'application et 21 scénarios du script de déploiement, tous verts, lancés sur chaque pull request par la CI.
 
 | Ensemble | Outil | Tests |
 |---|---|---|
@@ -89,8 +89,8 @@ Chemins relatifs à `apps/api/tests/integration/` (API, intégration), `apps/api
 | **Budgets** | `lib/period` (7 : mois civil, semaine du lundi au dimanche, jour courant à l'heure de Paris, changement d'année) | `budgets/ownership` (isolation, un budget par catégorie → 409) ; `budgets/budget-period` (période « custom » refusée) ; `amounts` (bornes de la limite) ; `invalid-input` (identifiants, catégorie inexistante) | `budgetApi` (limite convertie) ; `BudgetEditModal` ; `BudgetHistory` | P6 |
 | **Alertes de dépassement** | `services/alert.service` (7 : création, égalité exacte 0,10 + 0,20 = 0,30, centimes, pas de doublon, réactivation, retrait, mise à jour) | `budgets/alert-lifecycle` (retrait après suppression de la dépense, hausse de la limite, suppression du budget) ; `budgets/alert-consistency` (**atomicité** et **requêtes simultanées**) ; `budgets/budget-period` (dépenses du mois précédent ignorées, **alerte retirée au changement de mois**, alerte lue qui reste lue) | `alertApi` (montant converti) | P6 |
 | **Tableau de bord, statistiques** | `services/stats.service` (revenus, dépenses, solde ; zéros sans transaction ; suivi d'un budget sur sa période, au centime) | — | `StatsCards` (solde négatif en rouge) | P7 |
-| **Catégories** | — | `categories/order` (ordre du seed) ; `invalid-input` (identifiants) | — | P5, P6 |
-| **Navigation** | — | — | `Logo` (retour à l'accueil connecté ou public) | P8 |
+| **Catégories** | — | `categories/order` (ordre du seed) ; `invalid-input` (identifiants) | `CategoryIcon` (icône d'une catégorie connue ; rien pour une icône absente ou inconnue) | P5, P6 |
+| **Navigation et affichage** | — | — | `Logo` (retour à l'accueil connecté ou public) ; `ScreenImage` (chaque image n'est proposée qu'à son format d'écran) | P8 |
 
 ---
 
