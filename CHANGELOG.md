@@ -54,6 +54,16 @@ Copie ce bloc en haut de la section `## [Non publié]` et remplis-le :
 
 ---
 
+## [0.9.4] — 2026-11-01
+
+### Modifié
+- **Chaque écran ne télécharge que ses images** : les versions Desktop et Mobile des images (fonds, illustrations, logo) étaient toutes deux dans la page, l'une masquée en CSS ; or un navigateur télécharge une image même masquée, et un téléphone recevait donc aussi les versions pour ordinateur. Nouveau composant `components/ui/ScreenImage.tsx` : `<picture>` ne charge l'image que si l'écran est dans sa plage (alignée sur les points de rupture `md` et `lg` de Tailwind), sinon un pixel transparent embarqué. Mise en page inchangée (`display: contents`). Sur téléphone, images de l'accueil public : 199 218 → 53 168 octets ; connexion et pages privées : 100 174 → 26 276 octets (poids des fichiers). 27 images et le logo, dans 10 fichiers ; 2 tests (branche `perf/responsive-images`)
+
+### Corrigé
+- **Filtre par dates de `GET /transactions`** : avec `startDate` et `endDate` ensemble, la fin écrasait le début (deux objets `date` successifs), et la réponse contenait aussi les transactions antérieures à la période. Début et fin sont maintenant réunis dans une même condition. Le client n'utilise pas ces paramètres (filtres du tableau de bord faits côté client) : aucun effet visible jusqu'ici. Test rouge d'abord (`transactions/date-filter` : période complète rouge, début seul et fin seul en garde-fous) (branche `fix/transaction-date-filter`)
+
+---
+
 ## [0.9.3] — 2026-10-31
 
 ### Corrigé
