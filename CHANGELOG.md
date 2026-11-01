@@ -52,6 +52,10 @@ Copie ce bloc en haut de la section `## [Non publié]` et remplis-le :
 
 ## [Non publié]
 
+---
+
+## [0.9.4] — 2026-11-01
+
 ### Modifié
 - **Chaque écran ne télécharge que ses images** : les versions Desktop et Mobile des images (fonds, illustrations, logo) étaient toutes deux dans la page, l'une masquée en CSS ; or un navigateur télécharge une image même masquée, et un téléphone recevait donc aussi les versions pour ordinateur. Nouveau composant `components/ui/ScreenImage.tsx` : `<picture>` ne charge l'image que si l'écran est dans sa plage (alignée sur les points de rupture `md` et `lg` de Tailwind), sinon un pixel transparent embarqué. Mise en page inchangée (`display: contents`). Sur téléphone, images de l'accueil public : 199 218 → 53 168 octets ; connexion et pages privées : 100 174 → 26 276 octets (poids des fichiers). 27 images et le logo, dans 10 fichiers ; 2 tests (branche `perf/responsive-images`)
 
