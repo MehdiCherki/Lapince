@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import Footer from "@/components/layout/Footer";
 import { AnimatedOrbBackground } from "@/components/ui/AnimatedOrbBackground";
 import Logo from "@/components/layout/Logo";
+import ScreenImage from "@/components/ui/ScreenImage";
 
 interface TeamMember {
   name: string;
@@ -64,7 +65,8 @@ export default function MentionsLegalesPage() {
       <AnimatedOrbBackground />
 
       {/* Arrière-plans */}
-      <img
+      <ScreenImage
+        screen="desktop"
         src="/WEBP/Desktop/Lapince-Hero-Background-Desktop.webp"
         fetchPriority="high"
         className="absolute bottom-0 left-0 w-[55vw] opacity-60 object-contain origin-bottom-left z-0 pointer-events-none select-none hidden md:block"
@@ -72,13 +74,15 @@ export default function MentionsLegalesPage() {
         alt=""
       />
       <div className="absolute bottom-0 right-[5%] z-10 pointer-events-none hidden lg:block">
-        <img
+        <ScreenImage
+          screen="large"
           src="/WEBP/Desktop/Lapince-Hand-Desktop.webp"
           className="w-[24vw] h-auto object-contain"
           alt=""
         />
       </div>
-      <img
+      <ScreenImage
+        screen="mobile"
         src="/WEBP/Mobile/Lapince-Hero-Background-Mobile.webp"
         fetchPriority="high"
         className="absolute bottom-0 left-0 w-screen opacity-70 z-0 pointer-events-none block md:hidden"

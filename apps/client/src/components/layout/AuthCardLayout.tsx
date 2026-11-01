@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import Footer from "@/components/layout/Footer";
 import { AnimatedOrbBackground } from "@/components/ui/AnimatedOrbBackground";
 import Logo from "@/components/layout/Logo";
+import ScreenImage from "@/components/ui/ScreenImage";
 
 interface AuthCardLayoutProps {
   title: string;
@@ -21,7 +22,8 @@ export default function AuthCardLayout({
       <AnimatedOrbBackground />
 
       <div className="hidden md:block">
-        <img
+        <ScreenImage
+          screen="desktop"
           src="/WEBP/Desktop/Lapince-Hero-Background-Desktop.webp"
           fetchPriority="high"
           className="absolute bottom-0 left-0 w-[55vw] opacity-60 object-contain z-0 pointer-events-none"
@@ -34,7 +36,8 @@ export default function AuthCardLayout({
       </div>
 
       <div className="block md:hidden">
-        <img
+        <ScreenImage
+          screen="mobile"
           src="/WEBP/Mobile/Lapince-Hero-Background-Mobile.webp"
           fetchPriority="high"
           className="absolute bottom-0 left-0 w-full opacity-70 z-0 pointer-events-none"
