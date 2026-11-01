@@ -2,12 +2,12 @@
 
 Ce document décrit comment l'application est testée : la stratégie, la façon de lancer les tests, ce que chaque test couvre (matrice), les tests de sécurité et le cahier de recette.
 
-**État au 01/11/2026** : 136 tests automatisés de l'application et 21 scénarios du script de déploiement, tous verts, lancés sur chaque pull request par la CI.
+**État au 01/11/2026** : 139 tests automatisés de l'application et 21 scénarios du script de déploiement, tous verts, lancés sur chaque pull request par la CI.
 
 | Ensemble | Outil | Tests |
 |---|---|---|
 | API — unitaires | Vitest | 17 |
-| API — intégration (dont sécurité) | Vitest + Supertest + PostgreSQL | 78 |
+| API — intégration (dont sécurité) | Vitest + Supertest + PostgreSQL | 81 |
 | Client — composants, services, fonctions | Vitest + Testing Library (jsdom) | 41 |
 | Script de déploiement | Bash, doubles de `git`, `docker` et `curl` | 21 scénarios (69 vérifications) |
 | Recette (tests d'acceptation) | navigateur, cahier ci-dessous | 9 parcours |
@@ -84,7 +84,7 @@ Chemins relatifs à `apps/api/tests/integration/` (API, intégration), `apps/api
 | **Vérification de l'email** | — | `auth/register` (jeton émis) ; `auth/session-tokens` (seule l'empreinte du jeton en base, lien à usage unique, jeton en double dans l'adresse → 400) | `VerifyEmailPage` (sans jeton, jeton accepté, jeton refusé) | P1 |
 | **Connexion, déconnexion, sessions** | — | `auth/login-rate-limit-per-ip` (un compteur par visiteur derrière les proxys) ; `auth/multi-device-sessions` ; `auth/session-limit` (5 sessions max) ; `auth/session-tokens` (seule l'empreinte du jeton en base, jeton déjà utilisé refusé, 10 rafraîchissements simultanés → une seule session) ; `auth/cookies-production` (`Secure`, `SameSite=Lax`, `HttpOnly`) ; `auth/email-case` (connexion en majuscules) | `apiClient` (401 → rafraîchissement → requête rejouée, un seul rafraîchissement pour deux 401) ; `lib/bfcache` (page privée non réaffichée après déconnexion) | P2 |
 | **Mot de passe oublié** | — | `auth/password-reset` (réponse identique compte connu ou non, lien 30 min, seul le hash du jeton en base, usage unique, sessions fermées, lien expiré, mot de passe faible) | — | P3 |
-| **Profil (paramètres)** | — | `users/profile-reauth` (mot de passe actuel exigé pour changer mot de passe ou email, sessions fermées) ; `auth/email-case` ; `validation-messages` | — | P4 |
+| **Profil et compte (paramètres)** | — | `users/profile-reauth` (mot de passe actuel exigé pour changer mot de passe ou email, sessions fermées) ; `users/account-deletion` (compte et toutes ses données supprimés en cascade, session fermée, données d'un autre intactes, 401 sans session) ; `auth/email-case` ; `validation-messages` | — | P4 |
 | **Dépenses et revenus** | — | `transactions/security` ; `transactions/description` (intitulé facultatif) ; `transactions/order` (ordre stable, même jour) ; `transactions/date-filter` (période avec début et fin, début seul, fin seul) ; `amounts` (au centime, < 10 milliards) ; `validation-messages` | `transactionApi` (montants convertis, pagination) ; `lib/transaction` (libellé) ; `lib/sort` ; `AmountInputs` (saisie au centime) | P5 |
 | **Budgets** | `lib/period` (7 : mois civil, semaine du lundi au dimanche, jour courant à l'heure de Paris, changement d'année) | `budgets/ownership` (isolation, un budget par catégorie → 409) ; `budgets/budget-period` (période « custom » refusée) ; `amounts` (bornes de la limite) ; `invalid-input` (identifiants, catégorie inexistante) | `budgetApi` (limite convertie) ; `BudgetEditModal` ; `BudgetHistory` | P6 |
 | **Alertes de dépassement** | `services/alert.service` (7 : création, égalité exacte 0,10 + 0,20 = 0,30, centimes, pas de doublon, réactivation, retrait, mise à jour) | `budgets/alert-lifecycle` (retrait après suppression de la dépense, hausse de la limite, suppression du budget) ; `budgets/alert-consistency` (**atomicité** et **requêtes simultanées**) ; `budgets/budget-period` (dépenses du mois précédent ignorées, **alerte retirée au changement de mois**, alerte lue qui reste lue) | `alertApi` (montant converti) | P6 |
@@ -114,7 +114,8 @@ Chemins relatifs à `apps/api/tests/integration/` (API, intégration), `apps/api
 
 **Contre-épreuves** (dans le conteneur seulement, fichiers restaurés ensuite → verts) :
 - 30/10/2026 : filtre par utilisateur retiré du service des dépenses et contrôle d'audience retiré du middleware → 4 tests de `transactions/security` rouges ;
-- 31/10/2026 : jeton de session présenté non consommé lors de la rotation → « jeton déjà utilisé » et « rafraîchissements simultanés » rouges.
+- 31/10/2026 : jeton de session présenté non consommé lors de la rotation → « jeton déjà utilisé » et « rafraîchissements simultanés » rouges ;
+- 01/11/2026 : suppression du compte neutralisée dans le contrôleur → « supprime le compte et toutes ses données » rouge (l'utilisateur existe encore).
 
 ---
 
@@ -127,7 +128,7 @@ Parcours à dérouler dans le navigateur avant chaque mise en production, sur un
 | **P1** | Inscription et vérification | S'inscrire avec un mot de passe faible, puis valide ; confirmation différente ; ouvrir le lien reçu ; ouvrir `/verify-email` sans jeton | Message sous le champ en cause ; confirmation différente refusée ; « Votre adresse email a bien été confirmée » ; sans jeton : « Ce lien est invalide », immédiatement |
 | **P2** | Connexion et session | Se connecter avec l'email en majuscules ; laisser la session expirer (supprimer le cookie `accessToken`) puis agir ; se déconnecter puis « Précédent » | Connexion acceptée ; l'action aboutit sans reconnexion ; après déconnexion, aucun écran privé réaffiché |
 | **P3** | Mot de passe oublié | Demander un lien pour un email inconnu puis connu ; utiliser le lien ; le réutiliser | Même message dans les deux cas ; mot de passe changé, autres sessions fermées ; lien refusé la 2ᵉ fois |
-| **P4** | Paramètres | Changer le prénom ; changer le mot de passe sans puis avec le mot de passe actuel | Prénom changé sans mot de passe ; changement de mot de passe refusé sans le mot de passe actuel, accepté avec |
+| **P4** | Paramètres | Changer le prénom ; changer le mot de passe sans puis avec le mot de passe actuel ; supprimer le compte (sur un compte de test), puis tenter de se reconnecter | Prénom changé sans mot de passe ; changement de mot de passe refusé sans le mot de passe actuel, accepté avec ; après la suppression, retour à la page de connexion et connexion refusée |
 | **P5** | Dépenses et revenus | Ajouter une dépense de 0,10 € sans intitulé ; un revenu ; modifier ; supprimer ; essayer 12,345 € | Montants au centime ; sans intitulé, la catégorie s'affiche ; 12,345 refusé par le formulaire |
 | **P6** | Budgets et alertes | Budget de 0,30 € + dépenses de 0,10 € et 0,20 € ; limite passée à 0,10 € ; supprimer la dépense ; supprimer le budget ; 2ᵉ budget sur la même catégorie | Pas d'alerte à 0,30 € pile ; alerte de 0,20 € ; alerte retirée dans les deux cas ; 2ᵉ budget refusé (« Un budget existe déjà ») |
 | **P7** | Tableau de bord | Ouvrir le tableau de bord ; filtrer par mois, type, catégorie ; modifier un budget | Cartes, graphique et tableau cohérents avec les filtres ; tableau à jour après modification |

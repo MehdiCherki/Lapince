@@ -52,6 +52,9 @@ Copie ce bloc en haut de la section `## [Non publié]` et remplis-le :
 
 ## [Non publié]
 
+### Ajouté
+- **Tests de la suppression du compte** (`tests/integration/users/account-deletion.test.ts`, 3 tests) : le compte et toutes ses données (transactions, budgets, alertes, sessions) sont supprimés en cascade et la session ne peut plus être renouvelée ; les données d'un autre utilisateur restent intactes ; 401 sans session. Contre-épreuve : suppression neutralisée dans le contrôleur → test rouge. Suppression du compte ajoutée au parcours P4 du cahier de recette ; `docs/tests.md` : 139 tests, 81 d'intégration (branche `chore/account-deletion-test`)
+
 ### Modifié
 - **Commentaires du service des transactions** (`apps/api/src/services/transaction.service.ts`) : l'en-tête, hérité du projet d'équipe, décrivait un comportement inexistant (vérification de fonds, mise à jour d'un solde) ; il décrit maintenant le rôle réel du service. Commentaires trop longs coupés, pour un code lisible à l'impression (annexes du dossier). Aucun changement de code. `docs/tests.md` : compteurs du tableau de synthèse à jour (78 tests d'intégration, 41 tests client) (branche `chore/fil-rouge-comments`)
 
