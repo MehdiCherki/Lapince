@@ -1,7 +1,6 @@
-// Ce service contient la logique métier liée aux transactions, comme la création d'une transaction, la validation des données, etc.
-// Il interagit avec la base de données via Prisma pour effectuer les opérations nécessaires.
-// Par exemple, la fonction createTransaction pourrait recevoir les données d'une nouvelle transaction, vérifier que l'utilisateur a suffisamment de fonds, créer la transaction en base, mettre à jour le solde de l'utilisateur, etc.
-// En séparant la logique métier dans un service, on garde les contrôleurs propres et centrés sur la gestion des requêtes/réponses, ce qui facilite la maintenance et les tests.
+// Accès aux données des transactions (dépenses et revenus). Chaque requête est filtrée sur
+// l'utilisateur connecté ; les écritures passent par withAlertRefresh (alert.service.ts),
+// qui recalcule l'alerte du budget de la catégorie dans la même transaction.
 
 import { prisma } from "../lib/prisma.ts";
 import { withAlertRefresh } from "./alert.service.ts";
@@ -22,7 +21,7 @@ export const getAllTransactions = async (
     limit: number;
   },
 ) => {
-  // Début et fin dans un même objet `date` : deux spreads séparés faisaient écraser le début par la fin
+  // Début et fin dans un même objet `date` (deux objets séparés : la fin écraserait le début)
   const where = {
     userId,
     ...(filters.idcategory && { categoryId: filters.idcategory }),
@@ -77,7 +76,8 @@ export const createTransaction = async (
           ? { description: data.description }
           : {}),
       },
-      include: { category: true }, // On inclut la catégorie pour avoir le type (income/expense) côté front
+      // La catégorie donne le type (dépense ou revenu), dont le client a besoin pour l'afficher
+      include: { category: true },
     }),
   );
 };
@@ -85,19 +85,21 @@ export const createTransaction = async (
 // --- 3. Récupérer une transaction par son ID ---
 export const getTransactionById = async (id: number, userId: number) => {
   const transaction = await prisma.transaction.findFirst({
-    where: { id, userId }, // On s'assure que la transaction appartient bien à l'utilisateur connecté pour éviter les accès non autorisés
+    // Filtre sur l'utilisateur connecté : la transaction d'un autre est introuvable (404)
+    where: { id, userId },
     include: { category: true },
   });
   return transaction;
 };
 
-// --- 4. Mettre à jour une transaction (null si elle n'existe pas ou appartient à un autre utilisateur) ---
+// --- 4. Mettre à jour une transaction (null si inexistante ou à un autre utilisateur) ---
 export const updateTransaction = async (
   id: number,
   userId: number,
   data: UpdateTransactionInput,
 ) => {
-  // Seulement les champs envoyés (Prisma refuse un « undefined » explicite : exactOptionalPropertyTypes).
+  // Seulement les champs envoyés : Prisma refuse un « undefined » explicite
+  // (option exactOptionalPropertyTypes de TypeScript).
   // budgetId (accepté par le schéma) n'existe pas sur une transaction : il est ignoré.
   const updateData = {
     ...(data.amount !== undefined ? { amount: data.amount } : {}),
@@ -112,7 +114,8 @@ export const updateTransaction = async (
 
   const existing = await getTransactionById(id, userId);
   if (!existing) return null;
-  // Après le contrôle de propriété : la dépense d'un autre reste un 404, quelle que soit la catégorie
+  // Après le contrôle de propriété : la dépense d'un autre reste un 404,
+  // quelle que soit la catégorie demandée
   if (data.idcategory !== undefined)
     await assertCategoryExists(data.idcategory);
 
@@ -130,7 +133,7 @@ export const updateTransaction = async (
   );
 };
 
-// --- 5. Supprimer une transaction (false si elle n'existe pas ou appartient à un autre utilisateur) ---
+// --- 5. Supprimer une transaction (false si inexistante ou à un autre utilisateur) ---
 export const deleteTransaction = async (id: number, userId: number) => {
   const existing = await getTransactionById(id, userId);
   if (!existing) return false;
