@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useId, useRef, type KeyboardEvent } from "react";
 import type { Category } from "@/types/category";
 import CategoryIcon from "@/components/ui/CategoryIcon";
 
@@ -17,6 +17,16 @@ export default function CategorySelect({
 }: CategorySelectProps) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const toggleRef = useRef<HTMLButtonElement>(null);
+  const listId = useId();
+
+  // Échap referme la liste et rend le focus au sélecteur
+  function closeOnEscape(e: KeyboardEvent) {
+    if (e.key === "Escape" && open) {
+      setOpen(false);
+      toggleRef.current?.focus();
+    }
+  }
 
   const selectedCategory = Array.isArray(categories)
     ? categories.find((cat) => cat?.id?.toString() === value)
@@ -34,7 +44,11 @@ export default function CategorySelect({
 
   return (
     /* 1. Largeur augmentée ici : w-32 pour small, w-44 pour normal */
-    <div ref={ref} className={`relative z-20 ${small ? "w-32" : "w-44"}`}>
+    <div
+      ref={ref}
+      onKeyDown={closeOnEscape}
+      className={`relative z-20 ${small ? "w-32" : "w-44"}`}
+    >
       <div
         /* 2. Le fond orange [#FF7F00] est appliqué sur tout le conteneur */
         className={`bg-[#FF7F00] shadow-md overflow-hidden transition-[border-radius] ${
@@ -45,7 +59,10 @@ export default function CategorySelect({
       >
         {/* Bouton principal */}
         <button
+          ref={toggleRef}
           type="button"
+          aria-expanded={open}
+          aria-controls={listId}
           onClick={() => setOpen(!open)}
           className="w-full flex items-center justify-between gap-1 px-3 py-1 focus:outline-none"
         >
@@ -64,8 +81,11 @@ export default function CategorySelect({
           </span>
         </button>
 
-        {/* Liste déroulante (Slider) */}
+        {/* Liste déroulante (Slider). Fermée, elle est seulement réduite à une hauteur nulle :
+            inert la retire du parcours au clavier, sinon Tab passerait par ses catégories invisibles */}
         <div
+          id={listId}
+          inert={!open}
           className={`transition-all duration-300 overflow-y-auto ${
             open ? "max-h-40" : "max-h-0"
           }`}

@@ -10,7 +10,7 @@ Schémas UML écrits en texte ([PlantUML](https://plantuml.com/)), versionnés a
 | Séquence du fil rouge (1/2) | [sequence-ajout-depense.puml](sequence-ajout-depense.puml) | ajouter une dépense : parcours de la requête et contrôles (session, validation, catégorie) |
 | Séquence du fil rouge (2/2) | [sequence-ecriture-alerte.puml](sequence-ecriture-alerte.puml) | écriture de la dépense et recalcul de l'alerte dans une transaction, sous verrou |
 | Déploiement | [deploiement.puml](deploiement.puml) | serveur, conteneurs Docker, flux et ports, services externes |
-| Enchaînement des écrans | [enchainement-ecrans.puml](enchainement-ecrans.puml) | zone publique, zone privée, chemins réels des écrans (0.9.1) |
+| Enchaînement des écrans | [enchainement-ecrans.puml](enchainement-ecrans.puml) | zone publique, zone privée, chemins réels des écrans |
 
 ## Regénérer les images
 

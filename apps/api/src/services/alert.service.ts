@@ -2,8 +2,13 @@ import type { Prisma } from "@prisma/client";
 import { prisma } from "../lib/prisma.ts";
 import { periodBounds } from "../lib/period.ts";
 import { toCents } from "../lib/money.ts";
+import { BadRequestError } from "../lib/error.ts";
 
-// Client des requêtes : le client global, ou celui d'une transaction en cours
+// Plus grand dépassement que contient alerts.exceeded_amount, DECIMAL(15, 2), en centimes
+const MAX_EXCEEDED_CENTS = 999_999_999_999_999;
+
+// Client des requêtes : celui de la transaction ouverte par withAlertRefresh, sous verrou.
+// Aucun client par défaut : le calcul d'une alerte ne peut pas être appelé hors du verrou par oubli.
 type Db = Prisma.TransactionClient;
 
 // renotify : après une écriture (dépense, budget), une alerte déjà lue repasse en non lue pour
@@ -11,7 +16,7 @@ type Db = Prisma.TransactionClient;
 export const generateBudgetAlert = async (
   budgetId: number,
   userId: number,
-  db: Db = prisma,
+  db: Db,
   { renotify = true }: { renotify?: boolean } = {},
 ) => {
   // 1. Récupérer le budget avec ses transactions et sa catégorie
@@ -47,14 +52,19 @@ export const generateBudgetAlert = async (
     return null;
   }
 
-  // 4. Calcul du montant dépassé (repassé en euros, exact au centime)
+  // 4. Calcul du montant dépassé (repassé en euros, exact au centime). Au-delà de ce que la
+  // colonne peut contenir, l'écriture est refusée (400) et la transaction annulée, jamais un 500
+  if (spentCents - limitCents > MAX_EXCEEDED_CENTS) {
+    throw new BadRequestError(
+      "Le total des dépenses de cette catégorie sur la période est trop élevé",
+    );
+  }
   const exceededAmount = (spentCents - limitCents) / 100;
 
-  // 5. Vérifier si une alerte existe déjà pour cette catégorie
-  const existingAlert = await db.alert.findFirst({
+  // 5. Vérifier si une alerte existe déjà pour cette catégorie (une au plus : contrainte d'unicité)
+  const existingAlert = await db.alert.findUnique({
     where: {
-      userId,
-      categoryId: budget.category.id,
+      userId_categoryId: { userId, categoryId: budget.category.id },
     },
   });
 
@@ -94,7 +104,7 @@ export const generateBudgetAlert = async (
 export const removeCategoryAlert = (
   userId: number,
   categoryId: number,
-  db: Db = prisma,
+  db: Db,
 ) => db.alert.deleteMany({ where: { userId, categoryId } });
 
 // Alerte d'une catégorie : calculée d'après son budget s'il y en a un, sinon aucune alerte

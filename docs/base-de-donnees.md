@@ -21,7 +21,7 @@ PostgreSQL 17, piloté par l'ORM Prisma (requêtes typées, migrations versionn�
 
 | # | Règle |
 |---|---|
-| RG1 | Un utilisateur s'inscrit avec un prénom, un nom, un email et un mot de passe. L'email est **unique** et insensible à la casse (enregistré en minuscules). Le compte reste non vérifié tant que l'email n'est pas confirmé. |
+| RG1 | Un utilisateur s'inscrit avec un prénom, un nom, un email et un mot de passe. L'email est **unique** et insensible à la casse : enregistré en minuscules, ce que la base impose (contrainte `CHECK`). Le compte reste non vérifié tant que l'email n'est pas confirmé. |
 | RG2 | Le mot de passe compte au moins 8 caractères, dont une majuscule, un chiffre et un caractère spécial. Il n'est jamais stocké en clair (haché avec Argon2). |
 | RG3 | Les **catégories** sont communes à tous les utilisateurs (39, créées par le seed), de type **dépense** ou **revenu**, avec un nom unique. Les utilisateurs ne les modifient pas. |
 | RG4 | Une **transaction** appartient à un seul utilisateur et à une seule catégorie ; son type (dépense ou revenu) est celui de sa catégorie. Montant strictement positif, au centime, inférieur à 10 milliards ; date au jour ; intitulé facultatif (255 caractères au plus). |
@@ -40,7 +40,7 @@ PostgreSQL 17, piloté par l'ORM Prisma (requêtes typées, migrations versionn�
 Formalisme Merise, cardinalités (minimum, maximum) lues depuis l'entité : un utilisateur **effectue** 0 à N transactions ; une transaction est effectuée par 1 et 1 seul utilisateur.
 
 - **BUDGÉTER** est une association porteuse entre UTILISATEUR et CATÉGORIE (attributs : limite, période). Elle traduit RG5 : le couple (utilisateur, catégorie) identifie un budget, il ne peut donc y en avoir qu'un.
-- **ALERTE** est une entité : elle a sa propre vie (lue ou non, date de création). « Au plus une alerte par utilisateur et par catégorie » (RG6) est garanti par l'application, sous un verrou par utilisateur et par catégorie (section 7).
+- **ALERTE** est une entité : elle a sa propre vie (lue ou non, date de création). « Au plus une alerte par utilisateur et par catégorie » (RG6) est garanti par la base, avec une contrainte `UNIQUE (user_id, category_id)`. Le verrou par utilisateur et par catégorie (section 7) garantit en plus que le montant est calculé sur des données à jour.
 - **SESSION** représente une connexion ouverte sur un appareil (RG7).
 
 Source du schéma : [mcd/la-pince.mcd](mcd/la-pince.mcd), au format texte de [Mocodo](https://www.mocodo.net/), versionné avec le code. Pour regénérer l'image (SVG et PNG) après une modification, depuis la racine du dépôt (PowerShell) :
@@ -74,6 +74,9 @@ Le MPD est le SQL exécuté par PostgreSQL : les **migrations** versionnées, ap
 | [0_init](../apps/api/prisma/migrations/0_init/migration.sql) | création des types énumérés, des 6 tables, des index, des contraintes d'unicité et des 7 clés étrangères |
 | [20261030140000_naming_convention_and_money](../apps/api/prisma/migrations/20261030140000_naming_convention_and_money/migration.sql) | convention de nommage ci-dessous et montants en `DECIMAL(12, 2)`, écrite à la main (renommages seulement, aucune donnée supprimée) |
 | [20261031120000_hash_session_tokens](../apps/api/prisma/migrations/20261031120000_hash_session_tokens/migration.sql) | jetons de session et de confirmation d'email stockés sous forme d'empreinte SHA-256 (`token_hash`, `email_verification_token_hash`), écrite à la main : renommages, puis jetons existants hachés sur place, les sessions ouvertes restent valides |
+| [20261109200000_alert_unique_per_category](../apps/api/prisma/migrations/20261109200000_alert_unique_per_category/migration.sql) | contrainte `UNIQUE (user_id, category_id)` sur `alerts` (RG6 garantie par la base), écrite à la main : les doublons éventuels, données dérivées, sont d'abord supprimés en gardant l'alerte la plus récente |
+| [20261109210000_email_normalized_check](../apps/api/prisma/migrations/20261109210000_email_normalized_check/migration.sql) | contrainte `CHECK (email = lower(btrim(email)))` sur `users` (RG1 garantie par la base), écrite à la main : normalise d'abord les emails existants ; si deux comptes ne diffèrent que par la casse, elle échoue sans rien modifier (essayé sur une base jetable) |
+| [20261109220000_alert_exceeded_amount_precision](../apps/api/prisma/migrations/20261109220000_alert_exceeded_amount_precision/migration.sql) | `alerts.exceeded_amount` élargi à `DECIMAL(15, 2)` : le dépassement est une somme de dépenses, il peut excéder le montant maximal d'une dépense ; 15 chiffres, car tous les centimes restent alors exacts en nombre JavaScript |
 
 **Convention de nommage** :
 - tables au pluriel, en minuscules : `users`, `transactions`, `categories` ;
@@ -103,7 +106,7 @@ Types PostgreSQL. `NN` : obligatoire (`NOT NULL`). `PK` : clé primaire, `FK` : 
 | `id` | `INTEGER` | PK, auto-incrément | identifiant |
 | `first_name` | `TEXT` | NN | prénom |
 | `last_name` | `TEXT` | NN | nom |
-| `email` | `TEXT` | NN, UQ | email de connexion, en minuscules (RG1) |
+| `email` | `TEXT` | NN, UQ, CHECK | email de connexion, en minuscules, sans espaces autour (RG1) : contrainte `users_email_normalized_check` |
 | `password` | `TEXT` | NN | **hash Argon2** du mot de passe, jamais le mot de passe (RG2) |
 | `photo` | `TEXT` | | photo de profil (facultative) |
 | `email_verified` | `BOOLEAN` | NN, défaut `false` | email confirmé |
@@ -166,13 +169,13 @@ Contrainte `UNIQUE (user_id, category_id)` : un seul budget par utilisateur et p
 | Colonne | Type | Contraintes | Description |
 |---|---|---|---|
 | `id` | `INTEGER` | PK | identifiant |
-| `exceeded_amount` | `DECIMAL(12, 2)` | NN | montant du dépassement sur la période en cours |
+| `exceeded_amount` | `DECIMAL(15, 2)` | NN | montant du dépassement sur la période en cours ; plus large que celui d'une dépense, car c'est une somme de dépenses |
 | `is_read` | `BOOLEAN` | NN, défaut `false` | alerte vue par l'utilisateur |
 | `user_id` | `INTEGER` | NN, FK → `users`, suppression en cascade | destinataire |
 | `category_id` | `INTEGER` | NN, FK → `categories`, suppression en cascade | catégorie dépassée |
 | `created_at` | `TIMESTAMP(3)` | NN, défaut maintenant | date de l'alerte |
 
-Index : `(user_id)`.
+Contrainte `UNIQUE (user_id, category_id)` : une seule alerte par utilisateur et par catégorie (RG6). Index : `(user_id)`.
 
 ### Types énumérés
 
@@ -188,14 +191,15 @@ Index : `(user_id)`.
 **Dans la base** :
 - clés primaires, `NOT NULL` sur toute donnée obligatoire ;
 - **clés étrangères** : suppression **en cascade** depuis `users` (RG9 : supprimer un compte supprime ses données) ; suppression **interdite** (`RESTRICT`) d'une catégorie utilisée par une transaction ou un budget ;
-- contraintes d'**unicité** : email, nom de catégorie, hash du jeton de session, hash du jeton de réinitialisation, budget par utilisateur et catégorie ;
-- montants en `DECIMAL(12, 2)` : exacts au centime.
+- contrainte `CHECK` sur l'email (`email = lower(btrim(email))`) : avec son unicité, deux comptes ne peuvent pas différer par la seule casse (RG1) ;
+- contraintes d'**unicité** : email, nom de catégorie, hash du jeton de session, hash du jeton de réinitialisation, budget par utilisateur et catégorie, alerte par utilisateur et catégorie ;
+- montants en `DECIMAL(12, 2)` : exacts au centime ; dépassement d'une alerte en `DECIMAL(15, 2)`, somme de dépenses (au-delà, l'écriture est refusée par un 400, jamais un 500).
 
 **Dans l'API**, avant la base :
 - validation de chaque entrée (Zod) : montants au centime et sous 10 milliards, formats, longueurs → 400 avec le message sous le champ en cause, plutôt qu'une erreur de la base ;
 - chaque requête filtre sur l'utilisateur connecté (`user_id`) : un utilisateur ne lit ni ne modifie les données d'un autre ;
 - **transactions** : l'écriture d'une dépense ou d'un budget et le recalcul des alertes des catégories touchées se font dans une seule transaction PostgreSQL (tout ou rien) ;
-- **accès concurrents** : un verrou par utilisateur et par catégorie (`pg_advisory_xact_lock`, libéré à la fin de la transaction) fait passer les requêtes simultanées l'une après l'autre ; c'est lui qui garantit « une seule alerte » (RG6). Prouvé par un test : 8 dépenses envoyées en même temps donnaient 2 à 4 alertes avant ce verrou, 1 après ([docs/tests.md](tests.md)).
+- **accès concurrents** : un verrou par utilisateur et par catégorie (`pg_advisory_xact_lock`, libéré à la fin de la transaction) fait passer les requêtes simultanées l'une après l'autre ; chacune calcule l'alerte sur des données à jour, et la contrainte d'unicité de `alerts` refuse en dernier recours toute seconde alerte (RG6). Prouvé par un test : 8 dépenses envoyées en même temps donnaient 2 à 4 alertes avant ce verrou, 1 après ([docs/tests.md](tests.md)).
 
 ---
 

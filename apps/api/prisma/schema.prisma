@@ -28,6 +28,8 @@ model User {
   id         Int     @id @default(autoincrement())
   first_name String
   last_name  String
+  // Contrainte CHECK users_email_normalized_check (migration 20261109210000), non représentée par
+  // Prisma : email enregistré en minuscules, sans espaces autour ; avec @unique, unicité sans casse
   email      String  @unique
   password   String
   photo      String?
@@ -119,7 +121,7 @@ model Budget {
 
 model Alert {
   id             Int      @id @default(autoincrement())
-  exceededAmount Decimal  @db.Decimal(12, 2) @map("exceeded_amount")
+  exceededAmount Decimal  @db.Decimal(15, 2) @map("exceeded_amount")
   isRead         Boolean  @default(false) @map("is_read")
   userId         Int      @map("user_id")
   categoryId     Int      @map("category_id")
@@ -127,6 +129,7 @@ model Alert {
   category       Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
   createdAt      DateTime @default(now()) @map("created_at")
 
+  @@unique([userId, categoryId])
   @@index([userId])
   @@map("alerts")
 }

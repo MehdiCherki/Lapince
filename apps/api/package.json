@@ -10,6 +10,7 @@
     "test": "vitest",
     "test:unit": "vitest run --project unit",
     "test:integration": "vitest run --project integration",
+    "test:coverage": "vitest run --coverage",
     "test:db:setup": "DATABASE_URL=$DATABASE_URL_TEST prisma migrate deploy && DATABASE_URL=$DATABASE_URL_TEST prisma db seed",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
@@ -32,7 +33,7 @@
     "zod": "^4.3.6",
     "express-rate-limit": "^7.5.0",
     "pino": "^9.5.0",
-    "nodemailer": "^9.0.3"
+    "nodemailer": "^10.4.0"
   },
   "devDependencies": {
     "@types/cookie-parser": "^1.4.10",
@@ -47,6 +48,8 @@
     "tsx": "^4.21.0",
     "typescript": "^6.0.3",
     "pino-pretty": "13.0.0",
+    "@vitest/coverage-v8": "^4.1.12",
+    "fast-check": "^4.10.2",
     "vitest": "^4.1.5"
   }
 }
