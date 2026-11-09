@@ -2,6 +2,10 @@ import type { Prisma } from "@prisma/client";
 import { prisma } from "../lib/prisma.ts";
 import { periodBounds } from "../lib/period.ts";
 import { toCents } from "../lib/money.ts";
+import { BadRequestError } from "../lib/error.ts";
+
+// Plus grand dépassement que contient alerts.exceeded_amount, DECIMAL(15, 2), en centimes
+const MAX_EXCEEDED_CENTS = 999_999_999_999_999;
 
 // Client des requêtes : celui de la transaction ouverte par withAlertRefresh, sous verrou.
 // Aucun client par défaut : le calcul d'une alerte ne peut pas être appelé hors du verrou par oubli.
@@ -48,7 +52,13 @@ export const generateBudgetAlert = async (
     return null;
   }
 
-  // 4. Calcul du montant dépassé (repassé en euros, exact au centime)
+  // 4. Calcul du montant dépassé (repassé en euros, exact au centime). Au-delà de ce que la
+  // colonne peut contenir, l'écriture est refusée (400) et la transaction annulée, jamais un 500
+  if (spentCents - limitCents > MAX_EXCEEDED_CENTS) {
+    throw new BadRequestError(
+      "Le total des dépenses de cette catégorie sur la période est trop élevé",
+    );
+  }
   const exceededAmount = (spentCents - limitCents) / 100;
 
   // 5. Vérifier si une alerte existe déjà pour cette catégorie (une au plus : contrainte d'unicité)

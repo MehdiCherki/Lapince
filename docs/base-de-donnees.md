@@ -76,6 +76,7 @@ Le MPD est le SQL exécuté par PostgreSQL : les **migrations** versionnées, ap
 | [20261031120000_hash_session_tokens](../apps/api/prisma/migrations/20261031120000_hash_session_tokens/migration.sql) | jetons de session et de confirmation d'email stockés sous forme d'empreinte SHA-256 (`token_hash`, `email_verification_token_hash`), écrite à la main : renommages, puis jetons existants hachés sur place, les sessions ouvertes restent valides |
 | [20261109200000_alert_unique_per_category](../apps/api/prisma/migrations/20261109200000_alert_unique_per_category/migration.sql) | contrainte `UNIQUE (user_id, category_id)` sur `alerts` (RG6 garantie par la base), écrite à la main : les doublons éventuels, données dérivées, sont d'abord supprimés en gardant l'alerte la plus récente |
 | [20261109210000_email_normalized_check](../apps/api/prisma/migrations/20261109210000_email_normalized_check/migration.sql) | contrainte `CHECK (email = lower(btrim(email)))` sur `users` (RG1 garantie par la base), écrite à la main : normalise d'abord les emails existants ; si deux comptes ne diffèrent que par la casse, elle échoue sans rien modifier (essayé sur une base jetable) |
+| [20261109220000_alert_exceeded_amount_precision](../apps/api/prisma/migrations/20261109220000_alert_exceeded_amount_precision/migration.sql) | `alerts.exceeded_amount` élargi à `DECIMAL(15, 2)` : le dépassement est une somme de dépenses, il peut excéder le montant maximal d'une dépense ; 15 chiffres, car tous les centimes restent alors exacts en nombre JavaScript |
 
 **Convention de nommage** :
 - tables au pluriel, en minuscules : `users`, `transactions`, `categories` ;
@@ -168,7 +169,7 @@ Contrainte `UNIQUE (user_id, category_id)` : un seul budget par utilisateur et p
 | Colonne | Type | Contraintes | Description |
 |---|---|---|---|
 | `id` | `INTEGER` | PK | identifiant |
-| `exceeded_amount` | `DECIMAL(12, 2)` | NN | montant du dépassement sur la période en cours |
+| `exceeded_amount` | `DECIMAL(15, 2)` | NN | montant du dépassement sur la période en cours ; plus large que celui d'une dépense, car c'est une somme de dépenses |
 | `is_read` | `BOOLEAN` | NN, défaut `false` | alerte vue par l'utilisateur |
 | `user_id` | `INTEGER` | NN, FK → `users`, suppression en cascade | destinataire |
 | `category_id` | `INTEGER` | NN, FK → `categories`, suppression en cascade | catégorie dépassée |
@@ -192,7 +193,7 @@ Contrainte `UNIQUE (user_id, category_id)` : une seule alerte par utilisateur et
 - **clés étrangères** : suppression **en cascade** depuis `users` (RG9 : supprimer un compte supprime ses données) ; suppression **interdite** (`RESTRICT`) d'une catégorie utilisée par une transaction ou un budget ;
 - contrainte `CHECK` sur l'email (`email = lower(btrim(email))`) : avec son unicité, deux comptes ne peuvent pas différer par la seule casse (RG1) ;
 - contraintes d'**unicité** : email, nom de catégorie, hash du jeton de session, hash du jeton de réinitialisation, budget par utilisateur et catégorie, alerte par utilisateur et catégorie ;
-- montants en `DECIMAL(12, 2)` : exacts au centime.
+- montants en `DECIMAL(12, 2)` : exacts au centime ; dépassement d'une alerte en `DECIMAL(15, 2)`, somme de dépenses (au-delà, l'écriture est refusée par un 400, jamais un 500).
 
 **Dans l'API**, avant la base :
 - validation de chaque entrée (Zod) : montants au centime et sous 10 milliards, formats, longueurs → 400 avec le message sous le champ en cause, plutôt qu'une erreur de la base ;
