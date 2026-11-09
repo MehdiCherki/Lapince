@@ -2,6 +2,16 @@
 # sur une base jetable lapince_load_test, et k6. Mode d'emploi : docs/tests.md, « Test de charge ».
 # Chemins relatifs à la racine du dépôt (premier fichier : docker-compose.yml).
 services:
+  # Redis jetable, même script qu'en production (redis/start.sh)
+  redis-load:
+    image: redis:8.10.3-alpine
+    profiles: ["load"]
+    environment:
+      REDIS_PASSWORD: mot-de-passe-de-charge-uniquement
+    volumes:
+      - ./redis/start.sh:/redis/start.sh:ro
+    command: ["sh", "/redis/start.sh"]
+
   api-load:
     build:
       context: ./apps/api
@@ -18,6 +28,8 @@ services:
       JWT_SECRET: secret-de-charge-uniquement
       ALLOWED_ORIGINS: http://localhost
       FRONTEND_URL: http://localhost
+      REDIS_URL: redis://redis-load:6379
+      REDIS_PASSWORD: mot-de-passe-de-charge-uniquement
     entrypoint:
       - sh
       - -c
