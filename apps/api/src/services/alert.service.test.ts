@@ -7,7 +7,7 @@ vi.mock("../lib/prisma.ts", () => ({
     budget: { findFirst: vi.fn() },
     transaction: { findMany: vi.fn() },
     alert: {
-      findFirst: vi.fn(),
+      findUnique: vi.fn(),
       create: vi.fn(),
       update: vi.fn(),
       deleteMany: vi.fn(),
@@ -28,10 +28,10 @@ describe("generateBudgetAlert", () => {
       { amount: 80 },
       { amount: 70 },
     ] as any);
-    vi.mocked(prisma.alert.findFirst).mockResolvedValue(null);
+    vi.mocked(prisma.alert.findUnique).mockResolvedValue(null);
 
     // Act : appeler la vraie fonction (budgetId = 1, userId = 7)
-    await generateBudgetAlert(1, 7);
+    await generateBudgetAlert(1, 7, prisma);
 
     // Assert : une alerte créée avec le bon montant, aucune mise à jour
     expect(prisma.alert.create).toHaveBeenCalledTimes(1);
@@ -52,7 +52,7 @@ describe("generateBudgetAlert", () => {
       { amount: "0.20" },
     ] as any);
 
-    await generateBudgetAlert(1, 7);
+    await generateBudgetAlert(1, 7, prisma);
 
     expect(prisma.alert.create).not.toHaveBeenCalled();
     expect(prisma.alert.deleteMany).toHaveBeenCalledTimes(1);
@@ -67,9 +67,9 @@ describe("generateBudgetAlert", () => {
       { amount: "0.10" },
       { amount: "0.20" },
     ] as any);
-    vi.mocked(prisma.alert.findFirst).mockResolvedValue(null);
+    vi.mocked(prisma.alert.findUnique).mockResolvedValue(null);
 
-    await generateBudgetAlert(1, 7);
+    await generateBudgetAlert(1, 7, prisma);
 
     expect(prisma.alert.create).toHaveBeenCalledWith({
       data: { userId: 7, categoryId: 3, exceededAmount: 0.2 },
@@ -87,10 +87,10 @@ describe("generateBudgetAlert", () => {
       { amount: 70 },
     ] as any);
     const existingAlert = { id: 12, isRead: false, exceededAmount: 50 };
-    vi.mocked(prisma.alert.findFirst).mockResolvedValue(existingAlert as any);
+    vi.mocked(prisma.alert.findUnique).mockResolvedValue(existingAlert as any);
 
     // Act
-    const result = await generateBudgetAlert(1, 7);
+    const result = await generateBudgetAlert(1, 7, prisma);
 
     // Assert : on renvoie l'alerte existante, sans rien créer ni modifier
     expect(result).toEqual(existingAlert);
@@ -108,13 +108,13 @@ describe("generateBudgetAlert", () => {
       { amount: 80 },
       { amount: 70 },
     ] as any);
-    vi.mocked(prisma.alert.findFirst).mockResolvedValue({
+    vi.mocked(prisma.alert.findUnique).mockResolvedValue({
       id: 12,
       isRead: true,
     } as any);
 
     // Act
-    await generateBudgetAlert(1, 7);
+    await generateBudgetAlert(1, 7, prisma);
 
     // Assert : l'alerte repasse en non-lue avec le montant à jour, pas de nouvelle alerte
     expect(prisma.alert.update).toHaveBeenCalledWith({
@@ -136,11 +136,11 @@ describe("generateBudgetAlert", () => {
     ] as any);
 
     // Act
-    const result = await generateBudgetAlert(1, 7);
+    const result = await generateBudgetAlert(1, 7, prisma);
 
     // Assert : la fonction s'arrête avant même de chercher une alerte existante
     expect(result).toBeNull();
-    expect(prisma.alert.findFirst).not.toHaveBeenCalled();
+    expect(prisma.alert.findUnique).not.toHaveBeenCalled();
     expect(prisma.alert.create).not.toHaveBeenCalled();
     expect(prisma.alert.update).not.toHaveBeenCalled();
     expect(prisma.alert.deleteMany).toHaveBeenCalledWith({
@@ -158,14 +158,14 @@ describe("generateBudgetAlert", () => {
       { amount: 80 },
       { amount: 70 },
     ] as any);
-    vi.mocked(prisma.alert.findFirst).mockResolvedValue({
+    vi.mocked(prisma.alert.findUnique).mockResolvedValue({
       id: 12,
       isRead: false,
       exceededAmount: 30,
     } as any);
 
     // Act
-    await generateBudgetAlert(1, 7);
+    await generateBudgetAlert(1, 7, prisma);
 
     // Assert : seul le montant change — l'alerte reste non lue, pas de doublon
     expect(prisma.alert.update).toHaveBeenCalledWith({

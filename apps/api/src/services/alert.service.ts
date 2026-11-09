@@ -3,7 +3,8 @@ import { prisma } from "../lib/prisma.ts";
 import { periodBounds } from "../lib/period.ts";
 import { toCents } from "../lib/money.ts";
 
-// Client des requêtes : le client global, ou celui d'une transaction en cours
+// Client des requêtes : celui de la transaction ouverte par withAlertRefresh, sous verrou.
+// Aucun client par défaut : le calcul d'une alerte ne peut pas être appelé hors du verrou par oubli.
 type Db = Prisma.TransactionClient;
 
 // renotify : après une écriture (dépense, budget), une alerte déjà lue repasse en non lue pour
@@ -11,7 +12,7 @@ type Db = Prisma.TransactionClient;
 export const generateBudgetAlert = async (
   budgetId: number,
   userId: number,
-  db: Db = prisma,
+  db: Db,
   { renotify = true }: { renotify?: boolean } = {},
 ) => {
   // 1. Récupérer le budget avec ses transactions et sa catégorie
@@ -50,11 +51,10 @@ export const generateBudgetAlert = async (
   // 4. Calcul du montant dépassé (repassé en euros, exact au centime)
   const exceededAmount = (spentCents - limitCents) / 100;
 
-  // 5. Vérifier si une alerte existe déjà pour cette catégorie
-  const existingAlert = await db.alert.findFirst({
+  // 5. Vérifier si une alerte existe déjà pour cette catégorie (une au plus : contrainte d'unicité)
+  const existingAlert = await db.alert.findUnique({
     where: {
-      userId,
-      categoryId: budget.category.id,
+      userId_categoryId: { userId, categoryId: budget.category.id },
     },
   });
 
@@ -94,7 +94,7 @@ export const generateBudgetAlert = async (
 export const removeCategoryAlert = (
   userId: number,
   categoryId: number,
-  db: Db = prisma,
+  db: Db,
 ) => db.alert.deleteMany({ where: { userId, categoryId } });
 
 // Alerte d'une catégorie : calculée d'après son budget s'il y en a un, sinon aucune alerte

@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import request from "supertest";
 import app from "../../../src/app.ts";
+import { prisma } from "../../../src/lib/prisma.ts";
 import { createVerifiedUser, loginUser } from "../../helpers/auth.ts";
 import { addExpense, createBudget } from "../../helpers/budgets.ts";
 
@@ -40,5 +41,26 @@ describe("Dépense et alerte : cohérence", () => {
     const alerts = await request(app).get("/alerts").set("Cookie", cookie);
     expect(alerts.body).toHaveLength(1);
     expect(Number(alerts.body[0].exceededAmount)).toBe(30);
+  });
+
+  // Défense en profondeur : même sans passer par le verrou du service, la base refuse
+  // une seconde alerte pour le même utilisateur et la même catégorie (règle RG6).
+  it("la base refuse une seconde alerte pour la même catégorie", async () => {
+    const email = await createVerifiedUser("alerte_unique");
+    const { id: userId } = await prisma.user.findUniqueOrThrow({
+      where: { email },
+    });
+    const { id: categoryId } = await prisma.category.findFirstOrThrow({
+      where: { type: "EXPENSE" },
+    });
+
+    await prisma.alert.create({
+      data: { userId, categoryId, exceededAmount: 1 },
+    });
+
+    await expect(
+      prisma.alert.create({ data: { userId, categoryId, exceededAmount: 2 } }),
+    ).rejects.toMatchObject({ code: "P2002" });
+    expect(await prisma.alert.count({ where: { userId, categoryId } })).toBe(1);
   });
 });
