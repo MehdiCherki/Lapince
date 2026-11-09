@@ -2,13 +2,13 @@
 
 Ce document décrit comment l'application est testée : la stratégie, la façon de lancer les tests, ce que chaque test couvre (matrice), les tests de sécurité et le cahier de recette.
 
-**État au 09/11/2026** : 148 tests automatisés de l'application et 21 scénarios du script de déploiement, tous verts, lancés sur chaque pull request par la CI.
+**État au 09/11/2026** : 151 tests automatisés de l'application et 21 scénarios du script de déploiement, tous verts, lancés sur chaque pull request par la CI.
 
 | Ensemble | Outil | Tests |
 |---|---|---|
 | API — unitaires | Vitest | 20 |
 | API — intégration (dont sécurité) | Vitest + Supertest + PostgreSQL | 87 |
-| Client — composants, services, fonctions | Vitest + Testing Library (jsdom) | 41 |
+| Client — composants, services, fonctions | Vitest + Testing Library (jsdom) | 44 |
 | Script de déploiement | Bash, doubles de `git`, `docker` et `curl` | 21 scénarios (69 vérifications) |
 | Recette (tests d'acceptation) | navigateur, cahier ci-dessous | 9 parcours |
 
@@ -87,7 +87,7 @@ Chemins relatifs à `apps/api/tests/integration/` (API, intégration), `apps/api
 | **Profil et compte (paramètres)** | — | `users/profile-reauth` (mot de passe actuel exigé pour changer mot de passe ou email, sessions fermées) ; `users/account-deletion` (compte et toutes ses données supprimés en cascade, session fermée, données d'un autre intactes, 401 sans session) ; `auth/email-case` ; `validation-messages` | — | P4 |
 | **Dépenses et revenus** | — | `transactions/security` ; `transactions/description` (intitulé facultatif) ; `transactions/order` (ordre stable, même jour) ; `transactions/date-filter` (période avec début et fin, début seul, fin seul) ; `amounts` (au centime, < 10 milliards) ; `validation-messages` | `transactionApi` (montants convertis, pagination) ; `lib/transaction` (libellé) ; `lib/sort` ; `AmountInputs` (saisie au centime) | P5 |
 | **Budgets** | `lib/period` (7 : mois civil, semaine du lundi au dimanche, jour courant à l'heure de Paris, changement d'année) | `budgets/ownership` (isolation, un budget par catégorie → 409) ; `budgets/budget-period` (période « custom » refusée) ; `amounts` (bornes de la limite) ; `invalid-input` (identifiants, catégorie inexistante) | `budgetApi` (limite convertie) ; `BudgetEditModal` ; `BudgetHistory` | P6 |
-| **Alertes de dépassement** | `services/alert.service` (7 : création, égalité exacte 0,10 + 0,20 = 0,30, centimes, pas de doublon, réactivation, retrait, mise à jour) | `budgets/alert-lifecycle` (retrait après suppression de la dépense, hausse de la limite, suppression du budget) ; `budgets/alert-consistency` (**atomicité**, **requêtes simultanées**, dépassement plus grand qu'une dépense : alerte exacte ; au-delà de la borne : 400, rien enregistré) ; `budgets/budget-period` (dépenses du mois précédent ignorées, **alerte retirée au changement de mois**, alerte lue qui reste lue) | `alertApi` (montant converti) | P6 |
+| **Alertes de dépassement** | `services/alert.service` (7 : création, égalité exacte 0,10 + 0,20 = 0,30, centimes, pas de doublon, réactivation, retrait, mise à jour) | `budgets/alert-lifecycle` (retrait après suppression de la dépense, hausse de la limite, suppression du budget) ; `budgets/alert-consistency` (**atomicité**, **requêtes simultanées**, dépassement plus grand qu'une dépense : alerte exacte ; au-delà de la borne : 400, rien enregistré) ; `budgets/budget-period` (dépenses du mois précédent ignorées, **alerte retirée au changement de mois**, alerte lue qui reste lue) | `alertApi` (montant converti) ; `AlertPopup` (annoncée comme une alerte, fermeture par Échap et par un vrai bouton) | P6 |
 | **Tableau de bord, statistiques** | `services/stats.service` (revenus, dépenses, solde ; zéros sans transaction ; suivi d'un budget sur sa période, au centime) | — | `StatsCards` (solde négatif en rouge) | P7 |
 | **Catégories** | — | `categories/order` (ordre du seed) ; `invalid-input` (identifiants) | `CategoryIcon` (icône d'une catégorie connue ; rien pour une icône absente ou inconnue) | P5, P6 |
 | **Navigation et affichage** | — | — | `Logo` (retour à l'accueil connecté ou public) ; `ScreenImage` (chaque image n'est proposée qu'à son format d'écran) | P8 |
