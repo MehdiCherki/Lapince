@@ -52,6 +52,10 @@ Copie ce bloc en haut de la section `## [Non publié]` et remplis-le :
 
 ## [Non publié]
 
+---
+
+## [0.9.6] — 2026-11-10
+
 ### Ajouté
 - **Redis comme stockage du limiteur de tentatives** (connexion, inscription, rafraîchissement de session, mot de passe oublié, réinitialisation) : les compteurs sont partagés par toutes les instances de l'API et conservés quand elle redémarre (`rate-limit-redis` 6.0.2, client officiel `@redis/client` 6.3.1, module unique `src/lib/redis.ts`). Clé : préfixe du limiteur + adresse du visiteur (`rl:login:203.0.113.10`) ; création avec durée de vie (`SET … PX`), incrément (`INCR`), temps restant (`PTTL`, renvoyé dans `Retry-After`), expiration en fin de fenêtre (branche `feature/redis-rate-limit`)
 - **Service `redis`** (image `redis:8.10.3-alpine`) en développement et en production : aucun port publié, réseau Docker interne partagé avec l'API seulement et sans accès à Internet ; utilisateur `default` désactivé et utilisateur unique `lapince_app`, limité aux commandes du limiteur et aux clés `rl:*` (`FLUSHALL`, `CONFIG`, `KEYS`, `EVAL`… refusés) ; mot de passe `REDIS_PASSWORD` écrit au démarrage dans un fichier d'ACL lisible par Redis seul, jamais sur la ligne de commande ; sans persistance, mémoire bornée à 32 Mo avec éviction `volatile-ttl` ; healthcheck authentifié, l'API attend que Redis soit sain ([redis/start.sh](redis/start.sh))
