@@ -92,7 +92,9 @@ export default function AlertPopup({ alert, onClose }: AlertPopupProps) {
           </p>
         </div>
 
-        {/** Fermeture : un vrai bouton, bien visible, qui reçoit le focus à l'apparition */}
+        {/** Fermeture : un vrai bouton, qui reçoit le focus à l'apparition. Contour affiché dès qu'il a
+            le focus (focus:, pas focus-visible:) : donné par le code après un clic sur « Ajouter »,
+            le focus ne serait pas montré par les navigateurs, et Tab le ferait quitter sans le voir */}
         <button
           ref={closeButtonRef}
           type="button"
@@ -101,7 +103,7 @@ export default function AlertPopup({ alert, onClose }: AlertPopupProps) {
             event.stopPropagation(); // sinon le clic remonte aussi à la carte
             onClose();
           }}
-          className="mt-3 rounded-full bg-[#002b49] px-6 py-2 text-sm font-bold text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#002b49]"
+          className="mt-3 rounded-full bg-[#002b49] px-6 py-2 text-sm font-bold text-white outline-none focus:outline-3 focus:outline-offset-3 focus:outline-solid focus:outline-[#002b49]"
         >
           Fermer
         </button>
