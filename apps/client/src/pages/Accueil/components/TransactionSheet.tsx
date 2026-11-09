@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useId, useRef, useState } from "react";
 import { ChevronUp } from "lucide-react";
 import type { Transaction } from "@/types/transaction";
 import TransactionLine from "./TransactionLine";
@@ -25,6 +25,7 @@ export default function TransactionSheet({
   // --- ÉTATS (States) ---
   // Gère l'ouverture du panneau (vrai = ouvert, faux = réduit)
   const [isOpen, setIsOpen] = useState(false);
+  const contentId = useId();
 
   // useRef : On utilise des refs pour le drag-and-drop car changer un state
   // à chaque pixel déplacé ferait ramer l'application (trop de re-renders).
@@ -73,7 +74,18 @@ export default function TransactionSheet({
       className="fixed bottom-0 left-0 w-full bg-[#1e3a5f] text-white rounded-t-2xl shadow-2xl flex flex-col z-[55] transition-transform duration-300 ease-in-out"
     >
       {/* --- ENTÊTE / POIGNÉE DE DRAG --- */}
+      {/* Au clavier aussi : atteignable avec Tab, ouvre et ferme avec Entrée ou Espace */}
       <div
+        role="button"
+        tabIndex={0}
+        aria-expanded={isOpen}
+        aria-controls={contentId}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault(); // Espace ferait défiler la page
+            setIsOpen((open) => !open);
+          }
+        }}
         className="flex flex-col items-center pt-3 pb-2 shrink-0 cursor-pointer select-none group hover:bg-white/5 transition-colors rounded-t-2xl"
         onMouseDown={(e) => onDragStart(e.clientY)}
         onMouseMove={(e) => {
@@ -108,7 +120,13 @@ export default function TransactionSheet({
       </div>
 
       {/* --- LISTE DES TRANSACTIONS --- */}
-      <div className="flex-1 overflow-y-auto overscroll-contain">
+      {/* Fermée, la feuille est seulement glissée hors de l'écran : inert retire alors la liste du
+          parcours au clavier, sinon Tab passerait par ses boutons invisibles */}
+      <div
+        id={contentId}
+        inert={!isOpen}
+        className="flex-1 overflow-y-auto overscroll-contain"
+      >
         {transactions.length === 0 ? (
           <p className="text-center text-white/50 mt-8 text-sm italic">
             Aucune transaction pour le moment.

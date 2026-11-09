@@ -2,13 +2,13 @@
 
 Ce document décrit comment l'application est testée : la stratégie, la façon de lancer les tests, ce que chaque test couvre (matrice), les tests de sécurité et le cahier de recette.
 
-**État au 10/11/2026** : 163 tests automatisés de l'application et 21 scénarios du script de déploiement, tous verts, lancés sur chaque pull request par la CI.
+**État au 10/11/2026** : 168 tests automatisés de l'application et 21 scénarios du script de déploiement, tous verts, lancés sur chaque pull request par la CI.
 
 | Ensemble | Outil | Tests |
 |---|---|---|
 | API — unitaires (dont fuzzing) | Vitest + fast-check | 25 |
 | API — intégration (dont sécurité et fuzzing) | Vitest + Supertest + PostgreSQL | 92 |
-| Client — composants, services, fonctions | Vitest + Testing Library (jsdom) | 46 |
+| Client — composants, services, fonctions | Vitest + Testing Library (jsdom) | 51 |
 | Script de déploiement | Bash, doubles de `git`, `docker` et `curl` | 21 scénarios (69 vérifications) |
 | Recette (tests d'acceptation) | navigateur, cahier ci-dessous | 9 parcours |
 | Charge | k6, image de production de l'API, en local | 2 scénarios |
@@ -155,6 +155,7 @@ Chemins relatifs à `apps/api/tests/integration/` (API, intégration), `apps/api
 | Entrées malformées | `transactions/security`, `invalid-input`, `amounts`, `validation-messages` | 400 avec un message, jamais 500 ni une ressource devinée (`/budgets/12abc`) |
 | Montant valide qui ferait déborder un calcul | `budgets/alert-consistency` | deux dépenses maximales → 201 et alerte exacte (19 999 999 999,97 €) ; dépassement au-delà de la borne de la base → 400 explicite, rien n'est enregistré |
 | Image arbitraire en photo de profil (pistage, contenu choisi par un tiers) | `users/avatar` | adresse étrangère, `javascript:`, paramètres ajoutés → 400, à l'inscription comme au profil ; seul l'avatar DiceBear construit par le client est accepté |
+| Navigation au clavier (RGAA) | `CategorySelect`, `TransactionSheet`, `AlertPopup` (client) | aucun élément masqué atteignable avec Tab (liste de catégories fermée, feuille des transactions fermée : `inert`) ; feuille ouverte au clavier ; Échap referme la liste ; contour de focus visible partout (règle globale) |
 | Force brute | `auth/login-rate-limit-per-ip`, `auth/register-rate-limit` | 429 au-delà de la limite, par visiteur |
 | Prise de contrôle du compte | `users/profile-reauth` | mot de passe actuel exigé ; sessions fermées après changement |
 | Énumération des comptes | `auth/password-reset` | même réponse que l'email existe ou non |

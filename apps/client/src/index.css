@@ -82,3 +82,13 @@ body,
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
 }
+
+/* Focus clavier toujours visible (RGAA 10.7), y compris sur les champs dont le composant retire
+   le contour (outline-none) : hors des couches de Tailwind, cette règle passe avant ses classes.
+   Indicateur en deux couleurs (technique WCAG C40) : anneau blanc au bord de l'élément et contour
+   marine au-delà, lisible sur les fonds clairs comme sur les fonds foncés (feuille des transactions). */
+:focus-visible {
+  outline: 3px solid #002b49;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 2px #ffffff;
+}
