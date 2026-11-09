@@ -1,9 +1,10 @@
 import { afterAll, vi } from "vitest";
 import { prisma } from "../../src/lib/prisma.ts";
+import { disconnectRedis } from "../../src/lib/redis.ts";
 import { trackedEmails } from "../helpers/auth.ts";
 
 // Garde-fou : les tests créent et suppriment des utilisateurs, jamais dans la base de dev.
-// Les imports ci-dessus ne font aucune requête : ce contrôle passe avant le premier accès à la base.
+// Les imports ci-dessus ne font aucune requête à la base : ce contrôle passe avant le premier accès.
 // Témoin : lancer avec DATABASE_URL_TEST vide doit échouer avec ce message.
 if (!process.env.DATABASE_URL?.includes("_test")) {
   throw new Error(
@@ -21,4 +22,5 @@ vi.mock("../../src/lib/mailer.ts", () => ({
 afterAll(async () => {
   await prisma.user.deleteMany({ where: { email: { in: trackedEmails } } });
   await prisma.$disconnect();
+  await disconnectRedis();
 });
