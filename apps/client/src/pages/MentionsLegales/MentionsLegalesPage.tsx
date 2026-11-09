@@ -207,6 +207,14 @@ export default function MentionsLegalesPage() {
               donnée cédée à des tiers.
             </p>
             <p className="text-sm font-bold leading-relaxed opacity-80 mt-2">
+              <strong>Avatars :</strong> les avatars sont fournis par le service
+              DiceBear (api.dicebear.com). À chaque affichage d'un avatar, votre
+              navigateur lui transmet votre adresse IP et les informations
+              techniques de la requête (navigateur, système). L'adresse de
+              l'avatar ne contient aucune donnée personnelle : elle repose sur
+              un code tiré au hasard.
+            </p>
+            <p className="text-sm font-bold leading-relaxed opacity-80 mt-2">
               Pour exercer vos droits :{" "}
               <a
                 href="mailto:cherki.m3hdi@gmail.com"
