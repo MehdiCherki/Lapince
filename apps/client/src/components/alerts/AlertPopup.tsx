@@ -1,3 +1,4 @@
+import { useEffect, useId } from "react";
 import type { Alert } from "@/types/alert";
 
 type AlertPopupProps = {
@@ -11,7 +12,23 @@ function formatAmount(amount: number): string {
   return amount.toFixed(2).replace(".", ",");
 }
 
+// Accessibilité (RGAA, niveau AA du WCAG) :
+// - la fenêtre ne bloque pas la page : c'est une alerte (role="alert"), annoncée aussitôt par les
+//   lecteurs d'écran, et non une boîte de dialogue modale ;
+// - texte marine #002b49 sur corail #FF6855 : contraste de 5,1:1 (au moins 4,5:1 exigé) ;
+// - fermeture au clavier : touche Échap, ou bouton « Fermer » atteignable avec Tab.
 export default function AlertPopup({ alert, onClose }: AlertPopupProps) {
+  const titleId = useId();
+
+  // Échap ferme l'alerte, où que soit le focus : la fenêtre ne bloque pas la page
+  useEffect(() => {
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", closeOnEscape);
+    return () => document.removeEventListener("keydown", closeOnEscape);
+  }, [onClose]);
+
   return (
     //Overlay plein ecran non bloquant
     // pointer-events-none sur l'overlay -> l'user peut cliquer sur le reste de la page .
@@ -19,6 +36,8 @@ export default function AlertPopup({ alert, onClose }: AlertPopupProps) {
 
     <div className="fixed inset-0 z-50 flex items-end justify-center pb-24 px-4 pointer-events-none ">
       <div
+        role="alert"
+        aria-labelledby={titleId}
         onClick={onClose}
         className="
                 bg-[#FF6855] rounded-2xl shadow-2xl
@@ -36,23 +55,37 @@ export default function AlertPopup({ alert, onClose }: AlertPopupProps) {
           aria-hidden="true"
         />
         {/** Titre */}
-        <p className="text-white font-black text-xl uppercase tracking-widest">
+        <p
+          id={titleId}
+          className="text-[#002b49] font-black text-xl uppercase tracking-widest"
+        >
           Alerte
         </p>
         {/** Corps */}
-        <p className="text-white/90 text-sm">Dépassement de :</p>
-        <p className="text-white font-black text-3xl tracking-tight">
+        <p className="text-[#002b49] text-sm">Dépassement de :</p>
+        <p className="text-[#002b49] font-black text-3xl tracking-tight">
           {formatAmount(alert.exceededAmount)} €
         </p>
-        <p className="text-white/90 text-lg font-semibold">dans la catégorie</p>
+        <p className="text-[#002b49] text-lg font-semibold">
+          dans la catégorie
+        </p>
 
-        <p className="text-white font-black text-3xl tracking-tight text-center">
+        <p className="text-[#002b49] font-black text-3xl tracking-tight text-center">
           {alert.category.name}
         </p>
 
-        {/** Micro indication */}
-
-        <p className="text-white/50 text-[10px] mt-2">Appuie pour fermer</p>
+        {/** Fermeture : un vrai bouton, atteignable au clavier, en plus du clic sur la carte */}
+        <button
+          type="button"
+          aria-label="Fermer l'alerte"
+          onClick={(event) => {
+            event.stopPropagation(); // sinon le clic remonte aussi à la carte
+            onClose();
+          }}
+          className="mt-2 rounded-full px-4 py-1 text-sm font-semibold text-[#002b49] underline underline-offset-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#002b49]"
+        >
+          Fermer
+        </button>
       </div>
     </div>
   );
