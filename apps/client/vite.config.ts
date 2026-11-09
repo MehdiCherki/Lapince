@@ -11,6 +11,13 @@ export default defineConfig({
     environment: "jsdom",
     globals: true,
     setupFiles: "./src/test/setup.ts",
+    // npm run test:coverage → couverture du code de src/ (tests et outillage de test exclus)
+    coverage: {
+      provider: "v8",
+      include: ["src/**/*.{ts,tsx}"],
+      exclude: ["src/**/*.test.{ts,tsx}", "src/test/**", "src/vite-env.d.ts"],
+      reporter: ["text-summary", "text"],
+    },
   },
   server: {
     host: true, // Écoute sur 0.0.0.0 — indispensable pour être accessible depuis l'hôte via Docker

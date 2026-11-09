@@ -5,6 +5,13 @@ import { defineConfig } from "vitest/config";
 //   npm run test:integration   → tests d'intégration (supertest + base de données)
 export default defineConfig({
   test: {
+    // npm run test:coverage → couverture du code de src/ par les deux projets réunis
+    coverage: {
+      provider: "v8",
+      include: ["src/**/*.ts"],
+      exclude: ["src/**/*.test.ts"],
+      reporter: ["text-summary", "text"],
+    },
     projects: [
       { extends: true, test: { name: "unit", include: ["src/**/*.test.ts"] } },
       {

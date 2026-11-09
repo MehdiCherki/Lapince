@@ -3,3 +3,6 @@ node_modules
 .claude
 # Mocodo : géométrie régénérée à chaque rendu du MCD
 docs/mcd/*_geo.json
+
+# Rapports de couverture des tests (npm run test:coverage)
+coverage
