@@ -54,6 +54,17 @@ docker compose exec api npm run test:db:setup      # migrations + seed des caté
 
 Le code est copié dans l'image au build : après une modification, `docker compose up -d --build api` (ou `client`) avant de relancer les tests, ou `docker compose watch` pendant le développement.
 
+### Couverture du code
+
+`npm run test:coverage` (API, dans le conteneur, base `lapince_test` ; client) mesure la part du code de `src/` exécutée par les tests (Vitest, fournisseur v8). Mesure du 10/11/2026 :
+
+| Ensemble | Instructions | Branches | Fonctions | Lignes |
+|---|---|---|---|---|
+| API (unitaires + intégration, 110 tests) | 78,8 % | 70,1 % | 80,0 % | 80,4 % |
+| Client (44 tests) | 19,5 % | 20,0 % | 17,7 % | 19,9 % |
+
+Dans l'API : middlewares 97 %, validateurs 95 %, services 81 %, contrôleurs 70 %. Côté client, les tests portent sur les services, les fonctions et les composants à risque (fenêtre d'alerte, saisie des montants) ; les écrans sont vérifiés par la recette. La couverture dit ce qui est exécuté, pas ce qui est vérifié : un test sans assertion juste la ferait monter. C'est un indicateur suivi, sans seuil imposé.
+
 ### En intégration continue
 
 [.github/workflows/ci.yml](../.github/workflows/ci.yml), sur chaque pull request, sur une machine neuve et à partir du dépôt seul :
