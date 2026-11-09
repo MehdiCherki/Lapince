@@ -1,7 +1,7 @@
 # ===== Premier step : construire le dossier dist ======
 
 # Image de base
-FROM node:22-alpine AS builder
+FROM node:26-alpine AS builder
 
 # Définir l'espace de travail
 WORKDIR /app
