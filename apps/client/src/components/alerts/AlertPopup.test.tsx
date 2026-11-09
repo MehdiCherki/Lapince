@@ -14,37 +14,55 @@ const alert: Alert = {
 
 function renderPopup() {
   const onClose = vi.fn();
-  render(<AlertPopup alert={alert} onClose={onClose} />);
-  return onClose;
+  const view = render(<AlertPopup alert={alert} onClose={onClose} />);
+  return { onClose, ...view };
 }
 
-// La fenêtre ne bloque pas la page : c'est une alerte (zone annoncée aussitôt par les lecteurs
-// d'écran), pas une boîte de dialogue modale. Elle se ferme au clavier comme à la souris.
+// La fenêtre ne bloque pas la page : boîte de dialogue non modale. À son apparition, le focus
+// va sur « Fermer » (un utilisateur au clavier la ferme aussitôt), puis revient d'où il venait.
 describe("AlertPopup : accessibilité", () => {
-  it("est annoncée comme une alerte, avec un nom et son contenu", () => {
+  it("est une boîte de dialogue nommée, décrite par son contenu", () => {
     renderPopup();
 
-    const popup = screen.getByRole("alert", { name: "Alerte" });
-    expect(popup).toHaveTextContent("15,00 €");
-    expect(popup).toHaveTextContent("Alimentation");
+    const popup = screen.getByRole("dialog", { name: "Alerte" });
+    expect(popup).not.toHaveAttribute("aria-modal");
+    expect(popup).toHaveAccessibleDescription(/15,00 €.*Alimentation/);
+  });
+
+  it("donne le focus au bouton Fermer dès son apparition", () => {
+    renderPopup();
+
+    expect(
+      screen.getByRole("button", { name: "Fermer l'alerte" }),
+    ).toHaveFocus();
   });
 
   it("se ferme avec la touche Échap", () => {
-    const onClose = renderPopup();
+    const { onClose } = renderPopup();
 
     fireEvent.keyDown(document, { key: "Escape" });
 
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
-  it("propose un vrai bouton Fermer, atteignable au clavier", () => {
-    const onClose = renderPopup();
+  it("se ferme avec le bouton Fermer, sans double appel", () => {
+    const { onClose } = renderPopup();
 
-    const button = screen.getByRole("button", { name: "Fermer l'alerte" });
-    button.focus();
-    expect(button).toHaveFocus();
-    fireEvent.click(button);
+    fireEvent.click(screen.getByRole("button", { name: "Fermer l'alerte" }));
 
     expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it("rend le focus à l'élément d'origine quand elle disparaît", () => {
+    const origin = document.createElement("button");
+    origin.textContent = "Ajouter";
+    document.body.appendChild(origin);
+    origin.focus();
+
+    const { unmount } = renderPopup();
+    unmount();
+
+    expect(origin).toHaveFocus();
+    origin.remove();
   });
 });

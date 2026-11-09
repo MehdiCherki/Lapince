@@ -1,4 +1,4 @@
-import { useEffect, useId } from "react";
+import { useEffect, useId, useRef } from "react";
 import type { Alert } from "@/types/alert";
 
 type AlertPopupProps = {
@@ -13,12 +13,28 @@ function formatAmount(amount: number): string {
 }
 
 // Accessibilité (RGAA, niveau AA du WCAG) :
-// - la fenêtre ne bloque pas la page : c'est une alerte (role="alert"), annoncée aussitôt par les
-//   lecteurs d'écran, et non une boîte de dialogue modale ;
-// - texte marine #002b49 sur corail #FF6855 : contraste de 5,1:1 (au moins 4,5:1 exigé) ;
-// - fermeture au clavier : touche Échap, ou bouton « Fermer » atteignable avec Tab.
+// - boîte de dialogue non modale (la page reste utilisable), nommée par son titre et décrite par
+//   son contenu, que les lecteurs d'écran annoncent quand le focus y arrive ;
+// - à son apparition, le focus va sur « Fermer » : au clavier, on la ferme aussitôt (Entrée), sans
+//   parcourir toute la page ; à sa fermeture, il revient d'où il venait (le bouton « Ajouter ») ;
+// - Échap la ferme aussi ; elle s'affiche au-dessus de la barre et du pied de page ;
+// - texte marine #002b49 sur corail #FF6855 : 5,1:1 ; bouton blanc sur marine : 14:1 (4,5:1 exigé).
 export default function AlertPopup({ alert, onClose }: AlertPopupProps) {
   const titleId = useId();
+  const descriptionId = useId();
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
+
+  // Focus sur « Fermer » à l'apparition, rendu à l'élément d'origine à la disparition
+  useEffect(() => {
+    const origin =
+      document.activeElement instanceof HTMLElement
+        ? document.activeElement
+        : null;
+    closeButtonRef.current?.focus();
+    return () => {
+      if (origin?.isConnected) origin.focus();
+    };
+  }, []);
 
   // Échap ferme l'alerte, où que soit le focus : la fenêtre ne bloque pas la page
   useEffect(() => {
@@ -30,14 +46,15 @@ export default function AlertPopup({ alert, onClose }: AlertPopupProps) {
   }, [onClose]);
 
   return (
-    //Overlay plein ecran non bloquant
+    //Overlay plein ecran non bloquant, au-dessus de la barre des transactions et du pied de page
     // pointer-events-none sur l'overlay -> l'user peut cliquer sur le reste de la page .
     // pointer-eventes-autot sur la carte -> la carte reste cliquable
 
-    <div className="fixed inset-0 z-50 flex items-end justify-center pb-24 px-4 pointer-events-none ">
+    <div className="fixed inset-0 z-[70] flex items-end justify-center pb-24 px-4 pointer-events-none ">
       <div
-        role="alert"
+        role="dialog"
         aria-labelledby={titleId}
+        aria-describedby={descriptionId}
         onClick={onClose}
         className="
                 bg-[#FF6855] rounded-2xl shadow-2xl
@@ -61,28 +78,30 @@ export default function AlertPopup({ alert, onClose }: AlertPopupProps) {
         >
           Alerte
         </p>
-        {/** Corps */}
-        <p className="text-[#002b49] text-sm">Dépassement de :</p>
-        <p className="text-[#002b49] font-black text-3xl tracking-tight">
-          {formatAmount(alert.exceededAmount)} €
-        </p>
-        <p className="text-[#002b49] text-lg font-semibold">
-          dans la catégorie
-        </p>
+        {/** Corps : la description de la boîte de dialogue */}
+        <div id={descriptionId} className="flex flex-col items-center gap-2">
+          <p className="text-[#002b49] text-sm">Dépassement de :</p>
+          <p className="text-[#002b49] font-black text-3xl tracking-tight">
+            {formatAmount(alert.exceededAmount)} €
+          </p>
+          <p className="text-[#002b49] text-lg font-semibold">
+            dans la catégorie
+          </p>
+          <p className="text-[#002b49] font-black text-3xl tracking-tight text-center">
+            {alert.category.name}
+          </p>
+        </div>
 
-        <p className="text-[#002b49] font-black text-3xl tracking-tight text-center">
-          {alert.category.name}
-        </p>
-
-        {/** Fermeture : un vrai bouton, atteignable au clavier, en plus du clic sur la carte */}
+        {/** Fermeture : un vrai bouton, bien visible, qui reçoit le focus à l'apparition */}
         <button
+          ref={closeButtonRef}
           type="button"
           aria-label="Fermer l'alerte"
           onClick={(event) => {
             event.stopPropagation(); // sinon le clic remonte aussi à la carte
             onClose();
           }}
-          className="mt-2 rounded-full px-4 py-1 text-sm font-semibold text-[#002b49] underline underline-offset-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#002b49]"
+          className="mt-3 rounded-full bg-[#002b49] px-6 py-2 text-sm font-bold text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#002b49]"
         >
           Fermer
         </button>
