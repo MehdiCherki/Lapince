@@ -1,6 +1,6 @@
 # Base de données — La Pince
 
-Conception et description de la base : règles de gestion, modèles conceptuel (MCD), logique (MLD) et physique (MPD), dictionnaire de données, intégrité, sécurité.
+Conception et description de la base : règles de gestion, modèles conceptuel (MCD), logique (MLD) et physique (MPD), dictionnaire de données, intégrité, sécurité. La section 10 décrit le second stockage de l'application, clé/valeur : Redis, pour les compteurs du limiteur de tentatives.
 
 Sources de vérité : le schéma [apps/api/prisma/schema.prisma](../apps/api/prisma/schema.prisma) et les migrations SQL [apps/api/prisma/migrations/](../apps/api/prisma/migrations/). Ce document les explique ; en cas d'écart, ce sont eux qui font foi.
 
@@ -217,3 +217,42 @@ Contrainte `UNIQUE (user_id, category_id)` : une seule alerte par utilisateur et
 
 - **Seed** ([apps/api/prisma/seed.ts](../apps/api/prisma/seed.ts)) : les 39 catégories, créées ou mises à jour au démarrage de l'API (idempotent).
 - **Base de test** `lapince_test` : mêmes migrations et même seed, utilisée par les tests d'intégration, qui refusent de tourner sur une autre base ([docs/tests.md](tests.md)).
+
+---
+
+## 10. Stockage clé/valeur : Redis (limiteur de tentatives)
+
+Les compteurs du limiteur de tentatives (connexion, inscription, session, mot de passe oublié) sont dans **Redis 8**, base clé/valeur en mémoire, et non dans PostgreSQL ni dans la mémoire de l'API :
+
+- **Une donnée éphémère** : un nombre de tentatives, valable 15 minutes ou 1 heure. Redis efface la clé tout seul à la fin de sa durée de vie ; dans PostgreSQL, il faudrait écrire sur disque à chaque tentative, puis programmer le nettoyage des lignes périmées.
+- **Des opérations atomiques** : l'incrément et la pose de la durée de vie se font en une seule commande, sans course entre deux requêtes simultanées.
+- **Un compteur commun** : partagé par toutes les instances de l'API, et conservé quand elle redémarre, ce que la mémoire du processus ne permettait pas (0.9.5 et avant).
+
+**Modèle des clés** : `rl:<limiteur>:<adresse IP du visiteur>` → nombre de tentatives (entier), avec une durée de vie égale à la fenêtre.
+
+| Limiteur | Clé (exemple) | Limite | Fenêtre |
+|---|---|---|---|
+| connexion (seuls les échecs comptent) | `rl:login:203.0.113.10` | 10 | 15 min |
+| inscription | `rl:register:…` | 5 | 1 h |
+| rafraîchissement de session | `rl:refresh:…` | 30 | 15 min |
+| mot de passe oublié | `rl:forgot-password:…` | 5 | 1 h |
+| nouveau mot de passe | `rl:reset-password:…` | 10 | 15 min |
+
+**Opérations** (bibliothèque `rate-limit-redis`, par un script Lua exécuté d'un seul tenant ; code : [rate-limit.middleware.ts](../apps/api/src/middlewares/rate-limit.middleware.ts), client : [redis.ts](../apps/api/src/lib/redis.ts)) :
+
+| Opération | Commande Redis | Quand |
+|---|---|---|
+| Création | `SET clé 1 PX <fenêtre>` | première tentative de la fenêtre |
+| Lecture | `PTTL clé` (et `GET`) | à chaque tentative : temps restant, renvoyé dans `Retry-After` et `RateLimit-Reset` |
+| Mise à jour | `INCR clé` ; `DECR clé` | tentative suivante ; connexion réussie, qui ne compte pas |
+| Suppression | expiration automatique ; `DEL clé` | fin de la fenêtre ; à la main, pour débloquer quelqu'un ([deploiement-serveur.md](deploiement-serveur.md), section 6) |
+
+**Sécurité d'accès** ([redis/start.sh](../redis/start.sh)) :
+- authentification obligatoire : utilisateur `default` désactivé ; l'API se connecte avec l'utilisateur `lapince_app` et un mot de passe propre au serveur (`REDIS_PASSWORD`), jamais écrit dans une adresse ni sur une ligne de commande ;
+- moindre privilège : `lapince_app` n'accède qu'aux clés `rl:*` et aux seules commandes ci-dessus ; `FLUSHALL`, `CONFIG`, `KEYS`, `EVAL` ou `SHUTDOWN` lui sont refusés (`NOPERM`) ;
+- réseau : aucun port publié ; réseau Docker interne, partagé avec l'API seulement, sans accès à Internet ;
+- mémoire bornée à 32 Mo : si elle se remplit, Redis efface d'abord les compteurs les plus proches de leur fin (`volatile-ttl`) au lieu de refuser les écritures.
+
+**Données personnelles** : l'adresse IP en est une (RGPD). Elle n'est conservée qu'en mémoire (aucune persistance sur disque), au plus 1 heure, pour la seule protection contre les attaques par force brute (intérêt légitime).
+
+**Si Redis tombe** : l'application reste utilisable, les tentatives ne sont plus limitées pendant la panne, chaque incident est journalisé, et l'API se reconnecte seule (choix justifié dans le code et dans [tests.md](tests.md), section 4).

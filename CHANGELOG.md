@@ -52,6 +52,22 @@ Copie ce bloc en haut de la section `## [Non publié]` et remplis-le :
 
 ## [Non publié]
 
+### Ajouté
+- **Redis comme stockage du limiteur de tentatives** (connexion, inscription, rafraîchissement de session, mot de passe oublié, réinitialisation) : les compteurs sont partagés par toutes les instances de l'API et conservés quand elle redémarre (`rate-limit-redis` 6.0.2, client officiel `@redis/client` 6.3.1, module unique `src/lib/redis.ts`). Clé : préfixe du limiteur + adresse du visiteur (`rl:login:203.0.113.10`) ; création avec durée de vie (`SET … PX`), incrément (`INCR`), temps restant (`PTTL`, renvoyé dans `Retry-After`), expiration en fin de fenêtre (branche `feature/redis-rate-limit`)
+- **Service `redis`** (image `redis:8.10.3-alpine`) en développement et en production : aucun port publié, réseau Docker interne partagé avec l'API seulement et sans accès à Internet ; utilisateur `default` désactivé et utilisateur unique `lapince_app`, limité aux commandes du limiteur et aux clés `rl:*` (`FLUSHALL`, `CONFIG`, `KEYS`, `EVAL`… refusés) ; mot de passe `REDIS_PASSWORD` écrit au démarrage dans un fichier d'ACL lisible par Redis seul, jamais sur la ligne de commande ; sans persistance, mémoire bornée à 32 Mo avec éviction `volatile-ttl` ; healthcheck authentifié, l'API attend que Redis soit sain ([redis/start.sh](redis/start.sh))
+- **Tests contre un vrai Redis** (`auth/rate-limit-redis`, `auth/rate-limit-redis-down`, 5 tests) : durée de vie du compteur, `Retry-After`, connexion réussie non comptée, compteur partagé par deux instances de l'API, Redis coupé. Un préfixe de clés tiré au hasard par fichier de test, jamais de `FLUSHALL`. Redis jetable dans le job API de la CI (même script, mêmes ACL) ; 122 tests côté API (173 en tout)
+- `deploy.sh` : vérifie que `REDIS_PASSWORD` est présent dans `.env` (sans afficher sa valeur) et attend que Redis soit sain après le redémarrage ; 3 scénarios de test de plus (24 scénarios, 82 vérifications, dont « mot de passe jamais affiché ni journalisé »)
+
+### Modifié
+- **Connexion : seuls les échecs comptent** (10 par 15 minutes et par adresse) : une connexion réussie rend son essai, sans remettre le compteur à zéro, car un attaquant l'effacerait en se connectant à son propre compte entre deux essais
+- **Redis indisponible** : les requêtes passent sans limite plutôt que d'échouer (tout bloquer rendrait l'application inaccessible et déconnecterait tout le monde) ; chaque incident est journalisé et l'API se reconnecte seule ; au démarrage, l'API attend Redis
+- `express-rate-limit` 7.5.1 → 8.7.4 (exigé par `rate-limit-redis` 6, dont les versions 4.x plantaient si Redis était absent au démarrage et pouvaient compter deux fois une tentative) ; la v8 regroupe aussi les adresses IPv6 par /56, ce qui empêche de contourner la limite en changeant d'adresse dans son propre sous-réseau
+- Arrêt propre de l'API (SIGTERM, SIGINT) : plus de nouvelle connexion, puis fermeture de Redis ; `docker:start` lance `node` avec `exec`, pour qu'il reçoive bien le signal d'arrêt de Docker (auparavant tué d'office au bout du délai)
+
+### Infra
+- `REDIS_PASSWORD` obligatoire dans `.env` (`openssl rand -base64 32`) ; procédure de mise en production de la 0.9.6, contrôles préalables en lecture seule et retour arrière dans `docs/deploiement-serveur.md`
+- Diagramme de déploiement : conteneur `redis` ajouté
+
 ---
 
 ## [0.9.5] — 2026-11-10

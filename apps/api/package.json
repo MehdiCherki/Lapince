@@ -15,7 +15,7 @@
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio",
-    "docker:start": "prisma migrate deploy && prisma db seed && node dist/server.js"
+    "docker:start": "prisma migrate deploy && prisma db seed && exec node dist/server.js"
   },
   "keywords": [],
   "author": "",
@@ -31,9 +31,11 @@
     "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.3",
     "zod": "^4.3.6",
-    "express-rate-limit": "^7.5.0",
+    "express-rate-limit": "^8.7.4",
     "pino": "^9.5.0",
-    "nodemailer": "^10.4.0"
+    "nodemailer": "^10.4.0",
+    "rate-limit-redis": "^6.0.2",
+    "@redis/client": "^6.3.1"
   },
   "devDependencies": {
     "@types/cookie-parser": "^1.4.10",

@@ -29,7 +29,10 @@ cat > "$STUBS/docker" <<'EOF'
 #!/usr/bin/env bash
 echo "docker $*" >> "$CALLS"
 if [[ "$1" == inspect ]]; then
-  if [[ "${API_RECREATED:-1}" == 1 ]]; then echo "2999-01-01T00:00:00Z"; else echo "2000-01-01T00:00:00Z"; fi
+  case "$*" in
+    *Health.Status*) echo "${REDIS_STATE:-healthy}" ;;
+    *) if [[ "${API_RECREATED:-1}" == 1 ]]; then echo "2999-01-01T00:00:00Z"; else echo "2000-01-01T00:00:00Z"; fi ;;
+  esac
   exit 0
 fi
 shift 3 # compose -f <fichier>
@@ -37,6 +40,7 @@ case "$*" in
   "ps db --format {{.State}}") echo running ;;
   "ps api --format {{.State}}") echo "${API_STATE:-running}" ;;
   "ps -q api") echo conteneur-api ;;
+  "ps -q redis") echo conteneur-redis ;;
   "ps --format {{.Service}} {{.State}}") printf '%b' "${PS_ALL:-db running\napi running\nclient running\n}" ;;
   "exec -T db sh -c "*pg_dump*)
     echo "-- dump"; [[ -n "${DUMP_INCOMPLETE:-}" ]] || echo "-- PostgreSQL database dump complete" ;;
@@ -68,6 +72,8 @@ chmod +x "$STUBS"/*
 run() {
   WORK="$(mktemp -d)"; CALLS="$WORK/calls"; : > "$CALLS"
   touch "$WORK/docker-compose.prod.yml"
+  # .env du serveur : le mot de passe de Redis par défaut (valeur que le script ne doit jamais afficher)
+  printf '%s\n' "${ENV_FILE-REDIS_PASSWORD=valeur-a-ne-jamais-afficher}" > "$WORK/.env"
   # Sauvegardes plus anciennes déjà présentes (une par jour, du 1er au PRE_BACKUPS octobre), et un autre .sql
   for i in $(seq 1 "${PRE_BACKUPS:-0}"); do
     echo "-- ancienne" > "$WORK/backup-lapince-2026-10-0$i-1200.sql"
@@ -126,6 +132,10 @@ check "base déjà inscrite : pas d'inscription" not_called "migrate resolve"
 check "fin annoncée" says "Déploiement terminé : aaaaaaa → bbbbbbb"
 check "journal écrit" test -n "$(ls "$WORK"/deploy-logs/deploy-*.log 2>/dev/null)"
 check "sauvegarde écrite" test -n "$(ls "$WORK"/backup-lapince-*.sql 2>/dev/null)"
+check "attend que Redis soit sain après le redémarrage" before "up -d" "Health.Status"
+check "Redis sain avant de contrôler l'API" before "Health.Status" "nginx -s reload"
+check "mot de passe de Redis jamais affiché" not_says "valeur-a-ne-jamais-afficher"
+check "ni écrit dans le journal" test -z "$(grep -l "valeur-a-ne-jamais-afficher" "$WORK"/deploy-logs/*.log)"
 
 scenario "sauvegarde incomplète"
 DUMP_INCOMPLETE=1 run
@@ -186,6 +196,24 @@ MIGRATIONS_TABLE=f DECIMALS='1\n0\n0\n' run
 check "code 1" test "$CODE" -eq 1
 check "explique pourquoi" says "plus de 2 décimales"
 check "pas d'inscription" not_called "migrate resolve"
+
+scenario "0.9.6 : REDIS_PASSWORD absent du .env"
+ENV_FILE="POSTGRES_DB=lapince" run --check
+check "code 1, dès --check" test "$CODE" -eq 1
+check "explique pourquoi" says "REDIS_PASSWORD absent ou vide"
+check "aucune sauvegarde ni pull" not_called "pg_dump"
+
+scenario "0.9.6 : REDIS_PASSWORD vide"
+ENV_FILE="REDIS_PASSWORD=" run
+check "code 1" test "$CODE" -eq 1
+check "aucune sauvegarde ni pull" not_called "git pull"
+
+scenario "0.9.6 : Redis non sain après le redémarrage"
+REDIS_STATE=unhealthy run
+check "code 1" test "$CODE" -eq 1
+check "explique pourquoi" says "Redis n'est pas sain (unhealthy)"
+check "nginx non rechargé" not_called "nginx -s reload"
+check "donne le retour arrière vers l'ancien commit" says "git checkout aaaaaaa"
 
 scenario "--redeploy sans nouveau commit"
 GIT_NEW="" run --redeploy

@@ -20,6 +20,25 @@ services:
       retries: 5        # 5 tentatives avant de considérer le service comme "unhealthy"
       start_period: 20s # Laisse 20s au démarrage avant de commencer les vérifications
 
+  # --- Redis (compteurs du limiteur de tentatives de l'API) ---
+  redis:
+    image: redis:8.10.3-alpine
+    restart: unless-stopped
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?REDIS_PASSWORD manquant dans .env}
+    volumes:
+      - ./redis/start.sh:/redis/start.sh:ro  # ACL, sans persistance, mémoire bornée
+    command: ["sh", "/redis/start.sh"]
+    networks:
+      - redis   # Réseau interne : joignable par l'API seulement, aucun port publié
+    healthcheck:
+      # PONG seulement avec le bon mot de passe ; REDISCLI_AUTH : le mot de passe n'apparaît pas dans la commande
+      test: ["CMD-SHELL", "REDISCLI_AUTH=\"$$REDIS_PASSWORD\" redis-cli --user lapince_app ping | grep -q PONG"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
   # --- API Node.js (backend) ---
   api:
     build:
@@ -35,11 +54,18 @@ services:
       SMTP_USER: ${SMTP_USER}
       SMTP_PASS: ${SMTP_PASS}
       FRONTEND_URL: ${FRONTEND_URL}
+      REDIS_URL: redis://redis:6379   # Service redis ci-dessus (hôte et port, sans identifiants)
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?REDIS_PASSWORD manquant dans .env}
     ports:
       - "${API_LOCAL_PORT}:${API_PORT}"  # Mappe le port local vers le port interne de l'API
+    networks:
+      - default
+      - redis
     depends_on:
       db:
         condition: service_healthy  # Démarre l'API seulement quand Postgres est prêt
+      redis:
+        condition: service_healthy  # ... et Redis
     develop:
       watch:
         # Synchronise les fichiers source dans le conteneur sans rebuild (tsx --watch détecte le changement)
@@ -107,3 +133,8 @@ services:
 # --- Volumes nommés ---
 volumes:
   postgres_data:  # Volume persistant pour les données PostgreSQL (survit aux docker compose down)
+
+# --- Réseaux ---
+networks:
+  redis:
+    internal: true  # Sans accès à Internet ; seuls redis et api y sont branchés

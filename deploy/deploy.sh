@@ -7,7 +7,7 @@
 #
 # Étapes (procédure détaillée : docs/deploiement-serveur.md, section 2) :
 #   1. préconditions  2. sauvegarde de la base  3. mise à jour du code  4. build
-#   5. inscription de la base aux migrations (une seule fois)  6. redémarrage
+#   5. inscription de la base aux migrations (une seule fois)  6. redémarrage (Redis sain, API démarrée)
 #   7. rechargement de nginx  8. contrôles
 # Sauvegardes : les KEEP_BACKUPS plus récentes sont gardées (5 par défaut), les autres supprimées.
 # Arrêt à la première erreur, avec les commandes de retour arrière.
@@ -70,6 +70,8 @@ step "1. Préconditions ($MODE)"
 [[ "$KEEP_BACKUPS" =~ ^[1-9][0-9]*$ ]] || fail "KEEP_BACKUPS doit être un entier ≥ 1 (reçu : $KEEP_BACKUPS)"
 [[ -z "$(git status --porcelain)" ]] || fail "modifications locales sur le serveur (git status) : rien ne doit être modifié à la main"
 [[ "$(git rev-parse --abbrev-ref HEAD)" == "$BRANCH" ]] || fail "le serveur n'est pas sur la branche $BRANCH"
+# Mot de passe de Redis (0.9.6) : présent et non vide, vérifié sans jamais lire ni afficher sa valeur
+grep -q '^REDIS_PASSWORD=.' .env 2>/dev/null || fail "REDIS_PASSWORD absent ou vide dans .env (docs/deploiement-serveur.md, section 1)"
 [[ "$(dc ps db --format '{{.State}}')" == "running" ]] || fail "la base (service db) ne tourne pas"
 PREVIOUS_COMMIT="$(git rev-parse --short HEAD)"
 echo "Version en production : $(git log --oneline -1)"
@@ -143,6 +145,16 @@ dc up -d  # recrée les services dont l'image ou la configuration a changé
 if [[ "$MODE" == "redeploy" ]]; then
   dc up -d --no-deps --force-recreate api client
 fi
+# Redis : l'API en dépend pour son limiteur de tentatives. On attend qu'il soit sain (1 min au plus),
+# y compris quand seul Redis a été recréé (l'API, inchangée, s'y reconnecte seule)
+REDIS_HEALTH=""
+for _ in $(seq 1 20); do
+  REDIS_HEALTH="$(docker inspect -f '{{.State.Health.Status}}' "$(dc ps -q redis)" 2>/dev/null || true)"
+  if [[ "$REDIS_HEALTH" == "healthy" ]]; then break; fi
+  sleep 3
+done
+[[ "$REDIS_HEALTH" == "healthy" ]] || fail "Redis n'est pas sain (${REDIS_HEALTH:-absent}) : dc logs redis --tail 50"
+echo "Redis : sain."
 # API recréée → attendre qu'elle ait appliqué les migrations et démarré ; sinon elle tourne déjà, inchangée
 API_STARTED_AT="$(docker inspect -f '{{.State.StartedAt}}' "$(dc ps -q api)")"
 if [[ "$API_STARTED_AT" > "$STARTED_AT" ]]; then
