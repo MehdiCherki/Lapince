@@ -2,12 +2,12 @@
 
 Ce document décrit comment l'application est testée : la stratégie, la façon de lancer les tests, ce que chaque test couvre (matrice), les tests de sécurité et le cahier de recette.
 
-**État au 09/11/2026** : 151 tests automatisés de l'application et 21 scénarios du script de déploiement, tous verts, lancés sur chaque pull request par la CI.
+**État au 09/11/2026** : 154 tests automatisés de l'application et 21 scénarios du script de déploiement, tous verts, lancés sur chaque pull request par la CI.
 
 | Ensemble | Outil | Tests |
 |---|---|---|
 | API — unitaires | Vitest | 20 |
-| API — intégration (dont sécurité) | Vitest + Supertest + PostgreSQL | 87 |
+| API — intégration (dont sécurité) | Vitest + Supertest + PostgreSQL | 90 |
 | Client — composants, services, fonctions | Vitest + Testing Library (jsdom) | 44 |
 | Script de déploiement | Bash, doubles de `git`, `docker` et `curl` | 21 scénarios (69 vérifications) |
 | Recette (tests d'acceptation) | navigateur, cahier ci-dessous | 9 parcours |
@@ -104,6 +104,7 @@ Chemins relatifs à `apps/api/tests/integration/` (API, intégration), `apps/api
 | Usurpation par le corps de la requête | `transactions/security` : `userId` d'un autre glissé à la création et à la modification | ignoré, la dépense reste à son auteur |
 | Entrées malformées | `transactions/security`, `invalid-input`, `amounts`, `validation-messages` | 400 avec un message, jamais 500 ni une ressource devinée (`/budgets/12abc`) |
 | Montant valide qui ferait déborder un calcul | `budgets/alert-consistency` | deux dépenses maximales → 201 et alerte exacte (19 999 999 999,97 €) ; dépassement au-delà de la borne de la base → 400 explicite, rien n'est enregistré |
+| Image arbitraire en photo de profil (pistage, contenu choisi par un tiers) | `users/avatar` | adresse étrangère, `javascript:`, paramètres ajoutés → 400, à l'inscription comme au profil ; seul l'avatar DiceBear construit par le client est accepté |
 | Force brute | `auth/login-rate-limit-per-ip`, `auth/register-rate-limit` | 429 au-delà de la limite, par visiteur |
 | Prise de contrôle du compte | `users/profile-reauth` | mot de passe actuel exigé ; sessions fermées après changement |
 | Énumération des comptes | `auth/password-reset` | même réponse que l'email existe ou non |
