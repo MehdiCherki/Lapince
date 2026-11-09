@@ -2,12 +2,12 @@
 
 Ce document décrit comment l'application est testée : la stratégie, la façon de lancer les tests, ce que chaque test couvre (matrice), les tests de sécurité et le cahier de recette.
 
-**État au 09/11/2026** : 140 tests automatisés de l'application et 21 scénarios du script de déploiement, tous verts, lancés sur chaque pull request par la CI.
+**État au 09/11/2026** : 147 tests automatisés de l'application et 21 scénarios du script de déploiement, tous verts, lancés sur chaque pull request par la CI.
 
 | Ensemble | Outil | Tests |
 |---|---|---|
-| API — unitaires | Vitest | 17 |
-| API — intégration (dont sécurité) | Vitest + Supertest + PostgreSQL | 82 |
+| API — unitaires | Vitest | 20 |
+| API — intégration (dont sécurité) | Vitest + Supertest + PostgreSQL | 86 |
 | Client — composants, services, fonctions | Vitest + Testing Library (jsdom) | 41 |
 | Script de déploiement | Bash, doubles de `git`, `docker` et `curl` | 21 scénarios (69 vérifications) |
 | Recette (tests d'acceptation) | navigateur, cahier ci-dessous | 9 parcours |
@@ -112,6 +112,8 @@ Chemins relatifs à `apps/api/tests/integration/` (API, intégration), `apps/api
 | Écran privé réaffiché après déconnexion | `lib/bfcache` (client) | page restaurée depuis le cache rechargée |
 | Requêtes simultanées | `budgets/alert-consistency` | une seule alerte, au montant exact (verrou par utilisateur et catégorie) |
 | Écriture qui contournerait le service | `budgets/alert-consistency` | seconde alerte pour le même utilisateur et la même catégorie refusée par la base (contrainte d'unicité, erreur P2002) |
+| Deux comptes qui ne diffèrent que par la casse | `auth/email-unique-database` | email non normalisé refusé par la base (contrainte CHECK) ; inscriptions ou changements d'email simultanés → un seul réussit, les autres 409, jamais 500 ; email non ASCII refusé |
+| Fuite de données dans les journaux | `middlewares/error.middleware` (unitaire) | donnée refusée par une contrainte CHECK → 400, sans le détail de PostgreSQL (qui recopie la ligne refusée) dans le journal |
 
 **Contre-épreuves** (dans le conteneur seulement, fichiers restaurés ensuite → verts) :
 - 30/10/2026 : filtre par utilisateur retiré du service des dépenses et contrôle d'audience retiré du middleware → 4 tests de `transactions/security` rouges ;

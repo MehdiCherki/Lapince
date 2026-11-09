@@ -21,7 +21,7 @@ PostgreSQL 17, piloté par l'ORM Prisma (requêtes typées, migrations versionn�
 
 | # | Règle |
 |---|---|
-| RG1 | Un utilisateur s'inscrit avec un prénom, un nom, un email et un mot de passe. L'email est **unique** et insensible à la casse (enregistré en minuscules). Le compte reste non vérifié tant que l'email n'est pas confirmé. |
+| RG1 | Un utilisateur s'inscrit avec un prénom, un nom, un email et un mot de passe. L'email est **unique** et insensible à la casse : enregistré en minuscules, ce que la base impose (contrainte `CHECK`). Le compte reste non vérifié tant que l'email n'est pas confirmé. |
 | RG2 | Le mot de passe compte au moins 8 caractères, dont une majuscule, un chiffre et un caractère spécial. Il n'est jamais stocké en clair (haché avec Argon2). |
 | RG3 | Les **catégories** sont communes à tous les utilisateurs (39, créées par le seed), de type **dépense** ou **revenu**, avec un nom unique. Les utilisateurs ne les modifient pas. |
 | RG4 | Une **transaction** appartient à un seul utilisateur et à une seule catégorie ; son type (dépense ou revenu) est celui de sa catégorie. Montant strictement positif, au centime, inférieur à 10 milliards ; date au jour ; intitulé facultatif (255 caractères au plus). |
@@ -75,6 +75,7 @@ Le MPD est le SQL exécuté par PostgreSQL : les **migrations** versionnées, ap
 | [20261030140000_naming_convention_and_money](../apps/api/prisma/migrations/20261030140000_naming_convention_and_money/migration.sql) | convention de nommage ci-dessous et montants en `DECIMAL(12, 2)`, écrite à la main (renommages seulement, aucune donnée supprimée) |
 | [20261031120000_hash_session_tokens](../apps/api/prisma/migrations/20261031120000_hash_session_tokens/migration.sql) | jetons de session et de confirmation d'email stockés sous forme d'empreinte SHA-256 (`token_hash`, `email_verification_token_hash`), écrite à la main : renommages, puis jetons existants hachés sur place, les sessions ouvertes restent valides |
 | [20261109200000_alert_unique_per_category](../apps/api/prisma/migrations/20261109200000_alert_unique_per_category/migration.sql) | contrainte `UNIQUE (user_id, category_id)` sur `alerts` (RG6 garantie par la base), écrite à la main : les doublons éventuels, données dérivées, sont d'abord supprimés en gardant l'alerte la plus récente |
+| [20261109210000_email_normalized_check](../apps/api/prisma/migrations/20261109210000_email_normalized_check/migration.sql) | contrainte `CHECK (email = lower(btrim(email)))` sur `users` (RG1 garantie par la base), écrite à la main : normalise d'abord les emails existants ; si deux comptes ne diffèrent que par la casse, elle échoue sans rien modifier (essayé sur une base jetable) |
 
 **Convention de nommage** :
 - tables au pluriel, en minuscules : `users`, `transactions`, `categories` ;
@@ -104,7 +105,7 @@ Types PostgreSQL. `NN` : obligatoire (`NOT NULL`). `PK` : clé primaire, `FK` : 
 | `id` | `INTEGER` | PK, auto-incrément | identifiant |
 | `first_name` | `TEXT` | NN | prénom |
 | `last_name` | `TEXT` | NN | nom |
-| `email` | `TEXT` | NN, UQ | email de connexion, en minuscules (RG1) |
+| `email` | `TEXT` | NN, UQ, CHECK | email de connexion, en minuscules, sans espaces autour (RG1) : contrainte `users_email_normalized_check` |
 | `password` | `TEXT` | NN | **hash Argon2** du mot de passe, jamais le mot de passe (RG2) |
 | `photo` | `TEXT` | | photo de profil (facultative) |
 | `email_verified` | `BOOLEAN` | NN, défaut `false` | email confirmé |
@@ -189,6 +190,7 @@ Contrainte `UNIQUE (user_id, category_id)` : une seule alerte par utilisateur et
 **Dans la base** :
 - clés primaires, `NOT NULL` sur toute donnée obligatoire ;
 - **clés étrangères** : suppression **en cascade** depuis `users` (RG9 : supprimer un compte supprime ses données) ; suppression **interdite** (`RESTRICT`) d'une catégorie utilisée par une transaction ou un budget ;
+- contrainte `CHECK` sur l'email (`email = lower(btrim(email))`) : avec son unicité, deux comptes ne peuvent pas différer par la seule casse (RG1) ;
 - contraintes d'**unicité** : email, nom de catégorie, hash du jeton de session, hash du jeton de réinitialisation, budget par utilisateur et catégorie, alerte par utilisateur et catégorie ;
 - montants en `DECIMAL(12, 2)` : exacts au centime.
 
