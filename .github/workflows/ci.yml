@@ -68,6 +68,10 @@ jobs:
           cache-dependency-path: apps/api/package-lock.json
       - name: Dépendances
         run: npm ci
+      # Chaîne d'approvisionnement (A03 du Top 10 OWASP 2025) : aucune faille haute ou critique
+      # connue dans les dépendances de production, sinon la pull request est bloquée
+      - name: Audit des dépendances
+        run: npm audit --omit=dev --audit-level=high
       - name: Client Prisma
         run: npx prisma generate
       - name: Types
@@ -98,6 +102,8 @@ jobs:
           cache-dependency-path: apps/client/package-lock.json
       - name: Dépendances
         run: npm ci
+      - name: Audit des dépendances
+        run: npm audit --omit=dev --audit-level=high
       - name: Lint
         run: npm run lint
       - name: Tests

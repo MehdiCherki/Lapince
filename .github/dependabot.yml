@@ -1,0 +1,76 @@
+# Dependabot : les mises à jour des dépendances sont proposées par pull request, chaque semaine.
+# Sécurité de la chaîne d'approvisionnement logicielle (A03 du Top 10 OWASP 2025) : une faille
+# corrigée en amont arrive vite, et passe par la CI comme toute autre modification.
+# Les pull requests visent dev ; mineures et correctifs sont regroupés, en nombre limité.
+# Pris en compte par GitHub une fois ce fichier sur la branche par défaut (main).
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directory: "/apps/api"
+    schedule:
+      interval: "weekly"
+    target-branch: "dev"
+    open-pull-requests-limit: 3
+    commit-message:
+      prefix: "chore"
+      include: "scope"
+    groups:
+      api-mineures-et-correctifs:
+        update-types: ["minor", "patch"]
+
+  - package-ecosystem: "npm"
+    directory: "/apps/client"
+    schedule:
+      interval: "weekly"
+    target-branch: "dev"
+    open-pull-requests-limit: 3
+    commit-message:
+      prefix: "chore"
+      include: "scope"
+    groups:
+      client-mineures-et-correctifs:
+        update-types: ["minor", "patch"]
+
+  # Actions utilisées par la CI (.github/workflows)
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    target-branch: "dev"
+    open-pull-requests-limit: 3
+    commit-message:
+      prefix: "chore"
+      include: "scope"
+
+  # Images de base des Dockerfiles (api.Dockerfile, client.Dockerfile : Dependabot retient
+  # tout fichier dont le nom contient « dockerfile »)
+  - package-ecosystem: "docker"
+    directory: "/apps/api"
+    schedule:
+      interval: "weekly"
+    target-branch: "dev"
+    open-pull-requests-limit: 3
+    commit-message:
+      prefix: "chore"
+      include: "scope"
+
+  - package-ecosystem: "docker"
+    directory: "/apps/client"
+    schedule:
+      interval: "weekly"
+    target-branch: "dev"
+    open-pull-requests-limit: 3
+    commit-message:
+      prefix: "chore"
+      include: "scope"
+
+  # Images des fichiers Compose (PostgreSQL, nginx, Certbot)
+  - package-ecosystem: "docker-compose"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    target-branch: "dev"
+    open-pull-requests-limit: 3
+    commit-message:
+      prefix: "chore"
+      include: "scope"

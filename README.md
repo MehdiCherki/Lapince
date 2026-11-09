@@ -149,8 +149,8 @@ Chaque pull request est vérifiée par GitHub Actions ([.github/workflows/ci.yml
 | Job | Contrôles |
 |---|---|
 | Formatage | Prettier sur tout le dépôt (version figée) |
-| API | `npm ci`, client Prisma, types, tests unitaires, migrations + seed sur une base PostgreSQL jetable, tests d'intégration, build |
-| Client | `npm ci`, lint, tests, types et build |
+| API | `npm ci`, audit des dépendances de production (aucune faille haute ou critique), client Prisma, types, tests unitaires, migrations + seed sur une base PostgreSQL jetable, tests d'intégration, build |
+| Client | `npm ci`, audit des dépendances de production, lint, tests, types et build |
 | Images de production | construction des Dockerfiles de prod de l'API et du client |
 | Script de déploiement | ShellCheck, puis tests du script avec des doubles de `git`, `docker` et `curl` |
 

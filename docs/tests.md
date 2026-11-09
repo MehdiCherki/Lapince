@@ -61,12 +61,14 @@ Le code est copié dans l'image au build : après une modification, `docker comp
 | Job | Étapes |
 |---|---|
 | Formatage | Prettier sur tout le dépôt |
-| API | `npm ci` → client Prisma → types → **unitaires** → migrations + seed sur une base PostgreSQL 17 jetable → **intégration** → build |
-| Client | `npm ci` → lint → **tests** → types et build |
+| API | `npm ci` → **audit des dépendances** (`npm audit --omit=dev --audit-level=high`) → client Prisma → types → **unitaires** → migrations + seed sur une base PostgreSQL 17 jetable → **intégration** → build |
+| Client | `npm ci` → **audit des dépendances** → lint → **tests** → types et build |
 | Images de production | construction des Dockerfiles de prod |
 | Script de déploiement | ShellCheck → tests du script ([deploy/deploy.test.sh](../deploy/deploy.test.sh)) |
 
 Les branches `dev` et `main` sont protégées : GitHub refuse le merge tant que tous ces jobs ne sont pas verts.
+
+**Dépendances** : Dependabot ([.github/dependabot.yml](../.github/dependabot.yml)) propose chaque semaine, par pull request vers `dev`, les mises à jour npm (API, client), des actions GitHub et des images Docker (Dockerfiles, fichiers Compose). L'étape d'audit de la CI bloque toute pull request qui introduirait une faille haute ou critique connue dans les dépendances de production.
 
 ### Tests manuels de l'API
 
