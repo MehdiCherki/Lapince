@@ -6,3 +6,6 @@ docs/mcd/*_geo.json
 
 # Rapports de couverture des tests (npm run test:coverage)
 coverage
+
+# Résultats du test de charge (apps/api/tests/load)
+apps/api/tests/load/results/
