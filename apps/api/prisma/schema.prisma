@@ -28,6 +28,8 @@ model User {
   id         Int     @id @default(autoincrement())
   first_name String
   last_name  String
+  // Contrainte CHECK users_email_normalized_check (migration 20261109210000), non représentée par
+  // Prisma : email enregistré en minuscules, sans espaces autour ; avec @unique, unicité sans casse
   email      String  @unique
   password   String
   photo      String?

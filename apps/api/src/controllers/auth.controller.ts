@@ -5,6 +5,7 @@ import type { User } from "@prisma/client";
 import type { Token } from "../types/auth.ts";
 import { prisma } from "../lib/prisma.ts";
 import { BadRequestError, UnauthorizedError } from "../lib/error.ts";
+import { isUniqueViolation } from "../lib/db-errors.ts";
 import { generateAuthTokens, hashToken } from "../lib/tokens.ts";
 import { registerSchema, loginSchema } from "../validators/auth.validator.ts";
 import { sendVerificationEmail } from "../services/mail.service.ts";
@@ -31,24 +32,37 @@ export async function register(req: Request, res: Response) {
   const hashedPassword = await argon2.hash(password);
   const token = crypto.randomUUID();
 
-  const user = await prisma.user.create({
-    data: {
-      first_name,
-      last_name,
-      email,
-      password: hashedPassword,
-      photo: photo ?? null,
-      emailVerificationTokenHash: hashToken(token),
-    },
-    select: {
-      id: true,
-      first_name: true,
-      last_name: true,
-      email: true,
-      photo: true,
-      createdAt: true,
-    },
-  });
+  const user = await prisma.user
+    .create({
+      data: {
+        first_name,
+        last_name,
+        email,
+        password: hashedPassword,
+        photo: photo ?? null,
+        emailVerificationTokenHash: hashToken(token),
+      },
+      select: {
+        id: true,
+        first_name: true,
+        last_name: true,
+        email: true,
+        photo: true,
+        createdAt: true,
+      },
+    })
+    .catch((err: unknown) => {
+      // Inscriptions simultanées avec le même email : toutes passent la vérification ci-dessus,
+      // l'index d'unicité de la base refuse les suivantes → 409, comme une inscription en double
+      if (isUniqueViolation(err)) return null;
+      throw err;
+    });
+  if (!user) {
+    res
+      .status(409)
+      .json({ error: "Cet email est déjà utilisé", field: "email" });
+    return;
+  }
 
   await sendVerificationEmail(user.email, token);
 

@@ -1,6 +1,7 @@
 import type { Request, Response } from "express";
 import argon2 from "argon2";
 import { prisma } from "../lib/prisma.ts";
+import { isUniqueViolation } from "../lib/db-errors.ts";
 import { updateUserSchema } from "../validators/user.validator.ts";
 import { validationError } from "../lib/validation.ts";
 
@@ -71,25 +72,35 @@ export async function updateMe(req: Request, res: Response) {
 
   const hashedPassword = password ? await argon2.hash(password) : undefined;
 
-  const user = await prisma.user.update({
-    where: { id: req.user.id },
-    data: {
-      ...(first_name && { first_name }),
-      ...(last_name && { last_name }),
-      ...(email && { email }),
-      ...(photo !== undefined && { photo }),
-      ...(hashedPassword && { password: hashedPassword }),
-    },
-    select: {
-      id: true,
-      first_name: true,
-      last_name: true,
-      email: true,
-      photo: true,
-      createdAt: true,
-      updatedAt: true,
-    },
-  });
+  const user = await prisma.user
+    .update({
+      where: { id: req.user.id },
+      data: {
+        ...(first_name && { first_name }),
+        ...(last_name && { last_name }),
+        ...(email && { email }),
+        ...(photo !== undefined && { photo }),
+        ...(hashedPassword && { password: hashedPassword }),
+      },
+      select: {
+        id: true,
+        first_name: true,
+        last_name: true,
+        email: true,
+        photo: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    })
+    .catch((err: unknown) => {
+      // Deux comptes qui prennent le même email en même temps : l'index d'unicité refuse le second
+      if (isUniqueViolation(err)) return null;
+      throw err;
+    });
+  if (!user)
+    return res
+      .status(409)
+      .json({ error: "Cet email est déjà utilisé", field: "email" });
 
   // Nouveau mot de passe : toutes les sessions (y compris celle d'un éventuel intrus) sont fermées
   if (hashedPassword) {
