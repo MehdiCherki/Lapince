@@ -213,7 +213,7 @@ dc exec nginx-proxy nginx -s reload   # sinon 502 : nginx-proxy garde l'adresse 
 #### C — Contrôler
 
 ```bash
-dc ps                       # tous les services « Up », db « healthy »
+dc ps                       # tous les services « Up », db et redis « healthy »
 dc logs api --tail 20       # « Server started », aucune erreur
 dc exec api npx prisma migrate diff --from-config-datasource --to-schema prisma/schema.prisma --exit-code; echo $?   # 0 : base conforme au schéma
 curl -s -o /dev/null -w "%{http_code}
