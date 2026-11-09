@@ -1,0 +1,39 @@
+# Test de charge, en local seulement (jamais en production) : l'image de PRODUCTION de l'API,
+# sur une base jetable lapince_load_test, et k6. Mode d'emploi : docs/tests.md, « Test de charge ».
+# Chemins relatifs à la racine du dépôt (premier fichier : docker-compose.yml).
+services:
+  api-load:
+    build:
+      context: ./apps/api
+      dockerfile: api.Dockerfile
+    image: lapince-api-load:local
+    profiles: ["load"]
+    environment:
+      NODE_ENV: production
+      PORT: "3007"
+      LOG_LEVEL: warn
+      # Base de test : son nom est remplacé par lapince_load_test au démarrage (refus sinon)
+      DATABASE_URL_TEST: ${DATABASE_URL_TEST}
+      # Valeurs propres au test de charge, sans rapport avec la prod (aucun secret réel ici)
+      JWT_SECRET: secret-de-charge-uniquement
+      ALLOWED_ORIGINS: http://localhost
+      FRONTEND_URL: http://localhost
+    entrypoint:
+      - sh
+      - -c
+      - >-
+        export DATABASE_URL=$$(printf '%s' "$$DATABASE_URL_TEST" | sed 's#/lapince_test#/lapince_load_test#');
+        case "$$DATABASE_URL" in *lapince_load_test*) exec npm run docker:start ;;
+        *) echo "Base de charge introuvable" >&2; exit 1 ;; esac
+
+  k6:
+    image: grafana/k6:1.4.0
+    profiles: ["load"]
+    environment:
+      BASE_URL: http://api-load:3007
+      LOAD_EMAIL: charge@lapince.test
+      LOAD_PASSWORD: Charge-1-test
+    volumes:
+      - ./apps/api/tests/load:/scripts:ro
+      - ./apps/api/tests/load/results:/out
+    command: run --summary-export=/out/summary.json /scripts/add-expense.k6.js

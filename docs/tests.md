@@ -2,15 +2,16 @@
 
 Ce document décrit comment l'application est testée : la stratégie, la façon de lancer les tests, ce que chaque test couvre (matrice), les tests de sécurité et le cahier de recette.
 
-**État au 09/11/2026** : 154 tests automatisés de l'application et 21 scénarios du script de déploiement, tous verts, lancés sur chaque pull request par la CI.
+**État au 10/11/2026** : 161 tests automatisés de l'application et 21 scénarios du script de déploiement, tous verts, lancés sur chaque pull request par la CI.
 
 | Ensemble | Outil | Tests |
 |---|---|---|
-| API — unitaires | Vitest | 20 |
-| API — intégration (dont sécurité) | Vitest + Supertest + PostgreSQL | 90 |
+| API — unitaires (dont fuzzing) | Vitest + fast-check | 25 |
+| API — intégration (dont sécurité et fuzzing) | Vitest + Supertest + PostgreSQL | 92 |
 | Client — composants, services, fonctions | Vitest + Testing Library (jsdom) | 44 |
 | Script de déploiement | Bash, doubles de `git`, `docker` et `curl` | 21 scénarios (69 vérifications) |
 | Recette (tests d'acceptation) | navigateur, cahier ci-dessous | 9 parcours |
+| Charge | k6, image de production de l'API, en local | 2 scénarios |
 
 ---
 
@@ -53,6 +54,42 @@ docker compose exec api npm run test:db:setup      # migrations + seed des caté
 ```
 
 Le code est copié dans l'image au build : après une modification, `docker compose up -d --build api` (ou `client`) avant de relancer les tests, ou `docker compose watch` pendant le développement.
+
+### Test de charge
+
+En local seulement, jamais en production : l'**image de production** de l'API sur une base jetable `lapince_load_test`, et k6 1.4.0 ([apps/api/tests/load](../apps/api/tests/load)). Deux scénarios successifs de 70 s (montée à 50 utilisateurs virtuels, palier, descente), une seule session :
+
+| Scénario | Ce qu'il éprouve | Requêtes | Erreurs | Latence médiane | p95 | p99 |
+|---|---|---|---|---|---|---|
+| `meme_categorie` | pire cas du verrou : 50 ajouts simultanés sur la **même** catégorie, au budget dépassé | 6 170 dépenses | 0 | 529 ms | 825 ms | 849 ms |
+| `categories_differentes` | usage courant : chacun sur sa catégorie | 59 519 dépenses | 0 | 57 ms | **62 ms** | 65 ms |
+
+Mesure du 10/11/2026 sur le poste de développement (Docker Desktop, Windows 11). Seuils : moins de 1 % d'erreurs et tous les contrôles verts dans les deux scénarios ; p95 sous 500 ms pour l'usage courant. Tous respectés.
+
+- **Exactitude sous charge** : à la fin, une seule alerte, au dépassement exact au centime (6 160,00 € = 6 170 dépenses de 1 € − 10 € de budget). Le verrou par utilisateur et par catégorie tient.
+- **Pire cas** : les écritures sur un même couple utilisateur-catégorie passent l'une après l'autre, par conception (environ 89 par seconde). Une file de 50 requêtes attend donc environ une demi-seconde. Une personne n'ajoute pas 50 dépenses à la seconde : la latence de ce scénario est rapportée, sans seuil.
+- **Transactions de Prisma** : pool de 10 connexions (défaut de l'adaptateur `pg`), attente d'une connexion `maxWait` 2 s, durée `timeout` 5 s (défauts). Aucun dépassement dans les deux scénarios : valeurs conservées.
+
+Rejouer le test, depuis la racine du dépôt :
+
+```bash
+L="-f docker-compose.yml -f apps/api/tests/load/compose.load.yml --profile load"
+echo "CREATE DATABASE lapince_load_test;" | docker compose exec -T db sh -c 'psql -U $POSTGRES_USER -d $POSTGRES_DB'
+docker compose $L up -d --build --no-deps api-load              # migrations + seed, puis l'API
+docker compose $L exec api-load node tests/load/prepare-user.ts  # utilisateur vérifié
+docker compose $L run --rm --no-deps k6                         # résumé : apps/api/tests/load/results/
+docker compose $L rm -sf api-load
+echo "DROP DATABASE lapince_load_test;" | docker compose exec -T db sh -c 'psql -U $POSTGRES_USER -d $POSTGRES_DB'
+```
+
+### Fuzzing
+
+Des entrées générées au hasard par `fast-check`, rejouables (graine fixe, exemple minimal affiché en cas d'échec) :
+
+- **schéma de création d'une dépense** (`validators/transaction.validator`, unitaire, 5 propriétés × 2 000 essais) : aucune entrée ne fait lever d'exception ; toute dépense valide est acceptée, au centime exact ; montants à plus de 2 décimales, nuls, négatifs, non finis ou trop grands refusés ; catégorie non entière refusée ;
+- **API** (`transactions/fuzz`, intégration, 200 corps de requête) : champs valides trois fois sur quatre, piégés une fois sur quatre (types inattendus, textes hostiles, opérateurs `{ $gt: 0 }`, nombres limites, clés `__proto__`) → toujours 201 ou 400, jamais 500 ; rien n'est écrit sur un refus ; une dépense acceptée appartient toujours à l'utilisateur de la session.
+
+**Contre-épreuves** (10/11/2026, dans le conteneur seulement) : règle « au centime » retirée → contre-exemple `0,01 + 0,001` trouvé ; vérification de la catégorie retirée → contre-exemple `{ amount: 0.01, idcategory: 40 }` → 500 trouvé. Une première version du générateur, trop aléatoire, n'atteignait presque jamais le service : elle ne trouvait pas ce second défaut. D'où la pondération.
 
 ### Couverture du code
 
