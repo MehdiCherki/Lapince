@@ -1,6 +1,6 @@
 # Base de données — La Pince
 
-Conception et description de la base : règles de gestion, modèles conceptuel (MCD), logique (MLD) et physique (MPD), dictionnaire de données, intégrité, sécurité. La section 10 décrit le second stockage de l'application, clé/valeur : Redis, pour les compteurs du limiteur de tentatives.
+Conception et description de la base : règles de gestion, modèles conceptuel (MCD), logique (MLD) et physique (MPD), dictionnaire de données, intégrité, sécurité, comptes et droits. La section 11 décrit le second stockage de l'application, clé/valeur : Redis, pour les compteurs du limiteur de tentatives.
 
 Sources de vérité : le schéma [apps/api/prisma/schema.prisma](../apps/api/prisma/schema.prisma) et les migrations SQL [apps/api/prisma/migrations/](../apps/api/prisma/migrations/). Ce document les explique ; en cas d'écart, ce sont eux qui font foi.
 
@@ -209,18 +209,64 @@ Contrainte `UNIQUE (user_id, category_id)` : une seule alerte par utilisateur et
 - **Minimisation** : seules les données utiles au service sont demandées (prénom, nom, email ; la photo est facultative).
 - **Droit à l'effacement** : la suppression du compte efface toutes les données de l'utilisateur, par les clés étrangères en cascade.
 - **Isolation** : la base n'est pas exposée sur Internet en production (seul le reverse proxy l'est) ; l'API filtre chaque requête par utilisateur.
+- **Moindre privilège** : l'API se connecte avec un compte qui lit et écrit les données, sans pouvoir modifier une table ni lire l'historique des migrations (section 9).
 - **Sauvegarde et restauration** : `pg_dump` avant chaque mise en production (fait par le script de déploiement), restauration vérifiée sur une base jetable : [deploiement-serveur.md](deploiement-serveur.md), section 5.
 
 ---
 
-## 9. Jeu d'essai et base de test
+## 9. Comptes et droits
 
-- **Seed** ([apps/api/prisma/seed.ts](../apps/api/prisma/seed.ts)) : les 39 catégories, créées ou mises à jour au démarrage de l'API (idempotent).
-- **Base de test** `lapince_test` : mêmes migrations et même seed, utilisée par les tests d'intégration, qui refusent de tourner sur une autre base ([docs/tests.md](tests.md)).
+Trois comptes PostgreSQL, un par usage, créés par un script versionné, [db/roles.sql](../db/roles.sql) (depuis la 0.9.7 ; avant, l'API, les migrations et le seed passaient tous par le superutilisateur).
+
+| Rôle | Droits | Usage |
+|---|---|---|
+| administrateur (`POSTGRES_USER`) | superutilisateur, créé par l'image `postgres` | administration seulement : création des rôles, sauvegardes (`deploy.sh`). L'API ne s'y connecte plus |
+| `lapince_owner` | propriétaire des tables, séquences et types énumérés du schéma `public` ; `CREATE` sur le schéma, et sur la base (créer un schéma) ; ni superutilisateur, ni `CREATEDB`, ni `CREATEROLE` | migrations et seed, au démarrage de l'API (`MIGRATION_DATABASE_URL`) |
+| `lapince_app` | `CONNECT` sur la base ; `USAGE` sur le schéma ; `SELECT`, `INSERT`, `UPDATE`, `DELETE` sur les tables ; `USAGE`, `SELECT` sur les séquences ; aucun droit sur `_prisma_migrations` ; aucun DDL, ni `TRUNCATE` | l'API en fonctionnement (`DATABASE_URL`) |
+
+**Pourquoi** : une faille de l'API (injection SQL, dépendance compromise) ne donne plus que les droits de `lapince_app`, c'est-à-dire ce que l'API fait déjà : lire et écrire des données. Plus de suppression ni de modification de table, plus de réécriture de l'historique des migrations. Surtout, le superutilisateur peut lire les fichiers du serveur et y exécuter des commandes (`COPY … FROM PROGRAM`), créer des rôles, lire les empreintes des mots de passe des autres comptes : rien de cela n'est accessible à l'API.
+
+**Démarrage de l'API en deux temps** ([apps/api/docker-start.sh](../apps/api/docker-start.sh), `set -eu`, vérifié par ShellCheck, n'affiche aucune adresse de connexion) :
+1. `prisma migrate deploy` puis le seed, avec `lapince_owner` : Prisma lit `MIGRATION_DATABASE_URL` dans [prisma.config.ts](../apps/api/prisma.config.ts), le seed aussi ([seed.ts](../apps/api/prisma/seed.ts), qui crée son propre client) ;
+2. le serveur, avec `lapince_app` : le client Prisma de l'API ([src/lib/prisma.ts](../apps/api/src/lib/prisma.ts)) lit `DATABASE_URL`.
+
+**Choix du script** :
+- **idempotent** et en une seule transaction : il se relance sans risque, remet les droits dans l'état décrit ici, et s'arrête en annulant tout si un contrôle final échoue (attributs des rôles, mots de passe présents, propriétaires, droits de l'API, droits en trop) ;
+- **propriété des objets existants** : transférée objet par objet (tables, séquences indépendantes, types énumérés `category_type` et `period_type`), dans une boucle `DO`. `REASSIGN OWNED BY <administrateur>` est refusé par PostgreSQL : le superutilisateur créé par l'image possède aussi les objets du système (`pg_catalog`, `information_schema`…), qu'il ne laisse pas transférer (« required by the database system ») ;
+- **tables futures** : `ALTER DEFAULT PRIVILEGES FOR ROLE lapince_owner` accorde automatiquement à `lapince_app` les mêmes droits sur les tables et séquences créées par les prochaines migrations. Sur une base neuve, ils s'appliqueraient aussi à `_prisma_migrations`, que Prisma crée juste avant de jouer les migrations : la migration `20261110120000_private_migrations_table` les retire ;
+- **`PUBLIC`** (tout rôle) : plus de connexion à la base ni de table temporaire. `CREATE` sur le schéma `public` lui est retiré, ce qui est déjà le comportement par défaut depuis PostgreSQL 15 (ici 17) ; le script l'écrit pour être explicite ;
+- **`CREATE` sur la base pour `lapince_owner`** : la migration initiale commence par `CREATE SCHEMA IF NOT EXISTS "public"` (générée par Prisma), et PostgreSQL vérifie ce droit avant de regarder si le schéma existe. Sans lui, une base neuve (CI, volume neuf) ne pourrait pas être migrée. Il permet de créer un schéma, pas une base ni un rôle ;
+- **mots de passe** : lus dans l'environnement de `psql` (`\getenv` : `LAPINCE_OWNER_PASSWORD`, `LAPINCE_APP_PASSWORD`), jamais écrits dans le fichier ni sur une ligne de commande ; aucune requête de la session n'est écrite dans le journal du serveur, même en erreur ; une erreur n'affiche que son message, sans la requête. Le serveur n'en garde que l'empreinte (SCRAM-SHA-256). Exigés à la création d'un rôle, facultatifs ensuite (fournis, ils remplacent l'ancien) ; 32 caractères au moins, parmi les caractères qui s'écrivent tels quels dans une adresse de connexion (`openssl rand -hex 32`), et différents l'un de l'autre.
+
+**Prouvé** par un test d'intégration ([database-roles.test.ts](../apps/api/tests/integration/database-roles.test.ts)) : connecté comme l'API, `CREATE TABLE`, `ALTER TABLE`, `DROP TABLE users` et `TRUNCATE users` échouent (code `42501`, droits insuffisants), la lecture de `_prisma_migrations` aussi, et le compte n'a aucun attribut d'administration. Toute la suite d'intégration tourne avec `lapince_app`, en local comme dans la CI. Rouge, puis vert : avec le superutilisateur (état de la 0.9.6), 6 de ces 7 tests échouent ([tests.md](tests.md)).
+
+**Lancer le script** (procédure de production : [deploiement-serveur.md](deploiement-serveur.md), section 2) :
+- **volume neuf** (développement) : l'image `postgres` l'exécute elle-même à l'initialisation (`docker-entrypoint-initdb.d`), avec les mots de passe du `.env` ;
+- **base existante**, à chaque base de l'application (développement, test) :
+  ```bash
+  docker compose up -d db   # le conteneur reçoit les mots de passe du .env (recréé s'il ne les a pas)
+  docker compose exec -T db sh -c 'psql -X -U "$POSTGRES_USER" -d "$POSTGRES_DB"' < db/roles.sql
+  docker compose exec -T db sh -c 'psql -X -U "$POSTGRES_USER" -d lapince_test' < db/roles.sql
+  ```
+  Il affiche à la fin les rôles (avec ou sans mot de passe, jamais sa valeur) et, objet par objet, le propriétaire et les droits de `lapince_app`.
+
+**Créer une migration** (développement) : `prisma migrate dev` rejoue les migrations dans une base « shadow », qu'il crée et supprime ; `lapince_owner` n'a pas le droit de créer une base. On lui en fournit une dont il est propriétaire, une fois pour toutes, et `SHADOW_DATABASE_URL` la désigne (`.env.example`) :
+```bash
+printf 'CREATE DATABASE lapince_shadow OWNER lapince_owner;\nREVOKE ALL ON DATABASE lapince_shadow FROM PUBLIC;\n' | docker compose exec -T db sh -c 'psql -X -U "$POSTGRES_USER" -d "$POSTGRES_DB"'
+```
+
+**Limite** : `lapince_app` peut encore se connecter à la base de maintenance `postgres` (droit par défaut de `PUBLIC`, que le script ne modifie pas sur les bases du système) ; il n'y trouve aucune donnée et ne peut rien y créer.
 
 ---
 
-## 10. Stockage clé/valeur : Redis (limiteur de tentatives)
+## 10. Jeu d'essai et base de test
+
+- **Seed** ([apps/api/prisma/seed.ts](../apps/api/prisma/seed.ts)) : les 39 catégories, créées ou mises à jour au démarrage de l'API (idempotent), avec le rôle `lapince_owner`.
+- **Base de test** `lapince_test` : mêmes migrations, même seed et mêmes comptes, utilisée par les tests d'intégration (rôle `lapince_app`), qui refusent de tourner sur une autre base ([docs/tests.md](tests.md)).
+
+---
+
+## 11. Stockage clé/valeur : Redis (limiteur de tentatives)
 
 Les compteurs du limiteur de tentatives (connexion, inscription, session, mot de passe oublié) sont dans **Redis 8**, base clé/valeur en mémoire, et non dans PostgreSQL ni dans la mémoire de l'API :
 

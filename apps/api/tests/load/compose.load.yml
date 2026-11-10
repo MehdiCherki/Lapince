@@ -22,8 +22,10 @@ services:
       NODE_ENV: production
       PORT: "3007"
       LOG_LEVEL: warn
-      # Base de test : son nom est remplacé par lapince_load_test au démarrage (refus sinon)
+      # Bases de test (rôles lapince_app et lapince_owner) : leur nom est remplacé par
+      # lapince_load_test au démarrage (refus sinon)
       DATABASE_URL_TEST: ${DATABASE_URL_TEST}
+      MIGRATION_DATABASE_URL_TEST: ${MIGRATION_DATABASE_URL_TEST}
       # Valeurs propres au test de charge, sans rapport avec la prod (aucun secret réel ici)
       JWT_SECRET: secret-de-charge-uniquement
       ALLOWED_ORIGINS: http://localhost
@@ -35,7 +37,8 @@ services:
       - -c
       - >-
         export DATABASE_URL=$$(printf '%s' "$$DATABASE_URL_TEST" | sed 's#/lapince_test#/lapince_load_test#');
-        case "$$DATABASE_URL" in *lapince_load_test*) exec npm run docker:start ;;
+        export MIGRATION_DATABASE_URL=$$(printf '%s' "$$MIGRATION_DATABASE_URL_TEST" | sed 's#/lapince_test#/lapince_load_test#');
+        case "$$DATABASE_URL $$MIGRATION_DATABASE_URL" in *lapince_load_test*lapince_load_test*) exec sh docker-start.sh node dist/server.js ;;
         *) echo "Base de charge introuvable" >&2; exit 1 ;; esac
 
   k6:

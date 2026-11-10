@@ -102,7 +102,7 @@ deploy -up-> github : SSH\n(lecture seule)
 proxy -[hidden]left- certbot
 proxy -down-> client : HTTP 80
 client -down-> api : HTTP 3007
-api -down-> db : TCP 5432
+api -down-> db : TCP 5432\n(API : lapince_app ;\nmigrations : lapince_owner)
 api -down-> redis : TCP 6379\n(ACL)
 api -right-> brevo
 

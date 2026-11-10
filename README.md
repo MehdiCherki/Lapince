@@ -118,9 +118,11 @@ docker compose up -d --build
 docker compose watch   # optionnel : synchronise les fichiers modifiés dans les conteneurs
 ```
 
-`REDIS_PASSWORD` doit être renseigné dans `.env` (voir `.env.example`), sinon `docker compose` refuse de démarrer.
+`REDIS_PASSWORD` et `MIGRATION_DATABASE_URL` doivent être renseignés dans `.env` (voir `.env.example`), sinon `docker compose` refuse de démarrer.
 
-Au démarrage, l'API applique les **migrations** de la base qui ne l'ont pas encore été (`prisma migrate deploy`, dossier `apps/api/prisma/migrations`), puis lance le seed des catégories.
+**Comptes PostgreSQL** : l'API se connecte avec le rôle `lapince_app` (`DATABASE_URL`), les migrations et le seed avec `lapince_owner` (`MIGRATION_DATABASE_URL`) ; le superutilisateur (`POSTGRES_USER`) ne sert qu'à l'administration. Sur un volume neuf, la base crée ces rôles toute seule avec les mots de passe du `.env` (`LAPINCE_OWNER_PASSWORD`, `LAPINCE_APP_PASSWORD`) ; sur une base existante, lancer [db/roles.sql](db/roles.sql) : [docs/base-de-donnees.md](docs/base-de-donnees.md), section 9.
+
+Au démarrage, l'API applique les **migrations** de la base qui ne l'ont pas encore été (`prisma migrate deploy`, dossier `apps/api/prisma/migrations`), puis lance le seed des catégories, avec `lapince_owner` ; puis le serveur démarre, avec `lapince_app`.
 
 | Service | Adresse |
 |---|---|
@@ -140,9 +142,10 @@ docker compose exec api npm test -- run            # API : les deux
 docker compose exec client npm test                # client
 ```
 
-Les tests d'intégration n'utilisent jamais la base de dev : ils tournent sur `lapince_test` (`DATABASE_URL_TEST` dans `.env`) et refusent de démarrer sur une autre base. Mise en place, une seule fois :
+Les tests d'intégration n'utilisent jamais la base de dev : ils tournent sur `lapince_test` (`DATABASE_URL_TEST` et `MIGRATION_DATABASE_URL_TEST` dans `.env`), avec le rôle de l'API, et refusent de démarrer sur une autre base. Mise en place, une seule fois :
 ```bash
 echo "CREATE DATABASE lapince_test;" | docker compose exec -T db sh -c 'psql -U $POSTGRES_USER -d $POSTGRES_DB'
+docker compose exec -T db sh -c 'psql -X -U "$POSTGRES_USER" -d lapince_test' < db/roles.sql   # comptes et droits
 docker compose exec api npm run test:db:setup  # migrations + catégories ; à relancer après chaque nouvelle migration
 ```
 
@@ -152,10 +155,10 @@ Chaque pull request est vérifiée par GitHub Actions ([.github/workflows/ci.yml
 | Job | Contrôles |
 |---|---|
 | Formatage | Prettier sur tout le dépôt (version figée) |
-| API | Redis jetable (même script et mêmes ACL qu'en production), `npm ci`, audit des dépendances de production (aucune faille haute ou critique), client Prisma, types, tests unitaires, migrations + seed sur une base PostgreSQL jetable, tests d'intégration, build |
+| API | Redis jetable (même script et mêmes ACL qu'en production), `npm ci`, audit des dépendances de production (aucune faille haute ou critique), client Prisma, types, tests unitaires, comptes PostgreSQL (`db/roles.sql`), migrations + seed sur une base PostgreSQL jetable (rôle propriétaire), tests d'intégration (rôle de l'API), build |
 | Client | `npm ci`, audit des dépendances de production, lint, tests, types et build |
 | Images de production | construction des Dockerfiles de prod de l'API et du client |
-| Script de déploiement | ShellCheck (déploiement et Redis), puis tests du script avec des doubles de `git`, `docker` et `curl` |
+| Script de déploiement | ShellCheck (déploiement, Redis, démarrage de l'API), puis tests du script avec des doubles de `git`, `docker` et `curl` |
 
 Résultat d'une PR : onglet *Checks* sur GitHub, ou `gh pr checks <numéro>`.
 
@@ -237,6 +240,7 @@ Toute modification de `schema.prisma` passe par une **migration versionnée** : 
 ```bash
 docker compose exec api npx prisma migrate dev --name <description>   # crée et applique la migration en dev
 ```
+`migrate dev` a besoin d'une base « shadow » (`lapince_shadow`, `SHADOW_DATABASE_URL`), à créer une fois : [docs/base-de-donnees.md](docs/base-de-donnees.md), section 9.
 Le nouveau dossier `apps/api/prisma/migrations/<date>_<description>/` doit être commité. En prod, l'API l'applique toute seule au démarrage (`prisma migrate deploy`).
 
 ### Problème de dépendances

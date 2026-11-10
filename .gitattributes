@@ -4,3 +4,6 @@ apps/api/prisma/migrations/** text eol=lf
 
 # Scripts shell : fins de ligne LF obligatoires (un retour chariot Windows casse bash sur le serveur)
 *.sh text eol=lf
+
+# Scripts psql (db/roles.sql) : LF obligatoire, un retour chariot casse les méta-commandes (\if, \getenv)
+db/*.sql text eol=lf

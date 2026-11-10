@@ -52,6 +52,23 @@ Copie ce bloc en haut de la section `## [Non publié]` et remplis-le :
 
 ## [Non publié]
 
+### Ajouté
+- **Comptes PostgreSQL séparés** : l'API ne se connecte plus avec le superutilisateur. `lapince_owner`, propriétaire des objets du schéma `public` (ni superutilisateur, ni `CREATEDB`, ni `CREATEROLE`), fait les migrations et le seed ; `lapince_app`, l'API en fonctionnement, ne peut que lire et écrire les données (`SELECT`, `INSERT`, `UPDATE`, `DELETE` ; séquences en `USAGE`, `SELECT`), sans DDL, sans `TRUNCATE`, sans accès à `_prisma_migrations` ; le superutilisateur ne sert plus qu'à l'administration (branche `feature/database-roles`)
+- **Script des rôles** [db/roles.sql](db/roles.sql), lancé par l'administrateur avec `psql` : idempotent, en une transaction ; transfert de la propriété des tables, séquences et types énumérés existants objet par objet (`REASSIGN OWNED` est refusé pour le superutilisateur d'amorçage) ; privilèges par défaut pour les tables des prochaines migrations ; `PUBLIC` privé de connexion à la base ; mots de passe lus dans l'environnement (`\getenv`), jamais dans le fichier, sur une ligne de commande ni dans le journal du serveur ; contrôle final qui annule tout si l'état obtenu n'est pas celui attendu. Exécuté seul par l'image `postgres` sur un volume neuf
+- Migration `20261110120000_private_migrations_table` : retire à `lapince_app` les droits que les privilèges par défaut lui donneraient sur `_prisma_migrations` dans une base neuve
+- **Démarrage de l'API en deux temps** ([apps/api/docker-start.sh](apps/api/docker-start.sh), `set -eu`, ShellCheck) : migrations et seed avec `MIGRATION_DATABASE_URL` (`lapince_owner`), puis le serveur avec `DATABASE_URL` (`lapince_app`), lancé par `exec` ; refuse de démarrer si une adresse manque, sans jamais en afficher une
+- **Test de sécurité** `database-roles` (7 tests) : connecté comme l'API, `CREATE TABLE`, `ALTER TABLE`, `DROP TABLE users`, `TRUNCATE users` et la lecture de `_prisma_migrations` sont refusés (42501). Toute la suite d'intégration tourne avec `lapince_app`, en local et dans la CI, où une étape crée les rôles avec le même script ; 129 tests côté API (180 en tout)
+- `deploy.sh` vérifie dès ses préconditions que `MIGRATION_DATABASE_URL` et `DATABASE_URL` désignent les bons rôles (sans lire les mots de passe), que les rôles existent et possèdent les objets ; 6 scénarios de test de plus (30 scénarios, 102 vérifications)
+
+### Modifié
+- `prisma.config.ts` et `prisma/seed.ts` lisent `MIGRATION_DATABASE_URL` ; base « shadow » `lapince_shadow` (`SHADOW_DATABASE_URL`) pour `prisma migrate dev` en développement, `lapince_owner` n'ayant pas le droit de créer une base
+- Le script npm `docker:start` est remplacé par `docker-start.sh`, utilisé par les deux Dockerfiles et le test de charge
+- Prisma Studio se connecte avec le rôle de l'API
+- Documentation : section « Comptes et droits » dans `docs/base-de-donnees.md` ; procédure de production pas à pas (sauvegarde, contrôles, création des rôles, `.env`, déploiement, vérifications, retour arrière) dans `docs/deploiement-serveur.md` ; `docs/tests.md`, README, `.env.example`, diagramme de déploiement
+
+### Infra
+- **Production** : `MIGRATION_DATABASE_URL` à ajouter et `DATABASE_URL` à modifier dans le `.env` du serveur, après création des rôles (`docs/deploiement-serveur.md`, section 2) ; sans `MIGRATION_DATABASE_URL`, `docker compose` refuse de démarrer
+
 ---
 
 ## [0.9.6] — 2026-11-10
