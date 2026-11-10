@@ -41,11 +41,10 @@ RUN npm run build
 # Les variables d'environnement seront à préciser lorsqu'on lance `docker run IMAGE -e .....`
 
 # Lancer les migrations (objectif : créer les tables)
-# Pour lancer les migrations, j'ai besoin de la DATABASE_URL ==> cette étape doit être fait au moment de l'instanciation d'un conteneur
-# On va rajouter un script NPM qui : lance les migrations puis lance l'application
+# Pour lancer les migrations, j'ai besoin de l'adresse de la base ==> cette étape doit être faite au moment de l'instanciation d'un conteneur
 
-# CMD = commande qui sera lancé lorsqu'on génère le CONTENEUR à partir de l'image
-# Docker:start = lance les migrations (créé les tables) puis  lance l'app (node dist/server.js)
-# Cette commande "npm run docker:start" sera lancée lorsqu'on lance `docker run IMAGE`
-CMD ["npm", "run", "docker:start"]
+# CMD = commande qui sera lancée lorsqu'on génère le CONTENEUR à partir de l'image
+# docker-start.sh = migrations et seed (rôle lapince_owner, MIGRATION_DATABASE_URL),
+# puis l'app (node dist/server.js, rôle lapince_app, DATABASE_URL)
+CMD ["sh", "docker-start.sh", "node", "dist/server.js"]
 
