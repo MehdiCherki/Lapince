@@ -1,5 +1,5 @@
 @startuml deploiement
-' Diagramme de déploiement UML de La Pince (production, 0.9.6).
+' Diagramme de déploiement UML de La Pince (production, 0.9.7).
 ' Format A4 : nœuds compacts (contenu décrit dans le nœud), services externes en haut et à droite.
 ' Régénérer les images : voir docs/deploiement-serveur.md, section 1.
 

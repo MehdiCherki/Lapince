@@ -52,6 +52,10 @@ Copie ce bloc en haut de la section `## [Non publié]` et remplis-le :
 
 ## [Non publié]
 
+---
+
+## [0.9.7] — 2026-11-10
+
 ### Ajouté
 - **Comptes PostgreSQL séparés** : l'API ne se connecte plus avec le superutilisateur. `lapince_owner`, propriétaire des objets du schéma `public` (ni superutilisateur, ni `CREATEDB`, ni `CREATEROLE`), fait les migrations et le seed ; `lapince_app`, l'API en fonctionnement, ne peut que lire et écrire les données (`SELECT`, `INSERT`, `UPDATE`, `DELETE` ; séquences en `USAGE`, `SELECT`), sans DDL, sans `TRUNCATE`, sans accès à `_prisma_migrations` ; le superutilisateur ne sert plus qu'à l'administration (branche `feature/database-roles`)
 - **Script des rôles** [db/roles.sql](db/roles.sql), lancé par l'administrateur avec `psql` : idempotent, en une transaction ; transfert de la propriété des tables, séquences et types énumérés existants objet par objet (`REASSIGN OWNED` est refusé pour le superutilisateur d'amorçage) ; privilèges par défaut pour les tables des prochaines migrations ; `PUBLIC` privé de connexion à la base ; mots de passe lus dans l'environnement (`\getenv`), jamais dans le fichier, sur une ligne de commande ni dans le journal du serveur ; contrôle final qui annule tout si l'état obtenu n'est pas celui attendu. Exécuté seul par l'image `postgres` sur un volume neuf
