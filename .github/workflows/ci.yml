@@ -53,11 +53,16 @@ jobs:
           --health-interval 5s
           --health-timeout 5s
           --health-retries 10
-    # Valeurs propres à la CI, sans rapport avec la prod (aucun secret réel ici)
+    # Valeurs propres à la CI, sans rapport avec la prod (aucun secret réel ici).
+    # Comptes séparés, comme en production : les tests passent par lapince_app (moindre privilège),
+    # migrations et seed par lapince_owner ; lapince (superutilisateur) ne sert qu'à créer les rôles.
     env:
       NODE_ENV: development
-      DATABASE_URL: postgresql://lapince:lapince@localhost:5432/lapince_test
-      DATABASE_URL_TEST: postgresql://lapince:lapince@localhost:5432/lapince_test
+      LAPINCE_OWNER_PASSWORD: proprietaire-de-ci-uniquement-0000
+      LAPINCE_APP_PASSWORD: application-de-ci-uniquement-00000
+      DATABASE_URL: postgresql://lapince_app:application-de-ci-uniquement-00000@localhost:5432/lapince_test
+      DATABASE_URL_TEST: postgresql://lapince_app:application-de-ci-uniquement-00000@localhost:5432/lapince_test
+      MIGRATION_DATABASE_URL_TEST: postgresql://lapince_owner:proprietaire-de-ci-uniquement-0000@localhost:5432/lapince_test
       JWT_SECRET: secret-de-ci-uniquement
       ALLOWED_ORIGINS: http://localhost:8080
       FRONTEND_URL: http://localhost:8080
@@ -94,6 +99,11 @@ jobs:
         run: npx tsc --noEmit
       - name: Tests unitaires
         run: npm run test:unit
+      # Même script qu'en production (db/roles.sql), par le psql du conteneur PostgreSQL 17 ;
+      # mots de passe lus dans l'environnement (-e sans valeur : rien sur la ligne de commande)
+      - name: Comptes PostgreSQL (rôles lapince_owner et lapince_app)
+        working-directory: .
+        run: docker exec -i -e LAPINCE_OWNER_PASSWORD -e LAPINCE_APP_PASSWORD ${{ job.services.postgres.id }} psql -X -U lapince -d lapince_test < db/roles.sql
       - name: Base de test (migrations + seed)
         run: npm run test:db:setup
       - name: Tests d'intégration
@@ -133,7 +143,7 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       - name: ShellCheck
-        run: shellcheck deploy/*.sh redis/*.sh
+        run: shellcheck deploy/*.sh redis/*.sh apps/api/docker-start.sh
       # git, docker et curl remplacés par des doubles : aucun serveur n'est touché
       - name: Tests du script
         run: bash deploy/deploy.test.sh

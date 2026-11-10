@@ -8,10 +8,16 @@ services:
       POSTGRES_USER: ${POSTGRES_USER}         # Nom d'utilisateur (depuis .env)
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD} # Mot de passe (depuis .env)
       POSTGRES_DB: ${POSTGRES_DB}             # Nom de la base de données
+      # Mots de passe des rôles lapince_owner et lapince_app, lus par db/roles.sql (\getenv)
+      LAPINCE_OWNER_PASSWORD: ${LAPINCE_OWNER_PASSWORD:-}
+      LAPINCE_APP_PASSWORD: ${LAPINCE_APP_PASSWORD:-}
     ports:
       - "${POSTGRES_LOCAL_PORT}:5432"  # Expose Postgres sur le port local défini dans .env
     volumes:
       - postgres_data:/var/lib/postgresql/data  # Persiste les données entre les redémarrages
+      # Volume neuf : l'image crée les rôles (exécuté une seule fois, à l'initialisation).
+      # Volume existant : même script, lancé à la main (docs/base-de-donnees.md, « Comptes et droits »)
+      - ./db/roles.sql:/docker-entrypoint-initdb.d/10-roles.sql:ro
     healthcheck:
       # Vérifie que Postgres est prêt à accepter des connexions avant de démarrer les autres services
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
@@ -46,8 +52,13 @@ services:
       dockerfile: api.dev.Dockerfile  # Dockerfile de dev : lance tsx --watch (hot reload)
     environment:
       NODE_ENV: ${NODE_ENV}           # production | development
-      DATABASE_URL: ${DATABASE_URL}   # URL de connexion à Postgres
-      DATABASE_URL_TEST: ${DATABASE_URL_TEST}  # Base des tests d'intégration (lapince_test)
+      # Comptes PostgreSQL séparés : l'API avec lapince_app (données seulement),
+      # migrations et seed avec lapince_owner (propriétaire du schéma)
+      DATABASE_URL: ${DATABASE_URL}   # rôle lapince_app
+      MIGRATION_DATABASE_URL: ${MIGRATION_DATABASE_URL:?MIGRATION_DATABASE_URL manquante dans .env}  # rôle lapince_owner
+      SHADOW_DATABASE_URL: ${SHADOW_DATABASE_URL:-}  # base shadow de prisma migrate dev (lapince_shadow)
+      DATABASE_URL_TEST: ${DATABASE_URL_TEST}  # Base des tests d'intégration (lapince_test), rôle lapince_app
+      MIGRATION_DATABASE_URL_TEST: ${MIGRATION_DATABASE_URL_TEST}  # même base, rôle lapince_owner (npm run test:db:setup)
       PORT: ${API_PORT}               # Port interne sur lequel l'API écoute
       JWT_SECRET: ${JWT_SECRET}       # Clé secrète pour signer les tokens JWT
       ALLOWED_ORIGINS: ${ALLOWED_ORIGINS} # Liste des origines autorisées pour les requêtes CORS (séparées par des virgules)
@@ -116,7 +127,9 @@ services:
       context: ./apps/api
       dockerfile: api.dev.Dockerfile  # Même image que l'API : node_modules, OpenSSL et client Prisma déjà dedans
     environment:
-      DATABASE_URL: ${DATABASE_URL}  # Connexion à la même base que l'API
+      # Studio lit l'adresse de prisma.config.ts (MIGRATION_DATABASE_URL) : on lui donne celle de
+      # l'API, rôle lapince_app, qui lit et modifie les données mais aucune table
+      MIGRATION_DATABASE_URL: ${DATABASE_URL}
     ports:
       - "5555:5555"  # Interface Prisma Studio accessible sur http://localhost:5555
     command: npx prisma studio --port 5555 --browser none  # Remplace le CMD de l'image (migrations + seed + serveur)

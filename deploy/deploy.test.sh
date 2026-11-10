@@ -46,9 +46,11 @@ case "$*" in
     echo "-- dump"; [[ -n "${DUMP_INCOMPLETE:-}" ]] || echo "-- PostgreSQL database dump complete" ;;
   "exec -T db sh -c "*psql*)
     sql="$(cat)"
+    echo "sql $sql" >> "$CALLS"
     case "$sql" in
       *to_regclass*) echo "${MIGRATIONS_TABLE:-t}" ;;
       *round*) printf '%b' "${DECIMALS:-0\n0\n0\n}" ;;
+      *pg_roles*) echo "${DB_ROLES:-2|0}" ;;
     esac ;;
   "run --rm -T --entrypoint sh api -c "*) cat > /dev/null; exit "${INIT_DIFF:-0}" ;;
   "exec -T api npx prisma migrate diff"*) exit "${FINAL_DIFF:-0}" ;;
@@ -68,12 +70,18 @@ printf '#!/usr/bin/env bash\nexit 0\n' > "$STUBS/sleep"
 chmod +x "$STUBS"/*
 
 # --- Exécution d'un cas --------------------------------------------------------
+REDIS_OK="REDIS_PASSWORD=valeur-a-ne-jamais-afficher"
+OWNER_OK="MIGRATION_DATABASE_URL=postgresql://lapince_owner:mdp-proprietaire-a-ne-jamais-afficher@db:5432/Lapince"
+APP_OK="DATABASE_URL=postgresql://lapince_app:mdp-api-a-ne-jamais-afficher@db:5432/Lapince"
+ENV_OK="$REDIS_OK\n$OWNER_OK\n$APP_OK"
+
 # run <arguments> : lance le script dans un dossier neuf ; résultat dans $CODE, $OUT, $CALLS
 run() {
   WORK="$(mktemp -d)"; CALLS="$WORK/calls"; : > "$CALLS"
   touch "$WORK/docker-compose.prod.yml"
-  # .env du serveur : le mot de passe de Redis par défaut (valeur que le script ne doit jamais afficher)
-  printf '%s\n' "${ENV_FILE-REDIS_PASSWORD=valeur-a-ne-jamais-afficher}" > "$WORK/.env"
+  # .env du serveur : mot de passe de Redis et adresses des deux rôles PostgreSQL (valeurs que le
+  # script ne doit jamais afficher) ; \n sépare les lignes
+  printf '%b\n' "${ENV_FILE-$ENV_OK}" > "$WORK/.env"
   # Sauvegardes plus anciennes déjà présentes (une par jour, du 1er au PRE_BACKUPS octobre), et un autre .sql
   for i in $(seq 1 "${PRE_BACKUPS:-0}"); do
     echo "-- ancienne" > "$WORK/backup-lapince-2026-10-0$i-1200.sql"
@@ -134,8 +142,9 @@ check "journal écrit" test -n "$(ls "$WORK"/deploy-logs/deploy-*.log 2>/dev/nul
 check "sauvegarde écrite" test -n "$(ls "$WORK"/backup-lapince-*.sql 2>/dev/null)"
 check "attend que Redis soit sain après le redémarrage" before "up -d" "Health.Status"
 check "Redis sain avant de contrôler l'API" before "Health.Status" "nginx -s reload"
-check "mot de passe de Redis jamais affiché" not_says "valeur-a-ne-jamais-afficher"
-check "ni écrit dans le journal" test -z "$(grep -l "valeur-a-ne-jamais-afficher" "$WORK"/deploy-logs/*.log)"
+check "mots de passe (Redis, PostgreSQL) jamais affichés" not_says "a-ne-jamais-afficher"
+check "ni écrits dans le journal" test -z "$(grep -l "a-ne-jamais-afficher" "$WORK"/deploy-logs/*.log)"
+check "comptes PostgreSQL contrôlés avant la sauvegarde" before "pg_roles" "pg_dump"
 
 scenario "sauvegarde incomplète"
 DUMP_INCOMPLETE=1 run
@@ -214,6 +223,43 @@ check "code 1" test "$CODE" -eq 1
 check "explique pourquoi" says "Redis n'est pas sain (unhealthy)"
 check "nginx non rechargé" not_called "nginx -s reload"
 check "donne le retour arrière vers l'ancien commit" says "git checkout aaaaaaa"
+
+scenario "0.9.7 : MIGRATION_DATABASE_URL absente du .env"
+ENV_FILE="$REDIS_OK\n$APP_OK" run --check
+check "code 1, dès --check" test "$CODE" -eq 1
+check "explique pourquoi" says "MIGRATION_DATABASE_URL absente de .env"
+check "aucune sauvegarde ni pull" not_called "pg_dump"
+
+scenario "0.9.7 : MIGRATION_DATABASE_URL avec un autre rôle que lapince_owner"
+ENV_FILE="$REDIS_OK\nMIGRATION_DATABASE_URL=postgresql://Lapince:mdp-a-ne-jamais-afficher@db:5432/Lapince\n$APP_OK" run
+check "code 1" test "$CODE" -eq 1
+check "explique pourquoi" says "sans le rôle lapince_owner"
+check "mot de passe jamais affiché" not_says "a-ne-jamais-afficher"
+check "aucun pull" not_called "git pull"
+
+scenario "0.9.7 : DATABASE_URL encore sur l'administrateur"
+ENV_FILE="$REDIS_OK\n$OWNER_OK\nDATABASE_URL=postgresql://Lapince:mdp-a-ne-jamais-afficher@db:5432/Lapince" run
+check "code 1" test "$CODE" -eq 1
+check "explique pourquoi" says "doit se connecter avec le rôle lapince_app"
+check "mot de passe jamais affiché" not_says "a-ne-jamais-afficher"
+check "aucune sauvegarde ni pull" not_called "pg_dump"
+
+scenario "0.9.7 : adresses entre guillemets, schéma postgres://"
+ENV_FILE="$REDIS_OK\nMIGRATION_DATABASE_URL=\"postgres://lapince_owner:x@db:5432/Lapince\"\nDATABASE_URL='postgres://lapince_app:x@db:5432/Lapince'" run --check
+check "acceptées" test "$CODE" -eq 0
+
+scenario "0.9.7 : rôles pas encore créés en base"
+DB_ROLES="0|13" run --check
+check "code 1, dès --check" test "$CODE" -eq 1
+check "explique pourquoi" says "0 rôle(s) sur 2, 13 objet(s) à transférer"
+check "renvoie au script des rôles" says "lancer db/roles.sql"
+check "aucune sauvegarde" not_called "pg_dump"
+
+scenario "0.9.7 : rôles créés, objets pas encore transférés"
+DB_ROLES="2|13" run
+check "code 1" test "$CODE" -eq 1
+check "explique pourquoi" says "13 objet(s) à transférer"
+check "aucun pull" not_called "git pull"
 
 scenario "--redeploy sans nouveau commit"
 GIT_NEW="" run --redeploy

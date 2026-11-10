@@ -2,14 +2,14 @@
 
 Ce document décrit comment l'application est testée : la stratégie, la façon de lancer les tests, ce que chaque test couvre (matrice), les tests de sécurité et le cahier de recette.
 
-**État au 09/11/2026 (0.9.6)** : 173 tests automatisés de l'application et 24 scénarios du script de déploiement, tous verts, lancés sur chaque pull request par la CI.
+**État au 10/11/2026 (0.9.7)** : 180 tests automatisés de l'application et 30 scénarios du script de déploiement, tous verts, lancés sur chaque pull request par la CI.
 
 | Ensemble | Outil | Tests |
 |---|---|---|
 | API — unitaires (dont fuzzing) | Vitest + fast-check | 25 |
-| API — intégration (dont sécurité et fuzzing) | Vitest + Supertest + PostgreSQL + Redis | 97 |
+| API — intégration (dont sécurité et fuzzing) | Vitest + Supertest + PostgreSQL + Redis | 104 |
 | Client — composants, services, fonctions | Vitest + Testing Library (jsdom) | 51 |
-| Script de déploiement | Bash, doubles de `git`, `docker` et `curl` | 24 scénarios (82 vérifications) |
+| Script de déploiement | Bash, doubles de `git`, `docker` et `curl` | 30 scénarios (102 vérifications) |
 | Recette (tests d'acceptation) | navigateur, cahier ci-dessous | 9 parcours |
 | Charge | k6, image de production de l'API, en local | 2 scénarios |
 
@@ -31,6 +31,7 @@ Ce document décrit comment l'application est testée : la stratégie, la façon
 
 **Isolation des tests d'intégration** :
 - base dédiée `lapince_test`, jamais la base de dev : la suite refuse de démarrer si `DATABASE_URL` ne contient pas `_test` ([tests/setup/integration.ts](../apps/api/tests/setup/integration.ts)) ;
+- mêmes comptes qu'en production : la suite se connecte avec `lapince_app`, le rôle de l'API (lecture et écriture des données, aucun DDL), ce qui prouve que l'application fonctionne avec ce moindre privilège ; migrations et seed de la base de test passent par `lapince_owner` (`MIGRATION_DATABASE_URL_TEST`). Le nettoyage entre les tests se fait par `DELETE`, sans `TRUNCATE` ni DDL : aucun droit supplémentaire n'est nécessaire ;
 - aucun email réel : le transporteur SMTP est remplacé par un double dans tous les fichiers ;
 - chaque fichier supprime les comptes qu'il a créés (et leurs données, en cascade) ;
 - emails de test uniques (horodatés) : les fichiers ne se gênent pas entre eux ;
@@ -51,7 +52,8 @@ docker compose exec client npm test                # client
 Base de test, une seule fois, puis après chaque nouvelle migration :
 ```bash
 echo "CREATE DATABASE lapince_test;" | docker compose exec -T db sh -c 'psql -U $POSTGRES_USER -d $POSTGRES_DB'
-docker compose exec api npm run test:db:setup      # migrations + seed des catégories
+docker compose exec -T db sh -c 'psql -X -U "$POSTGRES_USER" -d lapince_test' < db/roles.sql   # comptes et droits (une fois)
+docker compose exec api npm run test:db:setup      # migrations + seed des catégories (rôle lapince_owner)
 ```
 
 Les tests d'intégration utilisent aussi Redis (service `redis`, `REDIS_URL` et `REDIS_PASSWORD` du conteneur `api`), sous leurs propres préfixes : ils ne touchent pas aux compteurs du développement.
@@ -80,7 +82,8 @@ Rejouer le test, depuis la racine du dépôt :
 ```bash
 L="-f docker-compose.yml -f apps/api/tests/load/compose.load.yml --profile load"
 echo "CREATE DATABASE lapince_load_test;" | docker compose exec -T db sh -c 'psql -U $POSTGRES_USER -d $POSTGRES_DB'
-docker compose $L up -d --build --no-deps redis-load api-load   # Redis jetable ; migrations + seed, puis l'API
+docker compose exec -T db sh -c 'psql -X -U "$POSTGRES_USER" -d lapince_load_test' < db/roles.sql   # comptes et droits
+docker compose $L up -d --build --no-deps redis-load api-load   # Redis jetable ; migrations + seed (lapince_owner), puis l'API (lapince_app)
 docker compose $L exec api-load node tests/load/prepare-user.ts  # utilisateur vérifié
 docker compose $L run --rm --no-deps k6                         # résumé : apps/api/tests/load/results/
 docker compose $L rm -sf api-load redis-load
@@ -114,10 +117,10 @@ Dans l'API : middlewares 97 %, validateurs 95 %, services 81 %, contrôleurs 70 
 | Job | Étapes |
 |---|---|
 | Formatage | Prettier sur tout le dépôt |
-| API | Redis jetable (même image, même script et mêmes ACL qu'en production) → `npm ci` → **audit des dépendances** (`npm audit --omit=dev --audit-level=high`) → client Prisma → types → **unitaires** → migrations + seed sur une base PostgreSQL 17 jetable → **intégration** → build |
+| API | Redis jetable (même image, même script et mêmes ACL qu'en production) → `npm ci` → **audit des dépendances** (`npm audit --omit=dev --audit-level=high`) → client Prisma → types → **unitaires** → comptes PostgreSQL (`db/roles.sql`, même script qu'en production) → migrations + seed sur une base PostgreSQL 17 jetable (rôle `lapince_owner`) → **intégration** (rôle `lapince_app`) → build |
 | Client | `npm ci` → **audit des dépendances** → lint → **tests** → types et build |
 | Images de production | construction des Dockerfiles de prod |
-| Script de déploiement | ShellCheck (scripts de déploiement et de Redis) → tests du script ([deploy/deploy.test.sh](../deploy/deploy.test.sh)) |
+| Script de déploiement | ShellCheck (scripts de déploiement, de Redis et de démarrage de l'API) → tests du script ([deploy/deploy.test.sh](../deploy/deploy.test.sh)) |
 
 Les branches `dev` et `main` sont protégées : GitHub refuse le merge tant que tous ces jobs ne sont pas verts.
 
@@ -173,6 +176,7 @@ Chemins relatifs à `apps/api/tests/integration/` (API, intégration), `apps/api
 | Requêtes simultanées | `budgets/alert-consistency` | une seule alerte, au montant exact (verrou par utilisateur et catégorie) |
 | Écriture qui contournerait le service | `budgets/alert-consistency` | seconde alerte pour le même utilisateur et la même catégorie refusée par la base (contrainte d'unicité, erreur P2002) |
 | Deux comptes qui ne diffèrent que par la casse | `auth/email-unique-database` | email non normalisé refusé par la base (contrainte CHECK) ; inscriptions ou changements d'email simultanés → un seul réussit, les autres 409, jamais 500 ; email non ASCII refusé |
+| Faille de l'API exploitée contre la base (injection SQL, dépendance compromise) | `database-roles` | l'API, et toute la suite d'intégration, se connectent avec `lapince_app`, sans attribut d'administration ; `CREATE TABLE`, `ALTER TABLE`, `DROP TABLE users`, `TRUNCATE users` → refusés (42501) ; historique des migrations illisible (42501) ; lecture et écriture des données acceptées |
 | Fuite de données dans les journaux | `middlewares/error.middleware` (unitaire) | donnée refusée par une contrainte CHECK → 400, sans le détail de PostgreSQL (qui recopie la ligne refusée) dans le journal |
 
 **Contre-épreuves** (dans le conteneur seulement, fichiers restaurés ensuite → verts) :
@@ -180,6 +184,7 @@ Chemins relatifs à `apps/api/tests/integration/` (API, intégration), `apps/api
 - 31/10/2026 : jeton de session présenté non consommé lors de la rotation → « jeton déjà utilisé » et « rafraîchissements simultanés » rouges ;
 - 01/11/2026 : suppression du compte neutralisée dans le contrôleur → « supprime le compte et toutes ses données » rouge (l'utilisateur existe encore) ;
 - 09/11/2026 : `skipSuccessfulRequests` retiré du limiteur de connexion → « ne compte pas une connexion réussie » rouge (10 échecs comptés au lieu de 9) ; `passOnStoreError` à `false` → « Redis indisponible » rouge (500 au lieu de 400). Avant le passage à Redis, 4 des 5 tests de `auth/rate-limit-redis*` étaient rouges (compteur absent de Redis, deux instances qui comptent chacune de leur côté, 429 quand Redis est coupé).
+- 10/11/2026 : `database-roles` lancé avec le superutilisateur, comme l'API de la 0.9.6 → 6 tests sur 7 rouges (DDL acceptés, ou refusés pour une autre raison que les droits : dépendances pour `DROP`, clés étrangères pour `TRUNCATE` ; historique des migrations lisible). Chaque requête testée s'exécute dans une transaction toujours annulée : même acceptée, elle n'a rien modifié (vérifié). Sur une base neuve sans la migration `20261110120000_private_migrations_table`, `lapince_app` avait les droits de lecture et d'écriture sur `_prisma_migrations` (privilèges par défaut) ; `deploy.sh` de la 0.9.6 → 15 des vérifications ajoutées rouges.
 
 ---
 

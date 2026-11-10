@@ -1,7 +1,8 @@
 import { PrismaClient, CategoryType } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 
-const adapter = new PrismaPg(process.env.DATABASE_URL!);
+// Lancé après les migrations, avec le même rôle (lapince_owner), et non celui de l'API
+const adapter = new PrismaPg(process.env.MIGRATION_DATABASE_URL!);
 const prisma = new PrismaClient({ adapter });
 
 async function main() {
