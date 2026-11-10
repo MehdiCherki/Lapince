@@ -27,9 +27,9 @@ Internet ──► nginx-proxy (:80, :443) ──► client (nginx, fichiers du 
 
 | Service | Rôle |
 |---|---|
-| `db` | PostgreSQL 17, données dans le volume `postgres_data` |
+| `db` | PostgreSQL 17, données dans le volume `postgres_data`. Trois comptes : l'administrateur (`POSTGRES_USER`, superutilisateur : administration et sauvegardes), `lapince_owner` (propriétaire du schéma : migrations et seed), `lapince_app` (l'API : données seulement) ; voir [base-de-donnees.md](base-de-donnees.md), section 9 |
 | `redis` | Redis 8 : compteurs du limiteur de tentatives de l'API (connexion, inscription, session, mot de passe oublié). Sur un réseau Docker interne, partagé avec `api` seulement, sans accès à Internet ; aucun port publié. Un seul utilisateur, `lapince_app`, limité aux commandes du limiteur et aux clés `rl:*` ; `default` désactivé ([redis/start.sh](../redis/start.sh)). Aucune persistance : un redémarrage remet les compteurs à zéro (fenêtres de 15 min à 1 h) |
-| `api` | API compilée (`node dist/…`). Au démarrage : `prisma migrate deploy` (applique les migrations versionnées non encore jouées), puis seed des catégories |
+| `api` | API compilée (`node dist/…`). Au démarrage ([apps/api/docker-start.sh](../apps/api/docker-start.sh)) : `prisma migrate deploy` (applique les migrations versionnées non encore jouées), puis seed des catégories, avec `lapince_owner` ; puis le serveur, avec `lapince_app` |
 | `client` | nginx qui sert le front et relaie `/api/` vers `api` |
 | `nginx-proxy` | Seul service exposé (ports 80 et 443). HTTP → HTTPS, `www` → domaine nu. Recharge sa configuration toutes les 6 h pour servir un certificat renouvelé |
 | `certbot` | Tente un renouvellement toutes les 12 h, en mode **webroot** |
@@ -49,7 +49,8 @@ Copie de `.env.example`, avec ces valeurs propres à la prod :
 
 ```env
 NODE_ENV=production
-DATABASE_URL=postgresql://<POSTGRES_USER>:<POSTGRES_PASSWORD>@db:5432/<POSTGRES_DB>
+DATABASE_URL=postgresql://lapince_app:<mot de passe de lapince_app>@db:5432/<POSTGRES_DB>
+MIGRATION_DATABASE_URL=postgresql://lapince_owner:<mot de passe de lapince_owner>@db:5432/<POSTGRES_DB>
 FRONTEND_URL=https://mehdicherki.fr
 ALLOWED_ORIGINS=https://mehdicherki.fr
 VITE_API_BASE_URL=/api
@@ -57,6 +58,8 @@ REDIS_PASSWORD=<valeur générée, voir ci-dessous>
 ```
 
 Les ports locaux (`*_LOCAL_PORT`) ne servent pas en prod : seul `nginx-proxy` est exposé.
+
+`DATABASE_URL` et `MIGRATION_DATABASE_URL` (depuis la 0.9.7) : l'API se connecte avec le rôle `lapince_app`, les migrations et le seed avec `lapince_owner` ; `POSTGRES_USER` et `POSTGRES_PASSWORD` ne servent plus qu'à l'administrateur (sauvegardes, création des rôles). Les mots de passe des rôles sont générés sur le serveur, sans être affichés, au moment de leur création (section 2, « comptes PostgreSQL séparés ») ; ils ne sont écrits que dans ces deux adresses. Sans `MIGRATION_DATABASE_URL`, aucune commande `dc` ne démarre ; `deploy.sh` vérifie que chaque adresse désigne le bon rôle, sans lire le mot de passe.
 
 `REDIS_PASSWORD` (depuis la 0.9.6) : mot de passe de l'utilisateur Redis `lapince_app`, propre au serveur, jamais réutilisé ailleurs. Le générer sur le serveur, sans l'afficher, puis l'ajouter au `.env` :
 
@@ -87,7 +90,7 @@ cd /opt/lapince
 
 | Étape | Ce que fait le script | Arrêt si |
 |---|---|---|
-| 1. Préconditions | dossier, branche `main`, aucune modification locale, `REDIS_PASSWORD` présent dans `.env` (sans afficher sa valeur), base démarrée ; liste les commits à déployer ; regarde si la base est inscrite aux migrations | une condition manque (ou rien à déployer : sortie normale) |
+| 1. Préconditions | dossier, branche `main`, aucune modification locale, `REDIS_PASSWORD` présent dans `.env` (sans afficher sa valeur), `MIGRATION_DATABASE_URL` sur le rôle `lapince_owner` et `DATABASE_URL` sur `lapince_app` (seul le nom du rôle est vérifié), base démarrée, rôles créés et propriétaires des objets du schéma ; liste les commits à déployer ; regarde si la base est inscrite aux migrations | une condition manque (ou rien à déployer : sortie normale) |
 | 2. Sauvegarde | `pg_dump` vers `~/backup-lapince-AAAA-MM-JJ-HHMM.sql` ; une fois vérifiée, seules les 5 sauvegardes les plus récentes sont gardées (`KEEP_BACKUPS=n ./deploy/deploy.sh` pour en garder un autre nombre) | fichier incomplet (ligne de fin de `pg_dump` absente) : rien n'est supprimé |
 | 3. Mise à jour | `git pull --ff-only` ; note le commit précédent, point de retour | historique divergent |
 | 4. Build | `dc build` | erreur de build |
@@ -107,7 +110,7 @@ bash ~/deploy.sh --check
 bash ~/deploy.sh
 ```
 
-**Testé** : [deploy/deploy.test.sh](../deploy/deploy.test.sh) exécute le script avec des doubles de `git`, `docker` et `curl` : 24 scénarios (déploiement normal, sauvegarde incomplète, site en 502, API en boucle, inscription de la 0.9.0 avec des contrôles verts ou non, rétention des sauvegardes, `REDIS_PASSWORD` absent ou vide, Redis non sain…), 82 vérifications, dont « le mot de passe de Redis n'apparaît ni à l'écran ni dans le journal », lancées par la CI à chaque PR, avec ShellCheck. Contre-épreuve : 6 sabotages du script (sans rechargement de nginx, sauvegarde non vérifiée, décimales non contrôlées, contrôle 1 sur le mauvais schéma, une sauvegarde de trop gardée, rétention avant la vérification), tous détectés. Exécuté en réel pour la 0.9.0 et la 0.9.1.
+**Testé** : [deploy/deploy.test.sh](../deploy/deploy.test.sh) exécute le script avec des doubles de `git`, `docker` et `curl` : 30 scénarios (déploiement normal, sauvegarde incomplète, site en 502, API en boucle, inscription de la 0.9.0 avec des contrôles verts ou non, rétention des sauvegardes, `REDIS_PASSWORD` absent ou vide, Redis non sain, adresse de migration absente ou sur un autre rôle, API encore sur l'administrateur, rôles non créés ou objets non transférés…), 102 vérifications, dont « aucun mot de passe (Redis, PostgreSQL) n'apparaît ni à l'écran ni dans le journal », lancées par la CI à chaque PR, avec ShellCheck. Contre-épreuves : 6 sabotages du script (sans rechargement de nginx, sauvegarde non vérifiée, décimales non contrôlées, contrôle 1 sur le mauvais schéma, une sauvegarde de trop gardée, rétention avant la vérification), tous détectés ; le script de la 0.9.6 échoue à 15 des vérifications ajoutées pour la 0.9.7. Exécuté en réel pour la 0.9.0 et la 0.9.1.
 
 ### Une seule fois : inscription de la base aux migrations (0.9.0)
 
@@ -186,6 +189,94 @@ dc exec nginx-proxy nginx -s reload
 docker network rm lapince_redis
 ```
 `REDIS_PASSWORD` peut rester dans le `.env` : la 0.9.5 ne le lit pas.
+
+### Une seule fois : comptes PostgreSQL séparés (0.9.7)
+
+La 0.9.7 sépare les comptes de la base ([base-de-donnees.md](base-de-donnees.md), section 9) : l'API ne se connecte plus avec le superutilisateur. Les rôles doivent exister, et posséder les objets du schéma, **avant** le déploiement : la nouvelle API ne démarre pas sans eux, et `deploy.sh` s'arrête dès ses préconditions tant qu'ils manquent. Une migration, qui ne change que des droits (aucune donnée). Tout se lance depuis `/opt/lapince`, **dans un même terminal** : les mots de passe générés à l'étape 3 restent dans des variables du shell jusqu'à l'étape 4.
+
+**1. Sauvegarde** (hors de la rotation de `deploy.sh`, qui en fera une autre) :
+```bash
+cd /opt/lapince
+F=~/sauvegarde-avant-0.9.7-$(date +%F-%H%M).sql
+dc exec -T db sh -c 'pg_dump -U "$POSTGRES_USER" "$POSTGRES_DB"' > "$F"
+grep -c "PostgreSQL database dump complete" "$F"   # 1
+```
+
+**2. Contrôles préalables, en lecture seule** :
+```bash
+q() { echo "$1" | dc exec -T db sh -c 'psql -X -U "$POSTGRES_USER" -d "$POSTGRES_DB" -At'; }
+q 'SHOW server_version;'        # 17.x : CREATE est déjà retiré à PUBLIC sur le schéma public (depuis la 15)
+q 'SHOW password_encryption;'   # scram-sha-256 : le serveur ne garde que l'empreinte des mots de passe
+q "SELECT count(*) FROM pg_roles WHERE rolname IN ('lapince_owner', 'lapince_app');"   # 0 : noms libres
+q "SELECT pg_get_userbyid(relowner), relkind, count(*) FROM pg_class WHERE relnamespace = 'public'::regnamespace AND relkind IN ('r', 'S') GROUP BY 1, 2 ORDER BY 2;"
+# <administrateur>|S|6 et <administrateur>|r|7 : 6 séquences et 7 tables (dont _prisma_migrations), à transférer
+q "SELECT count(*) FROM pg_type WHERE typnamespace = 'public'::regnamespace AND typtype = 'e';"   # 2 types énumérés
+```
+**Si les noms ne sont pas libres : STOP.** Quelqu'un a déjà créé ces rôles : comprendre pourquoi avant de continuer (le script les reprendrait et changerait leurs droits).
+
+**3. Création des rôles**, avec le script de la 0.9.7, pris dans `origin/main` sans toucher au dépôt :
+```bash
+git fetch origin main && git show origin/main:db/roles.sql > ~/roles.sql
+# Mots de passe générés dans des variables du shell : jamais affichés, jamais sur une ligne de commande
+export LAPINCE_OWNER_PASSWORD="$(openssl rand -hex 32)" LAPINCE_APP_PASSWORD="$(openssl rand -hex 32)"
+# -e sans valeur : docker transmet la variable du shell, sans qu'elle apparaisse dans « ps »
+dc exec -T -e LAPINCE_OWNER_PASSWORD -e LAPINCE_APP_PASSWORD db sh -c 'psql -X -U "$POSTGRES_USER" -d "$POSTGRES_DB"' < ~/roles.sql
+```
+Attendu : `lapince_owner` et `lapince_app` à `f` partout sauf `connexion` et `mot_de_passe` (`t`) ; les 15 objets à `lapince_owner` ; les 6 tables de l'application avec `DELETE, INSERT, SELECT, UPDATE`, `_prisma_migrations` avec `—`, les 6 séquences avec `SELECT, USAGE`, les 2 types avec `USAGE (PUBLIC)`. Le script tient en une transaction : en cas d'erreur, il annule tout et n'affiche que le message. L'API en place (0.9.6) continue de tourner : elle utilise encore l'administrateur, qui garde tous les droits ; le transfert ne verrouille les tables que le temps de la transaction (une fraction de seconde).
+
+**4. Le `.env`**, dans le même terminal :
+```bash
+cp -p .env ~/env-avant-0.9.7 && chmod 600 ~/env-avant-0.9.7   # ancienne DATABASE_URL, pour le retour arrière
+DB="$(sed -n 's/^POSTGRES_DB=//p' .env)"; echo "Base : $DB"   # nom de la base (pas un secret), sans guillemets
+sed -i '/^DATABASE_URL=/d; /^MIGRATION_DATABASE_URL=/d' .env
+# printf est une commande interne du shell : les valeurs n'apparaissent pas dans « ps »
+printf 'DATABASE_URL=postgresql://lapince_app:%s@db:5432/%s\nMIGRATION_DATABASE_URL=postgresql://lapince_owner:%s@db:5432/%s\n' \
+  "$LAPINCE_APP_PASSWORD" "$DB" "$LAPINCE_OWNER_PASSWORD" "$DB" >> .env
+unset LAPINCE_OWNER_PASSWORD LAPINCE_APP_PASSWORD
+grep -cE '^(DATABASE_URL=postgresql://lapince_app:|MIGRATION_DATABASE_URL=postgresql://lapince_owner:).' .env   # 2
+```
+L'API en place n'est pas touchée : elle garde l'environnement de sa création jusqu'à l'étape 5.
+
+**5. Déploiement**, avec le script de la 0.9.7, qui contrôle les comptes (celui du serveur est encore celui de la 0.9.6) :
+```bash
+git show origin/main:deploy/deploy.sh > ~/deploy.sh
+bash ~/deploy.sh --check   # préconditions : adresses des deux rôles, rôles créés, objets transférés
+bash ~/deploy.sh
+```
+Au redémarrage, l'API applique la migration `20261110120000_private_migrations_table` avec `lapince_owner`, puis démarre avec `lapince_app`.
+
+**6. Vérifications** (`q` : étape 2) :
+```bash
+echo '\du lapince_*' | dc exec -T db sh -c 'psql -X -U "$POSTGRES_USER" -d "$POSTGRES_DB"'   # aucun attribut (ni Superuser, ni Create DB, ni Create role)
+dc logs api | grep -E "Applying migration|Server started"   # 20261110120000_private_migrations_table, puis Server started
+q "SELECT count(*) FROM pg_class WHERE relnamespace = 'public'::regnamespace AND relkind IN ('r', 'S') AND pg_get_userbyid(relowner) <> 'lapince_owner';"   # 0
+# Droits réels de l'API, vus depuis son conteneur, avec son adresse (lecture seule) :
+dc exec -T api node -e 'const c=new (require("pg").Client)(process.env.DATABASE_URL);c.connect().then(()=>c.query("SELECT current_user AS role, has_schema_privilege($$public$$, $$CREATE$$) AS creer_table, has_table_privilege($$users$$, $$TRUNCATE$$) AS vider_users, has_table_privilege($$_prisma_migrations$$, $$SELECT$$) AS lire_migrations")).then(r=>console.log(r.rows[0])).finally(()=>c.end())'
+# { role: 'lapince_app', creer_table: false, vider_users: false, lire_migrations: false }
+```
+Puis, dans le navigateur : connexion, ajout d'une transaction, tableau de bord. Ensuite :
+```bash
+q "SELECT usename, count(*) FROM pg_stat_activity WHERE datname = current_database() AND backend_type = 'client backend' GROUP BY 1;"
+# lapince_app, et la session de psql de l'administrateur qui fait la requête
+```
+Une fois la version validée : `rm ~/env-avant-0.9.7 ~/roles.sql`.
+
+**7. Retour arrière** : aucune donnée n'a changé, la sauvegarde n'est pas à restaurer. Les rôles créés restent, sans effet tant qu'aucune adresse ne les utilise ; l'administrateur garde tous les droits sur les objets transférés.
+- L'API ne démarre pas avec les nouveaux comptes, on garde le code de la 0.9.7 : rétablir l'ancienne `DATABASE_URL` (administrateur) dans les deux adresses, puis recréer l'API. `deploy.sh` refusera ensuite de déployer tant que les comptes séparés ne sont pas rétablis : c'est voulu.
+  ```bash
+  OLD="$(grep '^DATABASE_URL=' ~/env-avant-0.9.7)"
+  sed -i '/^DATABASE_URL=/d; /^MIGRATION_DATABASE_URL=/d' .env
+  printf '%s\nMIGRATION_%s\n' "$OLD" "$OLD" >> .env
+  dc up -d api && dc exec nginx-proxy nginx -s reload
+  ```
+- Retour à la 0.9.6 :
+  ```bash
+  cp -p ~/env-avant-0.9.7 .env
+  git checkout 11a9c5b && dc up -d --build && dc exec nginx-proxy nginx -s reload
+  ```
+  La 0.9.6 démarre normalement sur la base migrée : la migration de la 0.9.7 est déjà inscrite, elle ne la rejoue pas (« No pending migrations »).
+
+Procédure **répétée le 10/11/2026** sur une base jetable PostgreSQL 17.9 dans l'état de la prod (créée par l'image de la 0.9.6 avec le superutilisateur d'amorçage, nom à la casse mixte) : script des rôles (13 objets et 2 types transférés), image de production de la 0.9.7 (migration appliquée par `lapince_owner`, API connectée en `lapince_app` d'après `pg_stat_activity`, contrôle final `migrate diff` à `0`, arrêt propre) ; image de la 0.9.6 sur la base migrée : `migrate deploy` sans erreur (« No pending migrations »). Mots de passe absents des journaux du serveur PostgreSQL et de l'API. Pas sur une copie des données de prod, qui ne sortent pas du serveur.
 
 ### À la main (référence)
 
@@ -320,6 +411,7 @@ echo "DROP DATABASE lapince_restore_check;" | dc exec -T db sh -c 'psql -U "$POS
 
 > **Restaurer sur une autre machine** (ex. le poste de développement) : si le rôle PostgreSQL n'a pas le même nom (`"Lapince"` en prod, `LaPince` en dev : les guillemets rendent la casse significative), les instructions `ALTER … OWNER TO` échouent. On les retire au passage, comme l'option `--no-owner` de `pg_restore` :
 > `sed -E '/^ALTER .* OWNER TO /d' "$F" | psql …`
+> Depuis la 0.9.7, les objets appartiennent à `lapince_owner` et les droits visent `lapince_app` : ces noms sont les mêmes partout, il suffit que `db/roles.sql` ait été lancé sur la machine de destination (les rôles existent alors pour tout le serveur PostgreSQL), puis relancé sur la base restaurée.
 
 **Testé le 30/10/2026** : sauvegarde de prod du jour restaurée sur le poste de développement, sans erreur ; nombres de lignes identiques au fichier pour les 6 tables (5 utilisateurs, 6 transactions, 2 budgets, 0 alerte, 39 catégories, 3 sessions) ; copie et base jetable supprimées ensuite.
 
@@ -330,8 +422,10 @@ Les mêmes commandes, sur la vraie base, API arrêtée pour qu'aucune écriture 
 dc stop api
 echo 'DROP DATABASE "Lapince"; CREATE DATABASE "Lapince";' | dc exec -T db sh -c 'psql -U "$POSTGRES_USER" -d postgres'
 dc exec -T db sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -v ON_ERROR_STOP=1 -q' < ~/backup-lapince-AAAA-MM-JJ.sql
+dc exec -T db sh -c 'psql -X -U "$POSTGRES_USER" -d "$POSTGRES_DB"' < db/roles.sql   # droits sur la base recréée (sans mot de passe : les rôles existent)
 dc start api                       # migrate deploy rejoue les migrations postérieures à la sauvegarde, s'il y en a
 ```
+Depuis la 0.9.7, une sauvegarde contient les propriétaires (`lapince_owner`) et les droits des tables (`lapince_app`), mais pas les droits sur la base elle-même (connexion), propres à la base recréée : d'où la relance de `db/roles.sql`, idempotent. Pour une sauvegarde d'avant la 0.9.7 (objets à l'administrateur, aucun droit pour l'API), il transfère aussi les objets et accorde les droits : sans lui, l'API n'aurait accès à aucune table.
 Avant de lancer cette restauration réelle, vérifier le fichier par la procédure précédente (base jetable). Cette restauration réelle n'a **pas** été exécutée en prod : seule la restauration de vérification l'a été (30/10/2026) ; les commandes sont les mêmes, appliquées à la base principale.
 
 ---
@@ -365,7 +459,7 @@ rcli DEL rl:login:203.0.113.10     # débloquer une personne bloquée à tort
 
 **Service qui redémarre en boucle** : `dc logs <service> --tail 50`.
 
-**Erreur de connexion à la base** : dans `.env`, `DATABASE_URL` doit reprendre `POSTGRES_USER`, `POSTGRES_PASSWORD` et `POSTGRES_DB`, avec l'hôte `db`. Attendre que `db` soit `healthy` (`dc ps`).
+**Erreur de connexion à la base** : dans `.env`, `DATABASE_URL` (rôle `lapince_app`) et `MIGRATION_DATABASE_URL` (rôle `lapince_owner`) doivent reprendre le mot de passe du rôle et `POSTGRES_DB`, avec l'hôte `db`. « password authentication failed » : le mot de passe de l'adresse diffère de celui du rôle (le redéfinir en relançant `db/roles.sql` avec `LAPINCE_*_PASSWORD`). « permission denied » au démarrage : `db/roles.sql` n'a pas été lancé sur cette base (`./deploy/deploy.sh --check` le signale). Attendre que `db` soit `healthy` (`dc ps`).
 
 **Redis non sain ou API qui attend Redis** : `dc logs redis --tail 30` (« REDIS_PASSWORD manquant », « trop court », « aucun espace ») et `dc logs api --tail 30` (« Redis : erreur de connexion », par exemple `WRONGPASS` si le mot de passe a changé sans recréer les deux services : `dc up -d redis api`). Redis arrêté en cours de route : l'API continue de répondre, les tentatives ne sont plus limitées, et chaque requête concernée est journalisée (« error from store, allowing request without rate-limiting ») jusqu'à son retour ; elle s'y reconnecte seule.
 
