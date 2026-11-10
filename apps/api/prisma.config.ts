@@ -13,6 +13,8 @@ export default defineConfig({
     // Développement seulement : prisma migrate dev rejoue les migrations dans une base « shadow ».
     // lapince_owner ne peut pas créer de base (pas de CREATEDB) : on lui en fournit une, dont il
     // est propriétaire (lapince_shadow). Inutile pour migrate deploy (production, CI).
-    shadowDatabaseUrl: process.env.SHADOW_DATABASE_URL,
+    // Vide = absente : Compose transmet vide une variable qui manque au .env, et Prisma refuse
+    // une adresse vide
+    shadowDatabaseUrl: process.env.SHADOW_DATABASE_URL || undefined,
   },
 });
