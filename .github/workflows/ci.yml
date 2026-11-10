@@ -23,7 +23,7 @@ jobs:
     name: Formatage (Prettier)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - uses: actions/setup-node@v5
         with:
           node-version: 22
@@ -69,7 +69,7 @@ jobs:
       REDIS_URL: redis://localhost:6379
       REDIS_PASSWORD: mot-de-passe-de-ci-uniquement
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       # Redis jetable, lancé comme en production : même image, même script, mêmes ACL
       # (les tests vérifient aussi que l'utilisateur lapince_app a les droits nécessaires).
       # Pas en « services » : ceux-ci démarrent avant le checkout, sans accès à redis/start.sh.
@@ -120,7 +120,7 @@ jobs:
     env:
       VITE_API_BASE_URL: /api
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - uses: actions/setup-node@v5
         with:
           node-version: 22
@@ -141,7 +141,7 @@ jobs:
     name: Script de déploiement (ShellCheck, tests)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - name: ShellCheck
         run: shellcheck deploy/*.sh redis/*.sh apps/api/docker-start.sh
       # git, docker et curl remplacés par des doubles : aucun serveur n'est touché
@@ -152,7 +152,7 @@ jobs:
     name: Images de production
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       # Les Dockerfiles de prod, tels que le serveur les construit (sans les publier)
       - name: Image de l'API
         run: docker build -f apps/api/api.Dockerfile apps/api
