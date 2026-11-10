@@ -52,6 +52,9 @@ Copie ce bloc en haut de la section `## [Non publié]` et remplis-le :
 
 ## [Non publié]
 
+### Modifié
+- Documentation : schémas à jour de la 0.9.7. Architecture : Redis et le compte `lapince_app` de l'API. MCD : l'alerte devient l'association porteuse ALERTER, comme BUDGÉTER, ce que traduit la contrainte `UNIQUE (user_id, category_id)` de la 0.9.5. Cas d'utilisation : un seul cadre, et l'inclusion du recalcul depuis « consulter ses alertes ». `docs/base-de-donnees.md` aligné : MCD, MLD, écarts MLD/MPD, migration `20261110120000_private_migrations_table` ajoutée au tableau, liste blanche des avatars dans le dictionnaire (branche `docs/architecture-diagram`, PR #103)
+
 ---
 
 ## [0.9.7] — 2026-11-10

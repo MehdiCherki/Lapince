@@ -1,15 +1,18 @@
 @startuml cas-utilisation
-' Cas d'utilisation de La Pince (0.9.1) — utilisateur connecté. Fil rouge : « Ajouter une dépense ».
+' Cas d'utilisation de La Pince (0.9.7) — utilisateur connecté. Fil rouge : « Ajouter une dépense ».
 ' L'accès au service (visiteur) est dans cas-utilisation-acces.puml.
-' Format A4 : libellés sur plusieurs lignes et espacements resserrés, pour tenir dans 16 cm de large (texte ≈ 9 pt).
+' Un seul cadre (le système), l'acteur à l'extérieur ; le cas inclus « Recalculer l'alerte » est dans le cadre.
+' Format A4 : libellés sur deux lignes et espacements resserrés, pour tenir dans 16 cm de large (texte ≈ 9 pt).
 skinparam defaultFontName "DejaVu Sans"
 skinparam defaultFontSize 14
 skinparam shadowing false
-skinparam ranksep 20
-skinparam nodesep 15
-skinparam packageStyle rectangle
+skinparam ranksep 60
+skinparam nodesep 8
 skinparam usecase {
   BackgroundColor #FFFFFF
+  BorderColor #002B49
+}
+skinparam rectangle {
   BorderColor #002B49
 }
 skinparam actor {
@@ -20,44 +23,37 @@ left to right direction
 
 title Cas d'utilisation — utilisateur connecté
 
-package "Transactions" {
-  usecase "Ajouter\nune dépense" as depense #EEF3F7
-  usecase "Ajouter\nun revenu" as revenu
-  usecase "Modifier ou\nsupprimer une\ntransaction" as transaction
-}
-package "Budgets et alertes" {
-  usecase "Définir un\nbudget par\ncatégorie" as budget
-  usecase "Modifier ou\nsupprimer\nun budget" as budgetmaj
-  usecase "Consulter et\nfermer ses\nalertes" as alertes
-}
-usecase "Recalculer\nl'alerte de\nla catégorie" as alerte #EEF3F7
-
 actor "Utilisateur\nconnecté" as utilisateur
 
-package "Suivi" {
+rectangle "La Pince" {
+  usecase "Ajouter\nune dépense" as depense #EEF3F7
+  usecase "Ajouter\nun revenu" as revenu
+  usecase "Modifier ou supprimer\nune transaction" as transaction
+  usecase "Définir un budget\npar catégorie" as budget
+  usecase "Modifier ou\nsupprimer un budget" as budgetmaj
+  usecase "Consulter et\nfermer ses alertes" as alertes
   usecase "Consulter le\ntableau de bord" as tableau
-}
-package "Mon compte" {
   usecase "Modifier\nson profil" as profil
   usecase "Supprimer\nson compte" as supprimer
   usecase "Se\ndéconnecter" as deconnecter
+  usecase "Recalculer\nl'alerte de\nla catégorie" as alerte #EEF3F7
 }
 
-depense -- utilisateur
-revenu -- utilisateur
-transaction -- utilisateur
-budget -- utilisateur
-budgetmaj -- utilisateur
-alertes -- utilisateur
-
+utilisateur -- depense
+utilisateur -- revenu
+utilisateur -- transaction
+utilisateur -- budget
+utilisateur -- budgetmaj
+utilisateur -- alertes
 utilisateur -- tableau
 utilisateur -- profil
 utilisateur -- supprimer
 utilisateur -- deconnecter
 
-alerte <.. depense : <<include>>
-alerte <.. transaction : <<include>>
-alerte <.. budget : <<include>>
-alerte <.. budgetmaj : <<include>>
+depense ..> alerte : <<include>>
+transaction ..> alerte : <<include>>
+budget ..> alerte : <<include>>
+budgetmaj ..> alerte : <<include>>
+alertes ..> alerte : <<include>>
 
 @enduml
