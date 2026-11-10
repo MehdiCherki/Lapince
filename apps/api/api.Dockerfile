@@ -1,7 +1,7 @@
 # Un dockerfile est une "recette amélioré" d'une image de base (FROM) permettant de créer des conteneurs pré-configuré plus finement
 
 # Définir l'image de base depuis laquelle on créé notre image
-FROM node:22-slim AS builder
+FROM node:26-slim AS builder
 
 # Définir un espace de travail
 # /app est très commun (convention) pour les applications Node
