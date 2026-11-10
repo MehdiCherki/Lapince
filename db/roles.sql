@@ -30,6 +30,19 @@ SET log_min_duration_statement = -1;
 
 \getenv owner_password LAPINCE_OWNER_PASSWORD
 \getenv app_password LAPINCE_APP_PASSWORD
+-- Vide = absent (Compose transmet vide une variable qui manque au .env)
+\if :{?owner_password}
+  SELECT :'owner_password' = '' AS owner_password_empty \gset
+  \if :owner_password_empty
+    \unset owner_password
+  \endif
+\endif
+\if :{?app_password}
+  SELECT :'app_password' = '' AS app_password_empty \gset
+  \if :app_password_empty
+    \unset app_password
+  \endif
+\endif
 
 -- --- Contrôles préalables -----------------------------------------------------------------
 SELECT rolsuper AS is_superuser,

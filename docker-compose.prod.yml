@@ -45,7 +45,10 @@ services:
     restart: unless-stopped  # Redémarre après un crash ou un redémarrage du serveur
     environment:
       NODE_ENV: ${NODE_ENV:-production}
-      DATABASE_URL: ${DATABASE_URL}   # URL de connexion à Postgres
+      # Comptes PostgreSQL séparés : l'API avec lapince_app (données seulement),
+      # migrations et seed avec lapince_owner (propriétaire du schéma)
+      DATABASE_URL: ${DATABASE_URL}   # rôle lapince_app
+      MIGRATION_DATABASE_URL: ${MIGRATION_DATABASE_URL:?MIGRATION_DATABASE_URL manquante dans .env}  # rôle lapince_owner
       PORT: ${API_PORT}               # Port interne sur lequel l'API écoute
       JWT_SECRET: ${JWT_SECRET}       # Clé secrète pour signer les tokens JWT
       ALLOWED_ORIGINS: ${ALLOWED_ORIGINS} # Liste des origines autorisées pour les requêtes CORS (séparées par des virgules)

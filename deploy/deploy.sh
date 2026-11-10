@@ -6,7 +6,7 @@
 #   ./deploy/deploy.sh --redeploy  reconstruit et relance même sans nouveau commit
 #
 # Étapes (procédure détaillée : docs/deploiement-serveur.md, section 2) :
-#   1. préconditions  2. sauvegarde de la base  3. mise à jour du code  4. build
+#   1. préconditions (dont les comptes PostgreSQL)  2. sauvegarde de la base  3. mise à jour du code  4. build
 #   5. inscription de la base aux migrations (une seule fois)  6. redémarrage (Redis sain, API démarrée)
 #   7. rechargement de nginx  8. contrôles
 # Sauvegardes : les KEEP_BACKUPS plus récentes sont gardées (5 par défaut), les autres supprimées.
@@ -72,7 +72,18 @@ step "1. Préconditions ($MODE)"
 [[ "$(git rev-parse --abbrev-ref HEAD)" == "$BRANCH" ]] || fail "le serveur n'est pas sur la branche $BRANCH"
 # Mot de passe de Redis (0.9.6) : présent et non vide, vérifié sans jamais lire ni afficher sa valeur
 grep -q '^REDIS_PASSWORD=.' .env 2>/dev/null || fail "REDIS_PASSWORD absent ou vide dans .env (docs/deploiement-serveur.md, section 1)"
+# Comptes PostgreSQL séparés (0.9.7) : migrations avec lapince_owner, API avec lapince_app.
+# Seul le nom du rôle est vérifié, jamais le mot de passe, qui n'est ni lu ni affiché
+grep -qE "^MIGRATION_DATABASE_URL=[\"']?postgres(ql)?://lapince_owner:." .env 2>/dev/null ||
+  fail "MIGRATION_DATABASE_URL absente de .env, ou sans le rôle lapince_owner (docs/deploiement-serveur.md, section 1)"
+grep -qE "^DATABASE_URL=[\"']?postgres(ql)?://lapince_app:." .env 2>/dev/null ||
+  fail "DATABASE_URL de .env : l'API doit se connecter avec le rôle lapince_app (docs/deploiement-serveur.md, section 1)"
 [[ "$(dc ps db --format '{{.State}}')" == "running" ]] || fail "la base (service db) ne tourne pas"
+# Rôles créés (connexion possible, sans superutilisateur) et propriétaires des objets du schéma,
+# sinon les migrations échoueraient : db/roles.sql n'a pas été lancé sur cette base
+read -r DB_ROLES NOT_OWNED <<< "$(sql "SELECT (SELECT count(*) FROM pg_roles WHERE rolname IN ('lapince_owner', 'lapince_app') AND rolcanlogin AND NOT rolsuper), (SELECT count(*) FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace WHERE n.nspname = 'public' AND c.relkind IN ('r', 'p', 'S') AND pg_get_userbyid(c.relowner) <> 'lapince_owner');" | tr '|' ' ')"
+[[ "$DB_ROLES" == "2" && "$NOT_OWNED" == "0" ]] ||
+  fail "comptes PostgreSQL non prêts ($DB_ROLES rôle(s) sur 2, $NOT_OWNED objet(s) à transférer) : lancer db/roles.sql (docs/deploiement-serveur.md, section 2)"
 PREVIOUS_COMMIT="$(git rev-parse --short HEAD)"
 echo "Version en production : $(git log --oneline -1)"
 
