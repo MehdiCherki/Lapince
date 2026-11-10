@@ -109,7 +109,7 @@ Types PostgreSQL. `NN` : obligatoire (`NOT NULL`). `PK` : clé primaire, `FK` : 
 | `last_name` | `TEXT` | NN | nom |
 | `email` | `TEXT` | NN, UQ, CHECK | email de connexion, en minuscules, sans espaces autour (RG1) : contrainte `users_email_normalized_check` |
 | `password` | `TEXT` | NN | **hash Argon2** du mot de passe, jamais le mot de passe (RG2) |
-| `photo` | `TEXT` | | photo de profil (facultative) |
+| `photo` | `TEXT` | | photo de profil (facultative) : adresse d'un avatar DiceBear, seule forme acceptée par l'API (liste blanche, 400 sinon) |
 | `email_verified` | `BOOLEAN` | NN, défaut `false` | email confirmé |
 | `email_verification_token_hash` | `TEXT` | | **hash SHA-256** du jeton aléatoire (UUID v4) du lien de confirmation ; effacé une fois l'email vérifié |
 | `password_reset_token_hash` | `TEXT` | UQ | **hash SHA-256** du jeton de réinitialisation ; le jeton en clair n'existe que dans l'email (RG8) |
