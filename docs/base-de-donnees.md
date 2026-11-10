@@ -40,7 +40,7 @@ PostgreSQL 17, piloté par l'ORM Prisma (requêtes typées, migrations versionn�
 Formalisme Merise, cardinalités (minimum, maximum) lues depuis l'entité : un utilisateur **effectue** 0 à N transactions ; une transaction est effectuée par 1 et 1 seul utilisateur.
 
 - **BUDGÉTER** est une association porteuse entre UTILISATEUR et CATÉGORIE (attributs : limite, période). Elle traduit RG5 : le couple (utilisateur, catégorie) identifie un budget, il ne peut donc y en avoir qu'un.
-- **ALERTE** est une entité : elle a sa propre vie (lue ou non, date de création). « Au plus une alerte par utilisateur et par catégorie » (RG6) est garanti par la base, avec une contrainte `UNIQUE (user_id, category_id)`. Le verrou par utilisateur et par catégorie (section 7) garantit en plus que le montant est calculé sur des données à jour.
+- **ALERTER** est, de la même façon, une association porteuse entre UTILISATEUR et CATÉGORIE (attributs : montant dépassé, lue, date de création). Elle traduit RG6 : il existe au plus une alerte par utilisateur et par catégorie, ce que la base garantit par une contrainte `UNIQUE (user_id, category_id)`. Le verrou par utilisateur et par catégorie (section 7) garantit en plus que le montant est calculé sur des données à jour.
 - **SESSION** représente une connexion ouverte sur un appareil (RG7).
 
 Source du schéma : [mcd/la-pince.mcd](mcd/la-pince.mcd), au format texte de [Mocodo](https://www.mocodo.net/), versionné avec le code. Pour regénérer l'image (SVG et PNG) après une modification, depuis la racine du dépôt (PowerShell) :
@@ -59,9 +59,9 @@ Clés primaires soulignées, clés étrangères précédées de `#` :
 - **CATÉGORIE** (<u>id catégorie</u>, nom, type, couleur, icône)
 - **TRANSACTION** (<u>id transaction</u>, montant, date, intitulé, #id utilisateur, #id catégorie)
 - **BUDGÉTER** (<u>#id utilisateur, #id catégorie</u>, limite, période)
-- **ALERTE** (<u>id alerte</u>, montant dépassé, lue, date de création, #id utilisateur, #id catégorie)
+- **ALERTER** (<u>#id utilisateur, #id catégorie</u>, montant dépassé, lue, date de création)
 
-Passage du MCD au MLD : chaque entité devient une table ; une association 1,1 – 0,N devient une clé étrangère du côté 1,1 ; l'association porteuse BUDGÉTER (0,N – 0,N) devient une table dont la clé est le couple des deux clés étrangères.
+Passage du MCD au MLD : chaque entité devient une table ; une association 1,1 – 0,N devient une clé étrangère du côté 1,1 ; les associations porteuses BUDGÉTER et ALERTER (0,N – 0,N) deviennent chacune une table dont la clé est le couple des deux clés étrangères.
 
 ---
 
@@ -77,6 +77,7 @@ Le MPD est le SQL exécuté par PostgreSQL : les **migrations** versionnées, ap
 | [20261109200000_alert_unique_per_category](../apps/api/prisma/migrations/20261109200000_alert_unique_per_category/migration.sql) | contrainte `UNIQUE (user_id, category_id)` sur `alerts` (RG6 garantie par la base), écrite à la main : les doublons éventuels, données dérivées, sont d'abord supprimés en gardant l'alerte la plus récente |
 | [20261109210000_email_normalized_check](../apps/api/prisma/migrations/20261109210000_email_normalized_check/migration.sql) | contrainte `CHECK (email = lower(btrim(email)))` sur `users` (RG1 garantie par la base), écrite à la main : normalise d'abord les emails existants ; si deux comptes ne diffèrent que par la casse, elle échoue sans rien modifier (essayé sur une base jetable) |
 | [20261109220000_alert_exceeded_amount_precision](../apps/api/prisma/migrations/20261109220000_alert_exceeded_amount_precision/migration.sql) | `alerts.exceeded_amount` élargi à `DECIMAL(15, 2)` : le dépassement est une somme de dépenses, il peut excéder le montant maximal d'une dépense ; 15 chiffres, car tous les centimes restent alors exacts en nombre JavaScript |
+| [20261110120000_private_migrations_table](../apps/api/prisma/migrations/20261110120000_private_migrations_table/migration.sql) | droits seulement : retire à `lapince_app` tout accès à l'historique `_prisma_migrations` (section 9), écrite à la main ; sans effet si le rôle ou la table n'existe pas |
 
 **Convention de nommage** :
 - tables au pluriel, en minuscules : `users`, `transactions`, `categories` ;
@@ -89,7 +90,7 @@ Le MPD est le SQL exécuté par PostgreSQL : les **migrations** versionnées, ap
 Le code garde ses noms (champs Prisma, donc API) : `@map` et `@@map` dans `schema.prisma` font la correspondance (`userId` ↔ `user_id`).
 
 **Écarts assumés entre MLD et MPD** :
-- `budgets` a une clé technique `id` (identifiant stable dans l'API : `/budgets/12`) ; l'identifiant du MLD (utilisateur, catégorie) devient une **contrainte d'unicité** `UNIQUE (user_id, category_id)`, qui garantit RG5 de la même façon.
+- `budgets` a une clé technique `id` (identifiant stable dans l'API : `/budgets/12`) ; l'identifiant du MLD (utilisateur, catégorie) devient une **contrainte d'unicité** `UNIQUE (user_id, category_id)`, qui garantit RG5 de la même façon. Même traitement pour `alerts` (`/alerts/7/read`) : clé technique `id`, et `UNIQUE (user_id, category_id)` pour RG6.
 - Colonnes techniques absentes du MCD : dates de création et de modification, jetons de vérification et de réinitialisation (section 6).
 - Table `_prisma_migrations` : historique des migrations appliquées, géré par Prisma.
 
@@ -108,7 +109,7 @@ Types PostgreSQL. `NN` : obligatoire (`NOT NULL`). `PK` : clé primaire, `FK` : 
 | `last_name` | `TEXT` | NN | nom |
 | `email` | `TEXT` | NN, UQ, CHECK | email de connexion, en minuscules, sans espaces autour (RG1) : contrainte `users_email_normalized_check` |
 | `password` | `TEXT` | NN | **hash Argon2** du mot de passe, jamais le mot de passe (RG2) |
-| `photo` | `TEXT` | | photo de profil (facultative) |
+| `photo` | `TEXT` | | photo de profil (facultative) : adresse d'un avatar DiceBear, seule forme acceptée par l'API (liste blanche, 400 sinon) |
 | `email_verified` | `BOOLEAN` | NN, défaut `false` | email confirmé |
 | `email_verification_token_hash` | `TEXT` | | **hash SHA-256** du jeton aléatoire (UUID v4) du lien de confirmation ; effacé une fois l'email vérifié |
 | `password_reset_token_hash` | `TEXT` | UQ | **hash SHA-256** du jeton de réinitialisation ; le jeton en clair n'existe que dans l'email (RG8) |

@@ -1,11 +1,12 @@
 @startuml architecture
-' Architecture logicielle multicouche de La Pince (0.9.1), avec la défense propre à chaque couche.
-' Format A4 : 4 étages, couches internes listées dans chaque étage (texte lisible une fois réduit à 16 cm).
+' Architecture logicielle multicouche de La Pince (0.9.7), avec la défense propre à chaque couche.
+' Format A4 : 3 étages, puis les deux stockages côte à côte ; texte lisible une fois réduit à 16 cm.
 
 skinparam defaultFontName "DejaVu Sans"
 skinparam defaultFontSize 14
 skinparam shadowing false
-skinparam ranksep 40
+skinparam ranksep 32
+skinparam nodesep 30
 skinparam rectangle {
   BackgroundColor #FFFFFF
   BorderColor #002B49
@@ -44,26 +45,28 @@ Middlewares globaux
 (helmet, cors, json, cookies)
 ↓
 Routes (authentification,
-limitation du débit)
+limitation des tentatives)
 ↓
 Contrôleurs (validation Zod)
 ↓
 Services (logique métier,
 transactions, verrou)
 ↓
-Accès aux données (Prisma)
+Accès aux données
+(Prisma ; client Redis)
 ]
 
-database "PostgreSQL 17" as db
+database "PostgreSQL 17\ndonnées métier" as db
+database "Redis 8\ncompteurs" as redis
 
 client -down-> proxy : HTTPS, JSON
 proxy -down-> api : HTTP (réseau Docker)
-api -down-> db : SQL paramétré
+api -down-> db : SQL paramétré,\ncompte lapince_app
+api -down-> redis : compteurs du\nlimiteur
 
 note right of client
   **Guide** : validation à la
-  saisie, messages sous le
-  champ, session rafraîchie.
+  saisie, session rafraîchie.
   Aucune règle de sécurité
   ne repose sur lui.
 end note
@@ -76,17 +79,25 @@ end note
 note right of api
   **Décide** : en-têtes de
   sécurité, CORS limité, JWT
-  vérifié, débit limité,
+  vérifié, tentatives limitées,
   entrées validées, chaque
   requête filtrée par
   utilisateur, erreurs sans
   détail interne.
 end note
 
-note right of db
+note bottom of db
   **Garantit** : clés étrangères,
-  unicité, DECIMAL(12, 2),
-  transactions ; non exposée.
+  unicités, CHECK, DECIMAL,
+  transactions. L'API n'y a
+  ni DDL ni administration.
+end note
+
+note bottom of redis
+  **Compte** les tentatives :
+  clés à durée de vie, sans
+  persistance ; ACL limitées
+  à rl:* ; réseau interne.
 end note
 
 @enduml
