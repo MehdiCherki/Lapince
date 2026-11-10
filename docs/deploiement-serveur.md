@@ -21,12 +21,14 @@ En résumé :
 ```
 Internet ──► nginx-proxy (:80, :443) ──► client (nginx, fichiers du build Vite)
                  │                          └── /api/ ──► api (:3007) ──► db (PostgreSQL)
+                 │                                            └──────────► redis (réseau interne à part)
                  └── /.well-known/acme-challenge/ ◄── certbot (renouvellement HTTPS)
 ```
 
 | Service | Rôle |
 |---|---|
 | `db` | PostgreSQL 17, données dans le volume `postgres_data` |
+| `redis` | Redis 8 : compteurs du limiteur de tentatives de l'API (connexion, inscription, session, mot de passe oublié). Sur un réseau Docker interne, partagé avec `api` seulement, sans accès à Internet ; aucun port publié. Un seul utilisateur, `lapince_app`, limité aux commandes du limiteur et aux clés `rl:*` ; `default` désactivé ([redis/start.sh](../redis/start.sh)). Aucune persistance : un redémarrage remet les compteurs à zéro (fenêtres de 15 min à 1 h) |
 | `api` | API compilée (`node dist/…`). Au démarrage : `prisma migrate deploy` (applique les migrations versionnées non encore jouées), puis seed des catégories |
 | `client` | nginx qui sert le front et relaie `/api/` vers `api` |
 | `nginx-proxy` | Seul service exposé (ports 80 et 443). HTTP → HTTPS, `www` → domaine nu. Recharge sa configuration toutes les 6 h pour servir un certificat renouvelé |
@@ -51,9 +53,19 @@ DATABASE_URL=postgresql://<POSTGRES_USER>:<POSTGRES_PASSWORD>@db:5432/<POSTGRES_
 FRONTEND_URL=https://mehdicherki.fr
 ALLOWED_ORIGINS=https://mehdicherki.fr
 VITE_API_BASE_URL=/api
+REDIS_PASSWORD=<valeur générée, voir ci-dessous>
 ```
 
 Les ports locaux (`*_LOCAL_PORT`) ne servent pas en prod : seul `nginx-proxy` est exposé.
+
+`REDIS_PASSWORD` (depuis la 0.9.6) : mot de passe de l'utilisateur Redis `lapince_app`, propre au serveur, jamais réutilisé ailleurs. Le générer sur le serveur, sans l'afficher, puis l'ajouter au `.env` :
+
+```bash
+printf 'REDIS_PASSWORD=%s\n' "$(openssl rand -base64 32)" >> .env
+grep -c '^REDIS_PASSWORD=.' .env   # 1 : présent une seule fois (la valeur n'est pas affichée)
+```
+
+Sans lui, aucune commande `dc` ne démarre (« REDIS_PASSWORD manquant dans .env ») et `deploy.sh` s'arrête dès ses préconditions. Seul Redis et l'API le lisent : Redis l'écrit au démarrage dans un fichier d'ACL lisible par son seul utilisateur, jamais sur la ligne de commande. `REDIS_URL` n'est pas dans le `.env` : `redis://redis:6379`, fixé dans `docker-compose.prod.yml`.
 
 > Ce document décrit le serveur **existant**. L'installation complète d'un nouveau serveur (Docker, premier certificat) n'est pas décrite ici, car elle n'a pas été rejouée depuis la mise en place.
 
@@ -75,12 +87,12 @@ cd /opt/lapince
 
 | Étape | Ce que fait le script | Arrêt si |
 |---|---|---|
-| 1. Préconditions | dossier, branche `main`, aucune modification locale, base démarrée ; liste les commits à déployer ; regarde si la base est inscrite aux migrations | une condition manque (ou rien à déployer : sortie normale) |
+| 1. Préconditions | dossier, branche `main`, aucune modification locale, `REDIS_PASSWORD` présent dans `.env` (sans afficher sa valeur), base démarrée ; liste les commits à déployer ; regarde si la base est inscrite aux migrations | une condition manque (ou rien à déployer : sortie normale) |
 | 2. Sauvegarde | `pg_dump` vers `~/backup-lapince-AAAA-MM-JJ-HHMM.sql` ; une fois vérifiée, seules les 5 sauvegardes les plus récentes sont gardées (`KEEP_BACKUPS=n ./deploy/deploy.sh` pour en garder un autre nombre) | fichier incomplet (ligne de fin de `pg_dump` absente) : rien n'est supprimé |
 | 3. Mise à jour | `git pull --ff-only` ; note le commit précédent, point de retour | historique divergent |
 | 4. Build | `dc build` | erreur de build |
 | 5. Inscription aux migrations | **une seule fois** (0.9.0) : contrôles 1 et 2 de l'encadré ci-dessous, puis inscription de `0_init` | un contrôle différent de 0 |
-| 6. Redémarrage | `dc up -d` ; l'API applique les migrations puis démarre ; le script attend « Server started » (2 min au plus) | l'API redémarre en boucle ou ne démarre pas |
+| 6. Redémarrage | `dc up -d` ; le script attend que Redis soit sain (1 min au plus) ; l'API applique les migrations, se connecte à Redis, puis démarre ; le script attend « Server started » (2 min au plus) | Redis n'est pas sain, l'API redémarre en boucle ou ne démarre pas |
 | 7. nginx | rechargement de `nginx-proxy` (sans lui : 502, incident de la 0.8.0) | — |
 | 8. Contrôles | tous les services démarrés ; base conforme au schéma ; site 200 ; API 401 | un contrôle échoue |
 
@@ -95,7 +107,7 @@ bash ~/deploy.sh --check
 bash ~/deploy.sh
 ```
 
-**Testé** : [deploy/deploy.test.sh](../deploy/deploy.test.sh) exécute le script avec des doubles de `git`, `docker` et `curl` : 21 scénarios (déploiement normal, sauvegarde incomplète, site en 502, API en boucle, inscription de la 0.9.0 avec des contrôles verts ou non, rétention des sauvegardes…), 69 vérifications, lancées par la CI à chaque PR, avec ShellCheck. Contre-épreuve : 6 sabotages du script (sans rechargement de nginx, sauvegarde non vérifiée, décimales non contrôlées, contrôle 1 sur le mauvais schéma, une sauvegarde de trop gardée, rétention avant la vérification), tous détectés. Exécuté en réel pour la 0.9.0 et la 0.9.1.
+**Testé** : [deploy/deploy.test.sh](../deploy/deploy.test.sh) exécute le script avec des doubles de `git`, `docker` et `curl` : 24 scénarios (déploiement normal, sauvegarde incomplète, site en 502, API en boucle, inscription de la 0.9.0 avec des contrôles verts ou non, rétention des sauvegardes, `REDIS_PASSWORD` absent ou vide, Redis non sain…), 82 vérifications, dont « le mot de passe de Redis n'apparaît ni à l'écran ni dans le journal », lancées par la CI à chaque PR, avec ShellCheck. Contre-épreuve : 6 sabotages du script (sans rechargement de nginx, sauvegarde non vérifiée, décimales non contrôlées, contrôle 1 sur le mauvais schéma, une sauvegarde de trop gardée, rétention avant la vérification), tous détectés. Exécuté en réel pour la 0.9.0 et la 0.9.1.
 
 ### Une seule fois : inscription de la base aux migrations (0.9.0)
 
@@ -127,6 +139,54 @@ Le script fait cette étape (5) tout seul. Commandes équivalentes, pour compren
 > Contrôle 1 vérifié le 30/10/2026 sur une base créée à l'état `0_init` : `0` avec le schéma de 673dcd2, `2` avec le schéma actuel ; puis inscription, migration de nommage appliquée par `migrate deploy`, écart final à `0`.
 > Procédure 0.9.0 complète **répétée le 30/10/2026** sur une copie de la sauvegarde de prod du jour (6 utilisateurs, 6 transactions, 3 budgets, 1 alerte) : contrôles 1 et 2 à `0`, `deploy` sans inscription refusé (P3005), inscription, migration de nommage appliquée, empreinte (MD5) du contenu de chaque table identique avant et après, sommes des montants identiques, seed, écart final à `0`. Copie et base jetable supprimées ensuite.
 
+### Une seule fois : arrivée de Redis (0.9.6)
+
+La 0.9.6 ajoute le service `redis`. Aucune migration de la base. Avant le déploiement :
+
+**1. Contrôles préalables, en lecture seule** (aucune adresse IP n'est affichée, seulement des nombres) :
+```bash
+cd /opt/lapince
+# a. Le limiteur compte par adresse de visiteur : nginx-proxy doit voir les adresses publiques.
+#    Requêtes des dernières 24 h reçues depuis une adresse privée, puis total :
+dc logs --no-log-prefix --since 24h nginx-proxy 2>/dev/null | awk '{print $1}' | grep -cE '^(10\.|172\.(1[6-9]|2[0-9]|3[01])\.|192\.168\.|127\.)'   # 0 attendu
+dc logs --no-log-prefix --since 24h nginx-proxy 2>/dev/null | wc -l
+# b. Mémoire libre (Redis en prend 32 Mo au plus)
+free -m
+# c. Nom du réseau interne libre
+docker network ls --format '{{.Name}}' | grep -c '^lapince_redis$'   # 0 attendu
+```
+**Si a n'affiche pas `0` : STOP.** Des visiteurs arrivent avec une adresse interne de Docker : ils partageraient un même compteur, et un seul d'entre eux pourrait bloquer la connexion de tous. À comprendre avant d'aller plus loin (c'est déjà le cas pour le limiteur en mémoire de la 0.9.5).
+
+**2. Mot de passe** : générer `REDIS_PASSWORD` et l'ajouter au `.env` (section 1).
+
+**3. Déployer avec le script de la 0.9.6**, qui contrôle déjà `REDIS_PASSWORD` et l'état de Redis (celui du serveur est encore celui de la 0.9.5). Comme pour la 0.9.0, le lancer depuis `origin/main` sans toucher au dépôt :
+```bash
+git fetch origin main && git show origin/main:deploy/deploy.sh > ~/deploy.sh
+bash ~/deploy.sh --check
+bash ~/deploy.sh
+```
+
+**4. Contrôles propres à Redis** :
+```bash
+dc ps redis                                     # Up (healthy)
+dc logs api --tail 30 | grep -c "Redis : connecté"   # 1 au moins
+dc ps redis --format '{{.Ports}}'              # 6379/tcp, sans « -> » : aucun port publié
+dc exec -T redis redis-cli ping                 # NOAUTH Authentication required. (mot de passe obligatoire)
+# Compteur conservé quand l'API redémarre (corps vide → 400, tentative comptée) :
+curl -s -o /dev/null -D - -X POST https://mehdicherki.fr/api/auth/login -H 'Content-Type: application/json' -d '{}' | grep -i '^ratelimit-remaining'   # 9
+dc restart api && sleep 15
+curl -s -o /dev/null -D - -X POST https://mehdicherki.fr/api/auth/login -H 'Content-Type: application/json' -d '{}' | grep -i '^ratelimit-remaining'   # 8, et non 9
+```
+Ces deux essais comptent dans la limite de 10 connexions par 15 minutes de l'adresse du serveur, sans gêner les visiteurs.
+
+**Retour arrière** : aucune donnée de la base n'a changé, la sauvegarde n'est pas à restaurer.
+```bash
+git checkout <commit de la 0.9.5> && dc up -d --build --remove-orphans   # --remove-orphans : retire le conteneur redis
+dc exec nginx-proxy nginx -s reload
+docker network rm lapince_redis
+```
+`REDIS_PASSWORD` peut rester dans le `.env` : la 0.9.5 ne le lit pas.
+
 ### À la main (référence)
 
 Les mêmes étapes, commande par commande (procédure des versions 0.7.0 et 0.8.0, complétée par leurs leçons).
@@ -153,7 +213,7 @@ dc exec nginx-proxy nginx -s reload   # sinon 502 : nginx-proxy garde l'adresse 
 #### C — Contrôler
 
 ```bash
-dc ps                       # tous les services « Up », db « healthy »
+dc ps                       # tous les services « Up », db et redis « healthy »
 dc logs api --tail 20       # « Server started », aucune erreur
 dc exec api npx prisma migrate diff --from-config-datasource --to-schema prisma/schema.prisma --exit-code; echo $?   # 0 : base conforme au schéma
 curl -s -o /dev/null -w "%{http_code}
@@ -288,6 +348,15 @@ dc exec api npx prisma db seed     # relancer le seed
 dc down                            # tout arrêter (les données restent)
 ```
 
+Redis, avec l'utilisateur de l'API (le mot de passe vient de l'environnement du conteneur, il n'est ni tapé ni affiché). Lister les clés est refusé (`KEYS`, `SCAN` : NOPERM) ; on lit le compteur d'une adresse connue :
+
+```bash
+rcli() { dc exec -T redis sh -c 'REDISCLI_AUTH="$REDIS_PASSWORD" redis-cli --user lapince_app "$@"' sh "$@"; }
+rcli GET rl:login:203.0.113.10     # tentatives de connexion comptées pour cette adresse
+rcli PTTL rl:login:203.0.113.10    # temps restant avant remise à zéro, en millisecondes
+rcli DEL rl:login:203.0.113.10     # débloquer une personne bloquée à tort
+```
+
 > ⚠️ **Jamais `dc down -v`** : `-v` supprime les volumes, donc la base de production.
 
 ---
@@ -297,6 +366,8 @@ dc down                            # tout arrêter (les données restent)
 **Service qui redémarre en boucle** : `dc logs <service> --tail 50`.
 
 **Erreur de connexion à la base** : dans `.env`, `DATABASE_URL` doit reprendre `POSTGRES_USER`, `POSTGRES_PASSWORD` et `POSTGRES_DB`, avec l'hôte `db`. Attendre que `db` soit `healthy` (`dc ps`).
+
+**Redis non sain ou API qui attend Redis** : `dc logs redis --tail 30` (« REDIS_PASSWORD manquant », « trop court », « aucun espace ») et `dc logs api --tail 30` (« Redis : erreur de connexion », par exemple `WRONGPASS` si le mot de passe a changé sans recréer les deux services : `dc up -d redis api`). Redis arrêté en cours de route : l'API continue de répondre, les tentatives ne sont plus limitées, et chaque requête concernée est journalisée (« error from store, allowing request without rate-limiting ») jusqu'à son retour ; elle s'y reconnecte seule.
 
 **Site injoignable en HTTPS** : vérifier la date d'expiration du certificat (section 4), puis `dc logs nginx-proxy --tail 30`.
 

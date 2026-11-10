@@ -2,14 +2,14 @@
 
 Ce document décrit comment l'application est testée : la stratégie, la façon de lancer les tests, ce que chaque test couvre (matrice), les tests de sécurité et le cahier de recette.
 
-**État au 10/11/2026** : 168 tests automatisés de l'application et 21 scénarios du script de déploiement, tous verts, lancés sur chaque pull request par la CI.
+**État au 09/11/2026 (0.9.6)** : 173 tests automatisés de l'application et 24 scénarios du script de déploiement, tous verts, lancés sur chaque pull request par la CI.
 
 | Ensemble | Outil | Tests |
 |---|---|---|
 | API — unitaires (dont fuzzing) | Vitest + fast-check | 25 |
-| API — intégration (dont sécurité et fuzzing) | Vitest + Supertest + PostgreSQL | 92 |
+| API — intégration (dont sécurité et fuzzing) | Vitest + Supertest + PostgreSQL + Redis | 97 |
 | Client — composants, services, fonctions | Vitest + Testing Library (jsdom) | 51 |
-| Script de déploiement | Bash, doubles de `git`, `docker` et `curl` | 21 scénarios (69 vérifications) |
+| Script de déploiement | Bash, doubles de `git`, `docker` et `curl` | 24 scénarios (82 vérifications) |
 | Recette (tests d'acceptation) | navigateur, cahier ci-dessous | 9 parcours |
 | Charge | k6, image de production de l'API, en local | 2 scénarios |
 
@@ -33,7 +33,8 @@ Ce document décrit comment l'application est testée : la stratégie, la façon
 - base dédiée `lapince_test`, jamais la base de dev : la suite refuse de démarrer si `DATABASE_URL` ne contient pas `_test` ([tests/setup/integration.ts](../apps/api/tests/setup/integration.ts)) ;
 - aucun email réel : le transporteur SMTP est remplacé par un double dans tous les fichiers ;
 - chaque fichier supprime les comptes qu'il a créés (et leurs données, en cascade) ;
-- emails de test uniques (horodatés) : les fichiers ne se gênent pas entre eux.
+- emails de test uniques (horodatés) : les fichiers ne se gênent pas entre eux ;
+- compteurs du limiteur dans un vrai Redis, sous un préfixe tiré au hasard pour chaque fichier (`rl:test:<uuid>:`, [tests/setup/rate-limit-prefix.ts](../apps/api/tests/setup/rate-limit-prefix.ts)) : les fichiers tournent en parallèle depuis la même adresse sans partager de compteur ; les clés expirent seules, aucune suppression (jamais de `FLUSHALL`).
 
 ---
 
@@ -53,11 +54,13 @@ echo "CREATE DATABASE lapince_test;" | docker compose exec -T db sh -c 'psql -U 
 docker compose exec api npm run test:db:setup      # migrations + seed des catégories
 ```
 
+Les tests d'intégration utilisent aussi Redis (service `redis`, `REDIS_URL` et `REDIS_PASSWORD` du conteneur `api`), sous leurs propres préfixes : ils ne touchent pas aux compteurs du développement.
+
 Le code est copié dans l'image au build : après une modification, `docker compose up -d --build api` (ou `client`) avant de relancer les tests, ou `docker compose watch` pendant le développement.
 
 ### Test de charge
 
-En local seulement, jamais en production : l'**image de production** de l'API sur une base jetable `lapince_load_test`, et k6 1.4.0 ([apps/api/tests/load](../apps/api/tests/load)). Deux scénarios successifs de 70 s (montée à 50 utilisateurs virtuels, palier, descente), une seule session :
+En local seulement, jamais en production : l'**image de production** de l'API sur une base jetable `lapince_load_test` et un Redis jetable, et k6 1.4.0 ([apps/api/tests/load](../apps/api/tests/load)). Deux scénarios successifs de 70 s (montée à 50 utilisateurs virtuels, palier, descente), une seule session :
 
 | Scénario | Ce qu'il éprouve | Requêtes | Erreurs | Latence médiane | p95 | p99 |
 |---|---|---|---|---|---|---|
@@ -65,6 +68,8 @@ En local seulement, jamais en production : l'**image de production** de l'API su
 | `categories_differentes` | usage courant : chacun sur sa catégorie | 59 519 dépenses | 0 | 57 ms | **62 ms** | 65 ms |
 
 Mesure du 10/11/2026 sur le poste de développement (Docker Desktop, Windows 11). Seuils : moins de 1 % d'erreurs et tous les contrôles verts dans les deux scénarios ; p95 sous 500 ms pour l'usage courant. Tous respectés.
+
+Rejoué le 09/11/2026 avec Redis (0.9.6 : image de production, Redis jetable lancé par le même script qu'en production) : 63 143 requêtes, 0 erreur, tous les contrôles verts ; p95 de 65 ms pour l'usage courant, 851 ms pour le pire cas. Résultats équivalents : ces routes ne passent pas par le limiteur, seule la connexion initiale l'utilise.
 
 - **Exactitude sous charge** : à la fin, une seule alerte, au dépassement exact au centime (6 160,00 € = 6 170 dépenses de 1 € − 10 € de budget). Le verrou par utilisateur et par catégorie tient.
 - **Pire cas** : les écritures sur un même couple utilisateur-catégorie passent l'une après l'autre, par conception (environ 89 par seconde). Une file de 50 requêtes attend donc environ une demi-seconde. Une personne n'ajoute pas 50 dépenses à la seconde : la latence de ce scénario est rapportée, sans seuil.
@@ -75,10 +80,10 @@ Rejouer le test, depuis la racine du dépôt :
 ```bash
 L="-f docker-compose.yml -f apps/api/tests/load/compose.load.yml --profile load"
 echo "CREATE DATABASE lapince_load_test;" | docker compose exec -T db sh -c 'psql -U $POSTGRES_USER -d $POSTGRES_DB'
-docker compose $L up -d --build --no-deps api-load              # migrations + seed, puis l'API
+docker compose $L up -d --build --no-deps redis-load api-load   # Redis jetable ; migrations + seed, puis l'API
 docker compose $L exec api-load node tests/load/prepare-user.ts  # utilisateur vérifié
 docker compose $L run --rm --no-deps k6                         # résumé : apps/api/tests/load/results/
-docker compose $L rm -sf api-load
+docker compose $L rm -sf api-load redis-load
 echo "DROP DATABASE lapince_load_test;" | docker compose exec -T db sh -c 'psql -U $POSTGRES_USER -d $POSTGRES_DB'
 ```
 
@@ -109,10 +114,10 @@ Dans l'API : middlewares 97 %, validateurs 95 %, services 81 %, contrôleurs 70 
 | Job | Étapes |
 |---|---|
 | Formatage | Prettier sur tout le dépôt |
-| API | `npm ci` → **audit des dépendances** (`npm audit --omit=dev --audit-level=high`) → client Prisma → types → **unitaires** → migrations + seed sur une base PostgreSQL 17 jetable → **intégration** → build |
+| API | Redis jetable (même image, même script et mêmes ACL qu'en production) → `npm ci` → **audit des dépendances** (`npm audit --omit=dev --audit-level=high`) → client Prisma → types → **unitaires** → migrations + seed sur une base PostgreSQL 17 jetable → **intégration** → build |
 | Client | `npm ci` → **audit des dépendances** → lint → **tests** → types et build |
 | Images de production | construction des Dockerfiles de prod |
-| Script de déploiement | ShellCheck → tests du script ([deploy/deploy.test.sh](../deploy/deploy.test.sh)) |
+| Script de déploiement | ShellCheck (scripts de déploiement et de Redis) → tests du script ([deploy/deploy.test.sh](../deploy/deploy.test.sh)) |
 
 Les branches `dev` et `main` sont protégées : GitHub refuse le merge tant que tous ces jobs ne sont pas verts.
 
@@ -132,7 +137,7 @@ Chemins relatifs à `apps/api/tests/integration/` (API, intégration), `apps/api
 |---|---|---|---|---|
 | **Inscription** | — | `auth/register` (compte non vérifié, email envoyé, doublon 409, mot de passe faible 400) ; `auth/register-rate-limit` ; `validation-messages` (message sous le bon champ) ; `auth/email-case` (minuscules, doublon de casse refusé) | `RegisterForm` (confirmation différente refusée sans appel, erreur générale) | P1 |
 | **Vérification de l'email** | — | `auth/register` (jeton émis) ; `auth/session-tokens` (seule l'empreinte du jeton en base, lien à usage unique, jeton en double dans l'adresse → 400) | `VerifyEmailPage` (sans jeton, jeton accepté, jeton refusé) | P1 |
-| **Connexion, déconnexion, sessions** | — | `auth/login-rate-limit-per-ip` (un compteur par visiteur derrière les proxys) ; `auth/multi-device-sessions` ; `auth/session-limit` (5 sessions max) ; `auth/session-tokens` (seule l'empreinte du jeton en base, jeton déjà utilisé refusé, 10 rafraîchissements simultanés → une seule session) ; `auth/cookies-production` (`Secure`, `SameSite=Lax`, `HttpOnly`) ; `auth/email-case` (connexion en majuscules) | `apiClient` (401 → rafraîchissement → requête rejouée, un seul rafraîchissement pour deux 401) ; `lib/bfcache` (page privée non réaffichée après déconnexion) | P2 |
+| **Connexion, déconnexion, sessions** | — | `auth/login-rate-limit-per-ip` (un compteur par visiteur derrière les proxys) ; `auth/rate-limit-redis` (compteur créé dans Redis avec une durée de vie de 15 min, `Retry-After`, connexion réussie non comptée sans effacer les échecs, compteur partagé par deux instances de l'API) ; `auth/rate-limit-redis-down` (Redis coupé : requêtes servies, jamais 429 ni 500, incident journalisé) ; `auth/multi-device-sessions` ; `auth/session-limit` (5 sessions max) ; `auth/session-tokens` (seule l'empreinte du jeton en base, jeton déjà utilisé refusé, 10 rafraîchissements simultanés → une seule session) ; `auth/cookies-production` (`Secure`, `SameSite=Lax`, `HttpOnly`) ; `auth/email-case` (connexion en majuscules) | `apiClient` (401 → rafraîchissement → requête rejouée, un seul rafraîchissement pour deux 401) ; `lib/bfcache` (page privée non réaffichée après déconnexion) | P2 |
 | **Mot de passe oublié** | — | `auth/password-reset` (réponse identique compte connu ou non, lien 30 min, seul le hash du jeton en base, usage unique, sessions fermées, lien expiré, mot de passe faible) | — | P3 |
 | **Profil et compte (paramètres)** | — | `users/profile-reauth` (mot de passe actuel exigé pour changer mot de passe ou email, sessions fermées) ; `users/account-deletion` (compte et toutes ses données supprimés en cascade, session fermée, données d'un autre intactes, 401 sans session) ; `auth/email-case` ; `validation-messages` | — | P4 |
 | **Dépenses et revenus** | — | `transactions/security` ; `transactions/description` (intitulé facultatif) ; `transactions/order` (ordre stable, même jour) ; `transactions/date-filter` (période avec début et fin, début seul, fin seul) ; `amounts` (au centime, < 10 milliards) ; `validation-messages` | `transactionApi` (montants convertis, pagination) ; `lib/transaction` (libellé) ; `lib/sort` ; `AmountInputs` (saisie au centime) | P5 |
@@ -156,7 +161,9 @@ Chemins relatifs à `apps/api/tests/integration/` (API, intégration), `apps/api
 | Montant valide qui ferait déborder un calcul | `budgets/alert-consistency` | deux dépenses maximales → 201 et alerte exacte (19 999 999 999,97 €) ; dépassement au-delà de la borne de la base → 400 explicite, rien n'est enregistré |
 | Image arbitraire en photo de profil (pistage, contenu choisi par un tiers) | `users/avatar` | adresse étrangère, `javascript:`, paramètres ajoutés → 400, à l'inscription comme au profil ; seul l'avatar DiceBear construit par le client est accepté |
 | Navigation au clavier (RGAA) | `CategorySelect`, `TransactionSheet`, `AlertPopup` (client) | aucun élément masqué atteignable avec Tab (liste de catégories fermée, feuille des transactions fermée : `inert`) ; feuille ouverte au clavier ; Échap referme la liste ; contour de focus visible partout (règle globale) |
-| Force brute | `auth/login-rate-limit-per-ip`, `auth/register-rate-limit` | 429 au-delà de la limite, par visiteur |
+| Force brute | `auth/login-rate-limit-per-ip`, `auth/register-rate-limit`, `auth/rate-limit-redis` | 429 au-delà de la limite, par visiteur, avec le temps restant (`Retry-After`) ; compteur commun à toutes les instances de l'API, conservé quand elle redémarre |
+| Contournement du limiteur en se connectant à son propre compte | `auth/rate-limit-redis` | une connexion réussie ne compte pas, mais n'efface pas les échecs : après 9 échecs et 1 succès, il reste 9 échecs comptés, et le 11e essai est refusé |
+| Panne du stockage des compteurs | `auth/rate-limit-redis-down` | Redis coupé : l'application reste utilisable (aucun 429 ni 500), chaque incident est journalisé |
 | Prise de contrôle du compte | `users/profile-reauth` | mot de passe actuel exigé ; sessions fermées après changement |
 | Énumération des comptes | `auth/password-reset` | même réponse que l'email existe ou non |
 | Vol des jetons en base | `auth/password-reset`, `auth/session-tokens` | seule l'empreinte SHA-256 des jetons est stockée (réinitialisation, session, confirmation d'email) ; liens à usage unique |
@@ -171,7 +178,8 @@ Chemins relatifs à `apps/api/tests/integration/` (API, intégration), `apps/api
 **Contre-épreuves** (dans le conteneur seulement, fichiers restaurés ensuite → verts) :
 - 30/10/2026 : filtre par utilisateur retiré du service des dépenses et contrôle d'audience retiré du middleware → 4 tests de `transactions/security` rouges ;
 - 31/10/2026 : jeton de session présenté non consommé lors de la rotation → « jeton déjà utilisé » et « rafraîchissements simultanés » rouges ;
-- 01/11/2026 : suppression du compte neutralisée dans le contrôleur → « supprime le compte et toutes ses données » rouge (l'utilisateur existe encore).
+- 01/11/2026 : suppression du compte neutralisée dans le contrôleur → « supprime le compte et toutes ses données » rouge (l'utilisateur existe encore) ;
+- 09/11/2026 : `skipSuccessfulRequests` retiré du limiteur de connexion → « ne compte pas une connexion réussie » rouge (10 échecs comptés au lieu de 9) ; `passOnStoreError` à `false` → « Redis indisponible » rouge (500 au lieu de 400). Avant le passage à Redis, 4 des 5 tests de `auth/rate-limit-redis*` étaient rouges (compteur absent de Redis, deux instances qui comptent chacune de leur côté, 429 quand Redis est coupé).
 
 ---
 

@@ -53,6 +53,7 @@ Fonctionnalités prévues dans le MVP :
 
 ### Base de données
 - PostgreSQL ([conception : MCD, MLD, dictionnaire de données](docs/base-de-donnees.md))
+- Redis (clé/valeur) : compteurs du limiteur de tentatives, partagés par toutes les instances de l'API ([redis/start.sh](redis/start.sh))
 
 ### DevOps
 - Docker
@@ -117,6 +118,8 @@ docker compose up -d --build
 docker compose watch   # optionnel : synchronise les fichiers modifiés dans les conteneurs
 ```
 
+`REDIS_PASSWORD` doit être renseigné dans `.env` (voir `.env.example`), sinon `docker compose` refuse de démarrer.
+
 Au démarrage, l'API applique les **migrations** de la base qui ne l'ont pas encore été (`prisma migrate deploy`, dossier `apps/api/prisma/migrations`), puis lance le seed des catégories.
 
 | Service | Adresse |
@@ -149,10 +152,10 @@ Chaque pull request est vérifiée par GitHub Actions ([.github/workflows/ci.yml
 | Job | Contrôles |
 |---|---|
 | Formatage | Prettier sur tout le dépôt (version figée) |
-| API | `npm ci`, audit des dépendances de production (aucune faille haute ou critique), client Prisma, types, tests unitaires, migrations + seed sur une base PostgreSQL jetable, tests d'intégration, build |
+| API | Redis jetable (même script et mêmes ACL qu'en production), `npm ci`, audit des dépendances de production (aucune faille haute ou critique), client Prisma, types, tests unitaires, migrations + seed sur une base PostgreSQL jetable, tests d'intégration, build |
 | Client | `npm ci`, audit des dépendances de production, lint, tests, types et build |
 | Images de production | construction des Dockerfiles de prod de l'API et du client |
-| Script de déploiement | ShellCheck, puis tests du script avec des doubles de `git`, `docker` et `curl` |
+| Script de déploiement | ShellCheck (déploiement et Redis), puis tests du script avec des doubles de `git`, `docker` et `curl` |
 
 Résultat d'une PR : onglet *Checks* sur GitHub, ou `gh pr checks <numéro>`.
 
@@ -207,8 +210,9 @@ Lapince/
 │   └── client/               # Front : React, Vite, Tailwind (TypeScript)
 ├── deploy/                   # Script de mise en production et ses tests
 ├── docs/                     # Base de données, tests, déploiement, conventions Git, commandes Docker
-├── docker-compose.yml        # Dev : db, api, client, studio (Prisma Studio)
-├── docker-compose.prod.yml   # Prod : db, api, client, nginx-proxy, certbot
+├── redis/                    # Démarrage de Redis : ACL, sans persistance, mémoire bornée
+├── docker-compose.yml        # Dev : db, redis, api, client, studio (Prisma Studio)
+├── docker-compose.prod.yml   # Prod : db, redis, api, client, nginx-proxy, certbot
 ├── nginx-proxy.conf          # Reverse proxy HTTPS de la prod
 ├── .env.example              # Modèle du fichier .env (à copier)
 └── CHANGELOG.md

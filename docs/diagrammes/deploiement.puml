@@ -1,5 +1,5 @@
 @startuml deploiement
-' Diagramme de déploiement UML de La Pince (production, 0.9.1).
+' Diagramme de déploiement UML de La Pince (production, 0.9.6).
 ' Format A4 : nœuds compacts (contenu décrit dans le nœud), services externes en haut et à droite.
 ' Régénérer les images : voir docs/deploiement-serveur.md, section 1.
 
@@ -82,6 +82,12 @@ node "Serveur VPS — Ubuntu" <<device>> as vps {
     ----
     volume postgres_data
     ]
+    database redis [
+    **redis** (Redis 8)
+    ----
+    compteurs du limiteur
+    de tentatives, en mémoire
+    ]
   }
 }
 
@@ -97,11 +103,13 @@ proxy -[hidden]left- certbot
 proxy -down-> client : HTTP 80
 client -down-> api : HTTP 3007
 api -down-> db : TCP 5432
+api -down-> redis : TCP 6379\n(ACL)
 api -right-> brevo
 
 legend bottom
   Seul nginx-proxy est exposé sur Internet (HTTP 80 → 301 vers HTTPS).
-  client, api et db : réseau interne de Docker uniquement.
+  client, api, db et redis : réseau interne de Docker uniquement ;
+  redis sur un réseau à part, sans accès à Internet, partagé avec api seulement.
 endlegend
 
 @enduml

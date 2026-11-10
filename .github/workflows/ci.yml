@@ -33,6 +33,8 @@ jobs:
   api:
     name: API (types, tests unitaires et d'intégration, build)
     runs-on: ubuntu-latest
+    # Redis ou PostgreSQL injoignable : l'API attend sans fin. Arrêt au bout de 15 min plutôt que 6 h
+    timeout-minutes: 15
     defaults:
       run:
         working-directory: apps/api
@@ -59,8 +61,22 @@ jobs:
       JWT_SECRET: secret-de-ci-uniquement
       ALLOWED_ORIGINS: http://localhost:8080
       FRONTEND_URL: http://localhost:8080
+      REDIS_URL: redis://localhost:6379
+      REDIS_PASSWORD: mot-de-passe-de-ci-uniquement
     steps:
       - uses: actions/checkout@v5
+      # Redis jetable, lancé comme en production : même image, même script, mêmes ACL
+      # (les tests vérifient aussi que l'utilisateur lapince_app a les droits nécessaires).
+      # Pas en « services » : ceux-ci démarrent avant le checkout, sans accès à redis/start.sh.
+      - name: Redis
+        working-directory: .
+        run: |
+          docker run -d --name redis -p 127.0.0.1:6379:6379 -e REDIS_PASSWORD \
+            -v "$PWD/redis/start.sh:/redis/start.sh:ro" \
+            --health-cmd 'REDISCLI_AUTH="$REDIS_PASSWORD" redis-cli --user lapince_app ping | grep -q PONG' \
+            --health-interval 2s \
+            redis:8.10.3-alpine sh /redis/start.sh
+          timeout 60 sh -c 'until [ "$(docker inspect -f "{{.State.Health.Status}}" redis)" = healthy ]; do sleep 1; done'
       - uses: actions/setup-node@v5
         with:
           node-version: 22
@@ -117,7 +133,7 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       - name: ShellCheck
-        run: shellcheck deploy/*.sh
+        run: shellcheck deploy/*.sh redis/*.sh
       # git, docker et curl remplacés par des doubles : aucun serveur n'est touché
       - name: Tests du script
         run: bash deploy/deploy.test.sh
