@@ -170,7 +170,7 @@ bash ~/deploy.sh
 ```bash
 dc ps redis                                     # Up (healthy)
 dc logs api --tail 30 | grep -c "Redis : connecté"   # 1 au moins
-dc port redis 6379 || echo "aucun port publié"  # « aucun port publié »
+dc ps redis --format '{{.Ports}}'              # 6379/tcp, sans « -> » : aucun port publié
 dc exec -T redis redis-cli ping                 # NOAUTH Authentication required. (mot de passe obligatoire)
 # Compteur conservé quand l'API redémarre (corps vide → 400, tentative comptée) :
 curl -s -o /dev/null -D - -X POST https://mehdicherki.fr/api/auth/login -H 'Content-Type: application/json' -d '{}' | grep -i '^ratelimit-remaining'   # 9
