@@ -52,5 +52,8 @@
     "@vitest/coverage-v8": "^4.1.12",
     "fast-check": "^4.10.2",
     "vitest": "^4.1.5"
+  },
+  "overrides": {
+    "effect": "3.22.5"
   }
 }
