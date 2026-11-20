@@ -58,6 +58,9 @@ Copie ce bloc en haut de la section `## [Non publié]` et remplis-le :
 ### Corrigé
 - Alertes : l'alerte d'un autre utilisateur répond désormais 404, comme une alerte inexistante, au lieu de 401 « Accès refusé » (`GET /alerts/:id`, `PATCH /alerts/:id/read`, `DELETE /alerts/:id`). La différence entre 401 et 404 révélait qu'une alerte existait ; la règle est maintenant la même que pour les transactions et les budgets (recherche filtrée sur l'utilisateur connecté). Nouveau test d'intégration `budgets/alert-ownership`, écrit rouge d'abord : B ne peut ni lire, ni marquer comme lue, ni supprimer l'alerte de A, et reçoit la même réponse que pour une alerte inexistante ; l'alerte de A reste intacte (branche `fix/alert-ownership-404`)
 
+### Sécurité
+- **Dépendance `effect` forcée en 3.22.5** (`overrides` de `apps/api/package.json`) : faille haute GHSA-7589-6fvf-x4pw (déni de service par expression régulière dans `Schema.TemplateLiteral`) publiée sur `effect` ≤ 3.22.0, que `@prisma/config` 7.10.1 fixe en 3.20.0 ; l'audit bloquant de la CI refusait toute pull request. Aucune version de Prisma 7 ne corrige encore la faille, et `npm audit fix --force` aurait rétrogradé Prisma en 6.12.0 ; même version majeure d'`effect`, donc compatible. Faille non exploitable dans l'application (chargement de la configuration Prisma, sans donnée utilisateur), corrigée pour garder l'audit strict. À retirer quand Prisma embarquera une version corrigée. `npm ci`, migrations, seed et 129 tests verts (branche `chore/deps-effect-override`)
+
 ---
 
 ## [0.9.7] — 2026-11-10
