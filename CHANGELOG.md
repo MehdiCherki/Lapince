@@ -55,6 +55,9 @@ Copie ce bloc en haut de la section `## [Non publié]` et remplis-le :
 ### Modifié
 - Documentation : schémas à jour de la 0.9.7. Architecture : Redis et le compte `lapince_app` de l'API. MCD : l'alerte devient l'association porteuse ALERTER, comme BUDGÉTER, ce que traduit la contrainte `UNIQUE (user_id, category_id)` de la 0.9.5. Cas d'utilisation : un seul cadre, et l'inclusion du recalcul depuis « consulter ses alertes ». `docs/base-de-donnees.md` aligné : MCD, MLD, écarts MLD/MPD, migration `20261110120000_private_migrations_table` ajoutée au tableau, liste blanche des avatars dans le dictionnaire (branche `docs/architecture-diagram`, PR #103)
 
+### Sécurité
+- **Dépendance `effect` forcée en 3.22.5** (`overrides` de `apps/api/package.json`) : faille haute GHSA-7589-6fvf-x4pw (déni de service par expression régulière dans `Schema.TemplateLiteral`) publiée sur `effect` ≤ 3.22.0, que `@prisma/config` 7.10.1 fixe en 3.20.0 ; l'audit bloquant de la CI refusait toute pull request. Aucune version de Prisma 7 ne corrige encore la faille, et `npm audit fix --force` aurait rétrogradé Prisma en 6.12.0 ; même version majeure d'`effect`, donc compatible. Faille non exploitable dans l'application (chargement de la configuration Prisma, sans donnée utilisateur), corrigée pour garder l'audit strict. À retirer quand Prisma embarquera une version corrigée. `npm ci`, migrations, seed et 129 tests verts (branche `chore/deps-effect-override`)
+
 ---
 
 ## [0.9.7] — 2026-11-10
