@@ -1,11 +1,18 @@
 import type { Request, Response } from "express";
 import { prisma } from "../lib/prisma.ts";
-import {
-  BadRequestError,
-  NotFoundError,
-  UnauthorizedError,
-} from "../lib/error.ts";
+import { BadRequestError, NotFoundError } from "../lib/error.ts";
 import { getUserAlerts } from "../services/alert.service.ts";
+
+// Alerte de l'utilisateur connecté, sinon 404 : celle d'un autre répond comme une alerte
+// inexistante, pour ne pas révéler qu'elle existe (même règle que les transactions et les budgets)
+async function findOwnAlert(id: number, userId: number) {
+  const alert = await prisma.alert.findFirst({
+    where: { id, userId },
+    include: { category: true },
+  });
+  if (!alert) throw new NotFoundError("Alerte introuvable");
+  return alert;
+}
 
 // GET /alerts
 export async function getAlerts(req: Request, res: Response) {
@@ -25,13 +32,7 @@ export async function getAlertById(req: Request, res: Response) {
   const id = Number(req.params.id);
   if (isNaN(id)) throw new BadRequestError("Identifiant invalide");
 
-  const alert = await prisma.alert.findUnique({
-    where: { id },
-    include: { category: true },
-  });
-  if (!alert) throw new NotFoundError("Alerte introuvable");
-  if (alert.userId !== req.user.id) throw new UnauthorizedError("Accès refusé");
-
+  const alert = await findOwnAlert(id, req.user.id);
   return res.json(alert);
 }
 
@@ -43,9 +44,7 @@ export async function markAlertAsRead(req: Request, res: Response) {
   const id = Number(req.params.id);
   if (isNaN(id)) throw new BadRequestError("Identifiant invalide");
 
-  const alert = await prisma.alert.findUnique({ where: { id } });
-  if (!alert) throw new NotFoundError("Alerte introuvable");
-  if (alert.userId !== req.user.id) throw new UnauthorizedError("Accès refusé");
+  await findOwnAlert(id, req.user.id);
 
   const updated = await prisma.alert.update({
     where: { id },
@@ -77,9 +76,7 @@ export async function deleteAlert(req: Request, res: Response) {
   const id = Number(req.params.id);
   if (isNaN(id)) throw new BadRequestError("Identifiant invalide");
 
-  const alert = await prisma.alert.findUnique({ where: { id } });
-  if (!alert) throw new NotFoundError("Alerte introuvable");
-  if (alert.userId !== req.user.id) throw new UnauthorizedError("Accès refusé");
+  await findOwnAlert(id, req.user.id);
 
   await prisma.alert.delete({ where: { id } });
   return res.status(204).send();

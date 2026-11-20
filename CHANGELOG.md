@@ -55,6 +55,9 @@ Copie ce bloc en haut de la section `## [Non publié]` et remplis-le :
 ### Modifié
 - Documentation : schémas à jour de la 0.9.7. Architecture : Redis et le compte `lapince_app` de l'API. MCD : l'alerte devient l'association porteuse ALERTER, comme BUDGÉTER, ce que traduit la contrainte `UNIQUE (user_id, category_id)` de la 0.9.5. Cas d'utilisation : un seul cadre, et l'inclusion du recalcul depuis « consulter ses alertes ». `docs/base-de-donnees.md` aligné : MCD, MLD, écarts MLD/MPD, migration `20261110120000_private_migrations_table` ajoutée au tableau, liste blanche des avatars dans le dictionnaire (branche `docs/architecture-diagram`, PR #103)
 
+### Corrigé
+- Alertes : l'alerte d'un autre utilisateur répond désormais 404, comme une alerte inexistante, au lieu de 401 « Accès refusé » (`GET /alerts/:id`, `PATCH /alerts/:id/read`, `DELETE /alerts/:id`). La différence entre 401 et 404 révélait qu'une alerte existait ; la règle est maintenant la même que pour les transactions et les budgets (recherche filtrée sur l'utilisateur connecté). Nouveau test d'intégration `budgets/alert-ownership`, écrit rouge d'abord : B ne peut ni lire, ni marquer comme lue, ni supprimer l'alerte de A, et reçoit la même réponse que pour une alerte inexistante ; l'alerte de A reste intacte (branche `fix/alert-ownership-404`)
+
 ---
 
 ## [0.9.7] — 2026-11-10
