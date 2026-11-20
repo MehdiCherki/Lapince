@@ -52,6 +52,9 @@ Copie ce bloc en haut de la section `## [Non publié]` et remplis-le :
 
 ## [Non publié]
 
+### Modifié
+- Documentation : `docs/tests.md` à jour de la 0.9.8 : 181 tests automatisés, dont 105 tests d'intégration de l'API ; le test `budgets/alert-ownership` figure dans la matrice (alertes) et dans les tests de sécurité (accès aux données d'un autre utilisateur) (branche `docs/tests-0.9.8`)
+
 ---
 
 ## [0.9.8] — 2026-11-20
